@@ -15,7 +15,7 @@ Deploy Neptune on your infra from day one, track 100% of your metadata and get t
 
 ## 📚Examples
 
-In this repo, you'll tutorials and examples of using Neptune for different use cases.
+In this repo, you'll find tutorials and examples of using Neptune.
 
 ## 🎓How-to guides
 
