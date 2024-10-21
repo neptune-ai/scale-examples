@@ -1,5 +1,4 @@
 import math
-import os
 import uuid
 from datetime import datetime
 
@@ -9,8 +8,6 @@ import torch.optim as optim
 from neptune_scale import Run
 from torchvision import datasets, transforms
 from tqdm.auto import tqdm, trange
-
-os.environ["NEPTUNE_PROJECT"] = "examples/hpo"  # Set your project here
 
 ALLOWED_DATATYPES = [int, float, str, datetime, bool, list, set]
 
