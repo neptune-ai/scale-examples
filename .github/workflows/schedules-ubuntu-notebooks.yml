@@ -1,0 +1,12 @@
+name: Scheduled notebook tests (ubuntu)
+on:
+  schedule:
+    - cron: "0 0 * * 2" # Run every Tuesday at 12:00 AM UTC
+  workflow_dispatch:
+jobs:
+  test-notebooks-ubuntu:
+    uses: ./.github/workflows/test-notebooks.yml
+    with:
+      os: ubuntu-latest
+    secrets:
+      NEPTUNE_API_TOKEN: ${{ secrets.NEPTUNE_API_TOKEN }}
