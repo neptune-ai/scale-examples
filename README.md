@@ -1,7 +1,7 @@
 <div align="center">
     <img src="https://neptune.ai/wp-content/uploads/2024/07/Facebook-cover-image.png" width="1500" />
     &nbsp;
- <h1><a href="https://neptune.ai">neptune.ai</a> scale examples</h1>
+ <h1><a href="https://neptune.ai">neptune.ai</a> Scale examples</h1>
 </div>
 
 ## What is neptune.ai?
