@@ -21,7 +21,7 @@ parameters = {
 
 input_size = math.prod(parameters["input_size"])
 
-learning_rates = [0.05, 0.075, 0.1]  # learning rate choices
+learning_rates = [0.025, 0.05, 0.075]  # learning rate choices
 
 
 class BaseModel(nn.Module):
@@ -42,40 +42,37 @@ class BaseModel(nn.Module):
         return x
 
 
+model = BaseModel(
+    input_size,
+    parameters["n_classes"],
+).to(parameters["device"])
+
+criterion = nn.CrossEntropyLoss()
+
+data_tfms = {
+    "train": transforms.Compose(
+        [
+            transforms.ToTensor(),
+        ]
+    )
+}
+
+trainset = datasets.MNIST(
+    root="mnist",
+    train=True,
+    download=True,
+    transform=data_tfms["train"],
+)
+
+trainloader = torch.utils.data.DataLoader(
+    trainset,
+    batch_size=parameters["batch_size"],
+    shuffle=True,
+    num_workers=0,
+)
+
 if __name__ == "__main__":
-    model = BaseModel(
-        input_size,
-        parameters["n_classes"],
-    ).to(parameters["device"])
-
-    criterion = nn.CrossEntropyLoss()
-
-    data_tfms = {
-        "train": transforms.Compose(
-            [
-                transforms.ToTensor(),
-            ]
-        )
-    }
-
-    trainset = datasets.MNIST(
-        root="mnist",
-        train=True,
-        download=True,
-        transform=data_tfms["train"],
-    )
-
-    trainloader = torch.utils.data.DataLoader(
-        trainset,
-        batch_size=parameters["batch_size"],
-        shuffle=True,
-        num_workers=0,
-    )
-
-    run = Run(
-        family="hpo",
-        run_id=f"hpo-{random()}",
-    )
+    run = Run(run_id=f"hpo-{random()}")
 
     run.add_tags(["all-trials", "script"])
 
@@ -101,7 +98,7 @@ if __name__ == "__main__":
         step = 0
 
         for epoch in trange(parameters["epochs"], desc=f"Trial {trial} - lr: {lr}"):
-            run.log_metrics(step=epoch, data={f"trials/{trial}/epochs": epoch})
+            run.log_metrics(data={f"trials/{trial}/epochs": epoch}, step=epoch)
 
             for x, y in trainloader:
                 x, y = x.to(parameters["device"]), y.to(parameters["device"])
@@ -115,11 +112,11 @@ if __name__ == "__main__":
 
                 # Log trial metrics
                 run.log_metrics(
-                    step=step,
                     data={
                         f"trials/{trial}/metrics/batch/loss": float(loss),
                         f"trials/{trial}/metrics/batch/acc": float(acc),
                     },
+                    step=step,
                 )
 
                 # Log best values across all trials
