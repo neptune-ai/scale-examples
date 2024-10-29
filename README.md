@@ -1,7 +1,7 @@
 <div align="center">
     <img src="https://neptune.ai/wp-content/uploads/2024/07/Facebook-cover-image.png" width="1500" />
     &nbsp;
- <h1><a href="https://neptune.ai">neptune.ai</a> examples</h1>
+ <h1><a href="https://neptune.ai">neptune.ai</a> Scale examples</h1>
 </div>
 
 ## What is neptune.ai?
@@ -15,7 +15,12 @@ Deploy Neptune on your infra from day one, track 100% of your metadata and get t
 
 ## 📚Examples
 
-In this repo, you'll find tutorials and examples of using Neptune.
+In this repo, you'll find tutorials and examples of using Neptune Scale.
+
+> [!NOTE]
+> These examples only work with the [`neptune-scale`](https://github.com/neptune-ai/neptune-client-scale) Python client, which is in beta.
+>
+> You can't use these with the stable Neptune `2.x` versions currently available to SaaS and self-hosting customers. For examples corresponding to Neptune `2.x`, see https://github.com/neptune-ai/examples.
 
 ## 🎓How-to guides
 
