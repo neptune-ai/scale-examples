@@ -21,7 +21,7 @@ parameters = {
 
 input_size = math.prod(parameters["input_size"])
 
-learning_rates = [0.075, 0.1, 0.25]  # learning rate choices
+learning_rates = [0.025, 0.05, 0.075]  # learning rate choices
 
 
 class BaseModel(nn.Module):
@@ -42,42 +42,39 @@ class BaseModel(nn.Module):
         return x
 
 
+model = BaseModel(
+    input_size,
+    parameters["n_classes"],
+).to(parameters["device"])
+
+criterion = nn.CrossEntropyLoss()
+
+data_tfms = {
+    "train": transforms.Compose(
+        [
+            transforms.ToTensor(),
+        ]
+    )
+}
+
+trainset = datasets.MNIST(
+    root="mnist",
+    train=True,
+    download=True,
+    transform=data_tfms["train"],
+)
+
+trainloader = torch.utils.data.DataLoader(
+    trainset,
+    batch_size=parameters["batch_size"],
+    shuffle=True,
+    num_workers=0,
+)
+
 if __name__ == "__main__":
-    model = BaseModel(
-        input_size,
-        parameters["n_classes"],
-    ).to(parameters["device"])
-
-    criterion = nn.CrossEntropyLoss()
-
-    data_tfms = {
-        "train": transforms.Compose(
-            [
-                transforms.ToTensor(),
-            ]
-        )
-    }
-
-    trainset = datasets.MNIST(
-        root="mnist",
-        train=True,
-        download=True,
-        transform=data_tfms["train"],
-    )
-
-    trainloader = torch.utils.data.DataLoader(
-        trainset,
-        batch_size=parameters["batch_size"],
-        shuffle=True,
-        num_workers=0,
-    )
-
     sweep_id = str(uuid.uuid4())
 
-    sweep_run = Run(
-        family=f"sweep-{sweep_id}",
-        run_id=f"sweep-{sweep_id}",
-    )
+    sweep_run = Run(run_id=f"sweep-{sweep_id}")
 
     sweep_run.add_tags(["sweep", "script"])
     sweep_run.add_tags([sweep_id], group_tags=True)
@@ -97,10 +94,7 @@ if __name__ == "__main__":
         desc="Trials",
     ):
         # Create a trial-level run
-        with Run(
-            family=f"sweep-{sweep_id}",
-            run_id=f"trial-{sweep_id}-{trial}",
-        ) as trial_run:
+        with Run(run_id=f"trial-{sweep_id}-{trial}") as trial_run:
             trial_run.add_tags(["trial", "script"])
 
             # Add sweep_id to the trial-level run
@@ -114,7 +108,7 @@ if __name__ == "__main__":
             step = 0
 
             for epoch in trange(parameters["epochs"], desc=f"Trial {trial} - lr: {lr}"):
-                trial_run.log_metrics(step=epoch, data={"epochs": epoch})
+                trial_run.log_metrics(data={"epochs": epoch}, step=epoch)
 
                 for x, y in trainloader:
                     x, y = x.to(parameters["device"]), y.to(parameters["device"])
@@ -128,11 +122,11 @@ if __name__ == "__main__":
 
                     # Log trial metrics
                     trial_run.log_metrics(
-                        step=step,
                         data={
                             "metrics/batch/loss": float(loss),
                             "metrics/batch/acc": float(acc),
                         },
+                        step=step,
                     )
 
                     # Log best values across all trials to Sweep-level run
