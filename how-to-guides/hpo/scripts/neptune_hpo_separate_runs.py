@@ -1,6 +1,6 @@
 import math
-import uuid
 from datetime import datetime
+from uuid import uuid4
 
 import torch
 import torch.nn as nn
@@ -72,7 +72,7 @@ trainloader = torch.utils.data.DataLoader(
 )
 
 if __name__ == "__main__":
-    sweep_id = str(uuid.uuid4())
+    sweep_id = str(uuid4())
 
     sweep_run = Run(run_id=f"sweep-{sweep_id}")
 
