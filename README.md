@@ -26,8 +26,8 @@ In this repo, you'll find tutorials and examples of using Neptune Scale.
 
 ### 👶 First steps
 
-| | Docs | Neptune | GitHub | Colab
-| ----------- | :---: | :---: | :------: | :---:
+| | Docs | Neptune
+| ----------- | :---: | :---:
 | Quickstart | [![docs]](https://docs-beta.neptune.ai/quickstart) |
 | Track and organize runs | [![docs]](https://docs-beta.neptune.ai/experiments_table) | [![neptune]](https://scale.neptune.ai/o/neptune/org/LLM-training-example/runs/table?viewId=9d0e03d5-d0e9-4c0a-a546-f065181de1d2&detailsTab=metadata&dash=table&type=run&compare=auto-5)
 
@@ -36,7 +36,7 @@ In this repo, you'll find tutorials and examples of using Neptune Scale.
 | | Docs | Neptune | GitHub | Colab
 | ----------- | :---: | :---: | :------: | :---:
 | Resume run or other object | [![docs]](https://docs-beta.neptune.ai/resume_run)
-| Use Neptune in HPO jobs | | [![neptune]](https://scale.neptune.ai/o/examples/org/hpo/runs/table?viewId=9d44261f-32a1-42e7-96ff-9b35edc4be66) | [![github]](how-to-guides/hpo/notebooks/Neptune_HPO.ipynb) | [![colab]](https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb) |
+| Use Neptune in HPO jobs | [![docs]](https://docs-beta.neptune.ai/hpo_tutorial) | [![neptune]](https://scale.neptune.ai/o/examples/org/hpo/runs/table?viewId=9d44261f-32a1-42e7-96ff-9b35edc4be66) | [![github]](how-to-guides/hpo/notebooks/Neptune_HPO.ipynb) | [![colab]](https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb) |
 
 ## 🛠️ Other utilities
 
