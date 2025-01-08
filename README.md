@@ -38,6 +38,15 @@ In this repo, you'll find tutorials and examples of using Neptune Scale.
 | Resume run or other object | [![docs]](https://docs-beta.neptune.ai/resume_run)
 | Use Neptune in HPO jobs | | [![neptune]](https://scale.neptune.ai/o/examples/org/hpo/runs/table?viewId=9d44261f-32a1-42e7-96ff-9b35edc4be66) | [![github]](how-to-guides/hpo/notebooks/Neptune_HPO.ipynb) | [![colab]](https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb) |
 
+## 🛠️ Other utilities
+
+### 🧳 Migration tools
+
+| | GitHub
+| - | :-:
+| Import runs from Weights & Biases | [![github]](utils/migration_tools/from_wandb/)
+
+
 ## 🔍 Cannot find what you are looking for?
 Check out our [docs](https://docs-beta.neptune.ai/), our [blog](https://neptune.ai/blog), or reach out to us at support@neptune.ai.
 
