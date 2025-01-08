@@ -34,11 +34,6 @@ To use the script, follow these steps:
 | Run summary | run.summary | run.summary<sup>3</sup> |
 | Run metrics | run.scan_history() | run.<METRIC_NAME><sup>4</sup> |
 | System metrics | run.history(stream="system") | run.system.<METRIC_NAME><sup>5</sup> |
-| System logs | output.log | run.monitoring.stdout |
-| Source code | code/* | run.source_code.files |
-| requirements.txt | requirements.txt | run.source_code.requirements |
-| Model checkpoints | \*.ckpt/\*checkpoint\* | run.checkpoints |
-| Other files | run.files() | run.files |
 | All W&B attributes | run.* | run.wandb.* |
 
 <sup>1</sup> Underscores `_` in a W&B project name are replaced by a hyphen `-` in Neptune  
