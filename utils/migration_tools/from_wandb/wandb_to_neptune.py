@@ -32,6 +32,12 @@ from neptune_scale import Run
 from neptune_scale.projects import create_project
 from tqdm.auto import tqdm
 
+# Silencing Neptune and httpx messages, W&B errors, urllib connection pool warnings
+logging.getLogger("httpx").setLevel(logging.ERROR)
+logging.getLogger("urllib3").setLevel(logging.ERROR)
+logging.getLogger("wandb").setLevel(logging.ERROR)
+logging.getLogger("neptune").setLevel(logging.CRITICAL)
+
 SUPPORTED_DATATYPES = [int, float, str, datetime, bool, list, set]
 
 if __name__ == "__main__":
@@ -83,12 +89,6 @@ if __name__ == "__main__":
     logger = logging.getLogger(__name__)
 
     print(f"Logs available at {log_filename}\n")
-
-    # Silencing Neptune and httpx messages, W&B errors, urllib connection pool warnings
-    logging.getLogger("neptune").setLevel(logging.CRITICAL)
-    logging.getLogger("httpx").setLevel(logging.ERROR)
-    logging.getLogger("urllib3").setLevel(logging.ERROR)
-    logging.getLogger("wandb").setLevel(logging.ERROR)
 
     def exc_handler(exctype, value, tb):
         logger.exception("".join(traceback.format_exception(exctype, value, tb)))
