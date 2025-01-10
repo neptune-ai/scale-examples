@@ -16,7 +16,6 @@
 # Instructions on how to use this script can be found at
 # https://github.com/neptune-ai/scale-examples/blob/main/utils/migration_tools/from_wandb/README.md
 
-import functools
 import logging
 import os
 import sys
@@ -25,9 +24,14 @@ import traceback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from contextlib import contextmanager
 from datetime import datetime
+from typing import Optional
 
 import wandb
 from neptune_scale import Run
+from neptune_scale.exceptions import (
+    NeptuneSeriesStepNonIncreasing,
+    NeptuneSeriesTimestampDecreasing,
+)
 from neptune_scale.projects import create_project
 from tqdm.auto import tqdm
 
@@ -120,19 +124,6 @@ def stringify_unsupported(d, parent_key="", sep="/"):
     return items
 
 
-def log_error(func):
-    @functools.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            logger.error(
-                f"[{func.__name__}]\tFailed to copy '{args[1]}' from W&B run '{args[0].name}' due to exception:\n{e}"
-            )
-
-    return wrapper
-
-
 @contextmanager
 def threadsafe_change_directory(new_dir):
     lock = threading.Lock()
@@ -147,11 +138,18 @@ def threadsafe_change_directory(new_dir):
 
 
 def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
+    def _error_callback(exc: BaseException, ts: Optional[float]) -> None:
+        if isinstance(exc, (NeptuneSeriesStepNonIncreasing, NeptuneSeriesTimestampDecreasing)):
+            logger.warning(f"Encountered {exc} error while copying {wandb_run.name}")
+        else:
+            neptune_run.close()
+
     with Run(
         run_id=wandb_run.id,
         project=f"{neptune_workspace}/{wandb_project_name}",
         experiment_name=wandb_run.name,
         creation_time=datetime.fromisoformat(wandb_run.created_at.replace("Z", "+00:00")),
+        on_error_callback=_error_callback,
     ) as neptune_run:
         # Add run description
         if wandb_run.notes:
@@ -186,21 +184,30 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
                     f"[{copy_run.__name__}]\tFailed to copy '{attr}' from W&B run '{wandb_run.name}' due to exception:\n{e}"
                 )
 
-        copy_summary(neptune_run, wandb_run)
-        copy_metrics(neptune_run, wandb_run)
-        copy_system_metrics(neptune_run, wandb_run)
-        # copy_files(neptune_run, wandb_run)
-        neptune_run.wait_for_processing()
-        logger.info(
-            f"Copied {wandb_run.url} to https://scale.neptune.ai/{neptune_run._project}/runs/table?viewId=standard-view&query=(%60sys%2Fname%60%3Astring%20MATCHES%20%22{wandb_run.name}%22)&experimentsOnly=false&runsLineage=FULL&lbViewUnpacked=true"
-        )
+        try:
+            copy_summary(neptune_run, wandb_run)
+            copy_metrics(neptune_run, wandb_run)
+            copy_system_metrics(neptune_run, wandb_run)
+            # copy_files(neptune_run, wandb_run)
+            neptune_run.wait_for_processing()
+        except Exception as e:
+            logger.error(f"Failed to copy {wandb_run.name} due to exception:\n{e}")
+        else:
+            logger.info(
+                f"Copied {wandb_run.url} to https://scale.neptune.ai/{neptune_run._project}/runs/table?viewId=standard-view&query=(%60sys%2Fname%60%3Astring%20MATCHES%20%22{wandb_run.name}%22)&experimentsOnly=false&runsLineage=FULL&lbViewUnpacked=true"
+            )
 
 
 def copy_config(neptune_run: Run, wandb_run) -> None:  # type: ignore
     flat_config = stringify_unsupported(wandb_run.config)
 
-    for key, value in flat_config.items():
-        neptune_run.log_configs({f"config/{key}": value})
+    try:
+        for key, value in flat_config.items():
+            neptune_run.log_configs({f"config/{key}": value})
+    except Exception as e:
+        logger.error(
+            f"Failed to copy config {key} from W&B run {wandb_run.name} due to exception:\n{e}"
+        )
 
 
 def copy_summary(neptune_run: Run, wandb_run) -> None:  # type: ignore
@@ -216,8 +223,11 @@ def copy_summary(neptune_run: Run, wandb_run) -> None:  # type: ignore
             else:
                 neptune_run.log_configs({f"summary/{key}": stringified_summary})
         except KeyError:
-            print(f"KeyError: {key}")
             continue
+        except Exception as e:
+            logger.error(
+                f"Failed to copy summary {key} from W&B run {wandb_run.name} due to exception:\n{e}"
+            )
 
 
 def copy_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
@@ -229,16 +239,20 @@ def copy_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
                 or (isinstance(value, dict) and value["_type"] == "table-file")
             ):
                 continue
-
-            neptune_run.log_metrics(
-                {key: value},
-                step=record.get("epoch") or record.get("_step"),
-                timestamp=(
-                    datetime.fromtimestamp(record.get("_timestamp"))
-                    if record.get("_timestamp")
-                    else None
-                ),
-            )
+            try:
+                neptune_run.log_metrics(
+                    {key: value},
+                    step=record.get("epoch") or record.get("_step"),
+                    timestamp=(
+                        datetime.fromtimestamp(record.get("_timestamp"))
+                        if record.get("_timestamp")
+                        else None
+                    ),
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to copy metric {key} from W&B run {wandb_run.name} due to exception:\n{e}"
+                )
 
 
 def copy_system_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
@@ -250,15 +264,18 @@ def copy_system_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
             value = record.get(key)
             if value is None:
                 continue
+            try:
+                neptune_run.log_metrics(
+                    {f"system/{key.replace('system.', '')}": value},
+                    step=step,
+                    timestamp=datetime.fromtimestamp(record.get("_timestamp")),
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to copy system metric {key} from W&B run {wandb_run.name} due to exception:\n{e}"
+                )
 
-            neptune_run.log_metrics(
-                {f"system/{key.replace('system.', '')}": value},
-                step=step,
-                timestamp=datetime.fromtimestamp(record.get("_timestamp")),
-            )
 
-
-@log_error
 def copy_console_output(neptune_run: Run, download_path: str) -> None:  # type: ignore
     # with open(download_path) as f:
     #     for line in f:
@@ -266,7 +283,6 @@ def copy_console_output(neptune_run: Run, download_path: str) -> None:  # type: 
     raise NotImplementedError("Console logging is not implemented in Neptune Scale yet")
 
 
-@log_error
 def copy_source_code(
     neptune_run: Run,
     download_path: str,
@@ -281,13 +297,11 @@ def copy_source_code(
     raise NotImplementedError("Source code logging is not implemented in Neptune Scale yet")
 
 
-@log_error
 def copy_requirements(neptune_run: Run, download_path: str) -> None:
     # neptune_run["source_code/requirements"].upload(download_path)
     raise NotImplementedError("Requirements logging is not implemented in Neptune Scale yet")
 
 
-@log_error
 def copy_other_files(neptune_run: Run, download_path: str, filename: str, namespace: str) -> None:
     # with threadsafe_change_directory(download_path.replace(filename, "")):
     #     neptune_run[namespace].upload_files(filename, wait=True)
@@ -323,7 +337,7 @@ def copy_files(neptune_run: Run, wandb_run) -> None:  # type: ignore
     #                     neptune_run, download_path, file.name, namespace="files"
     #                 )
     #         except Exception as e:
-    #             logger.error(f"Failed to copy {download_path} due to exception:\n{e}")
+    #             logger.error(f"Failed to copy {download_path} for {wandb_run.name} due to exception:\n{e}")
     raise NotImplementedError("File logging is not implemented in Neptune Scale yet")
 
 
