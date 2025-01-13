@@ -1,2 +1,6 @@
 # global owners
 * @neptune-ai/devrel-maintainers
+
+# Community Code
+/community-code @neptune-ai/blog-reviewers @neptune-ai/devrel-maintainers
+
