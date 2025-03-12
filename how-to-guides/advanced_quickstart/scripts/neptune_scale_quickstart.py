@@ -1,7 +1,8 @@
-from random import random, randint
+import time
+from random import randint, random
+
 import numpy as np
 from neptune_scale import Run
-import time
 
 custom_id = random()  # Sets a random value for the custom run_id
 
@@ -33,18 +34,33 @@ print(random_int)
 
 for step in range(1, steps + 1):
 
-    relative_progress = step/steps
+    relative_progress = step / steps
     noise = np.random.uniform(-0.3, 0.3) * (1 - relative_progress)
     random_factor = np.random.uniform(0.5, 1.5)
 
     # Specify data to log per step as a dictionary
     metrics_to_log = {
-        "train/metrics/accuracy":       1 - 1 / np.log(relative_progress * random_int + 1.1) - (random() / step) + noise,
-        "train/metrics/loss":           1 / np.log(relative_progress * random_int + 1.1) - (random() / step) + noise,
-        "validation/metrics/accuracy":  1 - 1 / np.log(relative_progress / 20 * random_int + 1.1) - (random() / step) + noise,
-        "validation/metrics/loss":      1 / np.log(relative_progress / 20 * random_int + 1.1) - (random() / step) + noise,
-        "test/metrics/accuracy":        1 - 1 / np.log(relative_progress / 30 * random_int + 1.1) - (random() / step) + noise,
-        "test/metrics/loss":            1 / np.log(relative_progress / 30 * random_int + 1.1) - (random() / step) + noise,
+        "train/metrics/accuracy": 1
+        - 1 / np.log(relative_progress * random_int + 1.1)
+        - (random() / step)
+        + noise,
+        "train/metrics/loss": 1 / np.log(relative_progress * random_int + 1.1)
+        - (random() / step)
+        + noise,
+        "validation/metrics/accuracy": 1
+        - 1 / np.log(relative_progress / 20 * random_int + 1.1)
+        - (random() / step)
+        + noise,
+        "validation/metrics/loss": 1 / np.log(relative_progress / 20 * random_int + 1.1)
+        - (random() / step)
+        + noise,
+        "test/metrics/accuracy": 1
+        - 1 / np.log(relative_progress / 30 * random_int + 1.1)
+        - (random() / step)
+        + noise,
+        "test/metrics/loss": 1 / np.log(relative_progress / 30 * random_int + 1.1)
+        - (random() / step)
+        + noise,
     }
 
     # Loop metrics to create unique values for each layer and GPU
@@ -56,8 +72,8 @@ for step in range(1, steps + 1):
 
     # Log metrics usig the log_metrics() method
     run.log_metrics(
-        data = metrics_to_log,
-        step = step,
+        data=metrics_to_log,
+        step=step,
     )
     logging_time_end = time.time()
     logging_time += logging_time_end - logging_time_start
@@ -73,5 +89,7 @@ execution_time = end_time - start_time
 print(f"Unique metrics per run: {len(metrics_to_log)}")
 print(f"Number of steps per run: {steps}")
 print(f"Total data points logged per run: {num_ops}")
-print(f"Total execution time: {execution_time:.2f} seconds to process {num_ops} operations ({num_ops/execution_time:.0f} datapoints/second).")
+print(
+    f"Total execution time: {execution_time:.2f} seconds to process {num_ops} operations ({num_ops/execution_time:.0f} datapoints/second)."
+)
 print(f"Logging time {logging_time}, ({num_ops/logging_time:.0f} datapoints/second).")
