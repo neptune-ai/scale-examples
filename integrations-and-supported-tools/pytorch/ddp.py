@@ -2,6 +2,8 @@
 # TODO: cleanup model classes for input params
 # TODO: Add Neptune logging
 
+# Important: This script can only be run when using multiple GPUS (> 1)
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -75,8 +77,8 @@ class SimpleNN(nn.Module):
         return x
     
     # Function to evaluate the model (validation/test) with gradients tracked
-def evaluate(model, data_loader, criterion, device, track_gradients=False):
-    model.train() if track_gradients else model.eval()  # Ensure model is in training mode if tracking gradients
+def evaluate(model, data_loader, criterion, device):
+    model.eval()  # Ensure model is in training mode if tracking gradients
     correct_preds = 0
     total_preds = 0
     epoch_loss = 0
@@ -89,10 +91,6 @@ def evaluate(model, data_loader, criterion, device, track_gradients=False):
             output = model(data)
             loss = criterion(output, target)  # Correct loss computation
             epoch_loss += loss.item()
-
-            if track_gradients:
-                # Track gradients (we will backpropagate but do not update model parameters)
-                loss.backward()
 
             # Calculate accuracy
             _, predicted = torch.max(output.data, 1)
@@ -136,7 +134,7 @@ def setupModel(rank, model, params):
 
     return model, optimizer, device
 
-def train(rank: int, model, params, train_loader):
+def train(rank: int, model, params, train_loader, val_loader):
 
     model, optimizer, device = setupModel(rank, model, params)
 
@@ -180,12 +178,12 @@ def train(rank: int, model, params, train_loader):
                 batch_accuracy = correct_preds / total_preds
 
                 # Validation step per training step
-                #val_loss, val_accuracy = evaluate(model, val_loader, criterion, device)  # Evaluate after each step
+                val_loss, val_accuracy = evaluate(model, val_loader, criterion, device)  # Evaluate after each step
 
                 if rank == 0:
                     print(f"Train loss: {loss.item()}")
                     print(f"Accuracy: {batch_accuracy}")
-                    #print(f"Validation loss: {val_loss}")
+                    print(f"Validation loss: {val_loss}")
 
                 dist.barrier() # synchonize processes before moving to next step
 
@@ -218,10 +216,11 @@ run.log_configs(
 )'
 '''
 def run_ddp(rank, world_size, params):
+    
     setup(rank, world_size, "nccl")
     model = SimpleNN(params)
     train_loader, val_loader = create_dataloader_minst(rank, world_size, params["batch_size"])
-    train(rank, model, params, train_loader)
+    train(rank, model, params, train_loader, val_loader)
 
 # Run DDP
 if __name__ == "__main__":
