@@ -1,4 +1,4 @@
-# TODO: cleanup model classes for input params
+# TODO: Update RUN initialization
 
 # Important: This script can only be run when using multiple GPUS (> 1)
 
@@ -54,19 +54,17 @@ class SimpleCNN(nn.Module):
         return x
 
 class SimpleNN(nn.Module):
-    def __init__(self, params):
+    def __init__(self):
         super(SimpleNN, self).__init__()
         # Define layers (increase number of layers)
-        self.params = params
-
-        self.fc1 = nn.Linear(params["input_size"], params["input_features"])
-        self.fc2 = nn.Linear(params["input_features"], 512)
+        self.fc1 = nn.Linear(28*28, 256)
+        self.fc2 = nn.Linear(256, 512)
         self.fc3 = nn.Linear(512, 256)
         self.fc4 = nn.Linear(256, 128)
-        self.fc5 = nn.Linear(128, params["n_classes"])      # Output layer (10 classes for MNIST)
+        self.fc5 = nn.Linear(128, 10)      # Output layer (10 classes for MNIST)
 
     def forward(self, x):
-        x = x.view(-1, self.params["input_size"])  # Flatten the input image (28x28)
+        x = x.view(-1, 28*28)  # Flatten the input image (28x28)
         x = torch.relu(self.fc1(x))  # Apply ReLU activation
         x = torch.relu(self.fc2(x))  # Apply ReLU activation
         x = torch.relu(self.fc3(x))  # Apply ReLU activation
@@ -219,7 +217,6 @@ def run_ddp(rank, world_size, params):
             "config/optimizer": params["optimizer"],
             "config/batch_size": params["batch_size"],
             "config/epochs": params["epochs"],
-            "config/input_size": params["input_size"]
         }
         )
 
@@ -229,9 +226,12 @@ def run_ddp(rank, world_size, params):
     else: 
         run = None
     
-    model = SimpleNN(params)
+    model = SimpleNN()
     train_loader, val_loader = create_dataloader_minst(rank, world_size, params["batch_size"])
     train(rank, model, params, train_loader, val_loader, run)
+
+    if rank == 0:
+        run.close()
 
 # Run DDP
 if __name__ == "__main__":
@@ -244,17 +244,15 @@ if __name__ == "__main__":
     "epochs": 5,
     "device": torch.device("cuda" if torch.cuda.is_available() else "cpu"),
     "num_gpus": torch.cuda.device_count(),
-    "input_features": 256,
     "n_classes": 10,
-    "input_size": 28 * 28
     }
     
     if params["device"] == "cpu":
-        raise TypeError(f"Current device picked-up: {params["device"]}\nThis example cannot be run on a CPU only setup")
+        raise TypeError(f"Current device picked-up: {params['device']} This example cannot be run on a CPU only setup")
     elif params["num_gpus"] < 2:
-        raise ValueError(f"This example is intended to execute with multiple GPU's. Number of GPU's is {params["num_gpus"]}")
+        raise ValueError(f"This example is intended to execute with multiple GPU's. Number of GPU's is {params['num_gpus']}")
     else:
         # Spawn ddp job to multiple GPU's
-        print(f"Example will use {params["num_gpus"]} GPU's")
+        print(f"Example will use {params['num_gpus']} GPU's")
         mp.set_start_method('spawn', force=True)
         mp.spawn(run_ddp, args=(params["num_gpus"], params), nprocs=params["num_gpus"], join=True)
