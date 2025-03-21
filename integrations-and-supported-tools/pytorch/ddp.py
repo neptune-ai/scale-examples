@@ -141,7 +141,6 @@ def train(rank: int, model, params, train_loader, val_loader, run):
 
         # Training loop
         num_epochs = params["epochs"]
-        print(num_epochs)
         step_counter = 0
         for epoch in range(num_epochs):
             model.train()
@@ -212,7 +211,6 @@ def run_ddp(rank, world_size, params):
                 project="leo/pytorch-tutorial",
                 api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vc2NhbGUubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3NjYWxlLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiMGIyNGUwYzMtMDg2Ni00YTZlLWIyYTctZDUxN2I4ZjE5MzA1In0=",
                 run_id=f"ddp-{uuid4()}")
-                if rank == 0 else None
         )
 
         run.log_configs(
