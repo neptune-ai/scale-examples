@@ -249,8 +249,12 @@ if __name__ == "__main__":
     "input_size": 28 * 28
     }
     
-    # Spawn ddp job to multiple devices
-    num_gpu = torch.cuda.device_count()
-    print(params["num_gpus"])
-    mp.set_start_method('spawn', force=True)
-    mp.spawn(run_ddp, args=(num_gpu, params), nprocs=num_gpu, join=True)
+    if params["device"] == "cpu":
+        raise TypeError(f"Current device picked-up: {params["device"]}\nThis example cannot be run on a CPU only setup")
+    elif params["num_gpus"] < 2:
+        raise ValueError(f"This example is intended to execute with multiple GPU's. Number of GPU's is {params["num_gpus"]}")
+    else:
+        # Spawn ddp job to multiple GPU's
+        print(f"Example will use {params["num_gpus"]} GPU's")
+        mp.set_start_method('spawn', force=True)
+        mp.spawn(run_ddp, args=(params["num_gpus"], params), nprocs=params["num_gpus"], join=True)
