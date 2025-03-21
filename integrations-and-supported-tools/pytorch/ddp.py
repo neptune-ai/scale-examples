@@ -1,6 +1,4 @@
-# TODO: Add validation calculation
 # TODO: cleanup model classes for input params
-# TODO: Add Neptune logging
 
 # Important: This script can only be run when using multiple GPUS (> 1)
 
@@ -134,7 +132,7 @@ def setupModel(rank, model, params):
 
     return model, optimizer, device
 
-def train(rank: int, model, params, train_loader, val_loader):
+def train(rank: int, model, params, train_loader, val_loader, run):
 
     model, optimizer, device = setupModel(rank, model, params)
 
@@ -182,8 +180,17 @@ def train(rank: int, model, params, train_loader, val_loader):
 
                 if rank == 0:
                     print(f"Train loss: {loss.item()}")
-                    print(f"Accuracy: {batch_accuracy}")
-                    print(f"Validation loss: {val_loss}")
+
+                    run.log_metrics(
+                        data = {
+                            "metrics/train/loss": loss.item(),
+                            "metrics/train/accuracy": batch_accuracy,
+                            "metrics/validation/loss": val_loss,
+                            "metrics/validation/accuracy": val_accuracy,
+                            "epoch_value": epoch
+                        },
+                        step = step_counter
+                    )
 
                 dist.barrier() # synchonize processes before moving to next step
 
@@ -192,39 +199,46 @@ def train(rank: int, model, params, train_loader, val_loader):
     except Exception as e:
         print(f"Error during training process (Rank {rank}): {e}")
 
-        ''''
-        run.log_metrics(
-            data = {
-                "metrics/train/loss": loss.item(),
-                "metrics/train/accuracy": batch_accuracy,
-                "metrics/validation/loss": val_loss,
-                "metrics/validation/accuracy": val_accuracy,
-                "epoch_value": epoch
-            },
-            step = step_counter
+def run_ddp(rank, world_size, params):
+
+    setup(rank, world_size, "nccl")
+
+    # Initialize the Neptune run
+    from neptune_scale import Run
+    from uuid import uuid4
+    if rank == 0: # Create a run object only on the main process
+        run = (
+            Run(    
+                project="leo/pytorch-tutorial",
+                api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vc2NhbGUubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3NjYWxlLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiMGIyNGUwYzMtMDg2Ni00YTZlLWIyYTctZDUxN2I4ZjE5MzA1In0=",
+                run_id=f"ddp-{uuid4()}")
+                if rank == 0 else None
         )
 
-# Final Testing Step with gradient tracking
-test_loss, test_accuracy = evaluate(model, test_loader, track_gradients=False)  # Track gradients during test
-print(f"Testing complete. Loss: {test_loss:.4f}, Accuracy: {test_accuracy:.2f}%")
-
-run.log_configs(
+        run.log_configs(
         {
-        "metrics/test/loss": test_loss,
-        "metrics/test/accuracy": test_accuracy
-    }
-)'
-'''
-def run_ddp(rank, world_size, params):
+            "config/learning_rate": params["learning_rate"],
+            "config/optimizer": params["optimizer"],
+            "config/batch_size": params["batch_size"],
+            "config/epochs": params["epochs"],
+            "config/input_size": params["input_size"]
+        }
+        )
+
+        run.add_tags(tags=[params["optimizer"]], group_tags=True)
+        run.add_tags(tags=["Torch-MINST", "ddp", "single-node"])
+
+    else: 
+        run = None
     
-    setup(rank, world_size, "nccl")
     model = SimpleNN(params)
     train_loader, val_loader = create_dataloader_minst(rank, world_size, params["batch_size"])
-    train(rank, model, params, train_loader, val_loader)
+    train(rank, model, params, train_loader, val_loader, run)
 
 # Run DDP
 if __name__ == "__main__":
 
+    # Set parameters
     params = {
     "optimizer": "Adam",
     "batch_size": 512,
@@ -237,31 +251,8 @@ if __name__ == "__main__":
     "input_size": 28 * 28
     }
     
+    # Spawn ddp job to multiple devices
     num_gpu = torch.cuda.device_count()
     print(params["num_gpus"])
     mp.set_start_method('spawn', force=True)
     mp.spawn(run_ddp, args=(num_gpu, params), nprocs=num_gpu, join=True)
-
-'''
-# Define Neptune parameters
-from neptune_scale import Run
-from uuid import uuid4
-
-run = Run(
-    project = "leo/pytorch-tutorial",
-    run_id=f"pytorch-{uuid4()}"
-    )
-
-run.log_configs(
-    {
-        "config/learning_rate": params["learning_rate"],
-        "config/optimizer": params["optimizer"],
-        "config/batch_size": params["batch_size"],
-        "config/epochs": params["epochs"],
-        "config/input_size": params["input_size"]
-    }
-)
-
-run.add_tags(tags=[params["optimizer"]], group_tags=True)
-run.add_tags(tags=["Torch-MINST"])
-'''
