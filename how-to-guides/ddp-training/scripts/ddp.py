@@ -263,9 +263,7 @@ if __name__ == "__main__":
 
     # Set environment variables for Neptune
     os.environ["NEPTUNE_PROJECT"] = "your_project_name/your_workspace_name"
-    os.environ["NEPTUNE_API_TOKEN"] = (
-        "your_api_token"
-    )
+    os.environ["NEPTUNE_API_TOKEN"] = "your_api_token"
 
     # Set parameters
     params = {
