@@ -9,6 +9,7 @@ from torchvision import datasets, transforms
 import torch.distributed as dist
 from torch.nn.parallel import DistributedDataParallel as DDP
 import torch.multiprocessing as mp
+import os
 
 def create_dataloader_minst(rank, world_size, batch_size):
     # Transform to normalize the data and convert it to tensor
@@ -97,10 +98,6 @@ def evaluate(model, data_loader, criterion, device):
 ## Setup distributed environment
 def setup(rank, world_size, backend):
 
-    import os
-
-    os.environ['MASTER_ADDR'] = 'localhost'
-    os.environ['MASTER_PORT'] = '12535'
     dist.init_process_group(backend=backend, rank=rank, world_size=world_size)
     torch.cuda.set_device(rank)
 
@@ -237,8 +234,11 @@ def run_ddp(rank, world_size, params):
 # Run DDP
 if __name__ == "__main__":
 
-    import os
-    # Set environment variables for example to run
+    # Set environment variables for DDP setup
+    os.environ['MASTER_ADDR'] = 'localhost'
+    os.environ['MASTER_PORT'] = '12535'
+
+    # Set environment variables for Neptune
     os.environ['NEPTUNE_PROJECT'] = "leo/pytorch-tutorial"
     os.environ['NEPTUNE_API_TOKEN'] = "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vc2NhbGUubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3NjYWxlLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiMGIyNGUwYzMtMDg2Ni00YTZlLWIyYTctZDUxN2I4ZjE5MzA1In0="
 
