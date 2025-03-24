@@ -262,9 +262,9 @@ if __name__ == "__main__":
     os.environ["MASTER_PORT"] = "12535"
 
     # Set environment variables for Neptune
-    os.environ["NEPTUNE_PROJECT"] = "leo/pytorch-tutorial"
+    os.environ["NEPTUNE_PROJECT"] = "your_project_name/your_workspace_name"
     os.environ["NEPTUNE_API_TOKEN"] = (
-        "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vc2NhbGUubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3NjYWxlLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiMGIyNGUwYzMtMDg2Ni00YTZlLWIyYTctZDUxN2I4ZjE5MzA1In0="
+        "your_api_token"
     )
 
     # Set parameters
