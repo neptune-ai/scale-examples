@@ -1,5 +1,3 @@
-# TODO: Update RUN initialization
-
 # Important: This script can only be run when using multiple GPUS (> 1)
 
 import torch
@@ -196,38 +194,41 @@ def train(rank: int, model, params, train_loader, val_loader, run):
     except Exception as e:
         print(f"Error during training process (Rank {rank}): {e}")
 
-def run_ddp(rank, world_size, params):
-
-    setup(rank, world_size, "nccl")
-
+def initialize_neptune_logger(params):
     # Initialize the Neptune run
     from neptune_scale import Run
     from uuid import uuid4
-    if rank == 0: # Create a run object only on the main process
-        run = (
-            Run(    
-                project="leo/pytorch-tutorial",
-                api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vc2NhbGUubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3NjYWxlLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiMGIyNGUwYzMtMDg2Ni00YTZlLWIyYTctZDUxN2I4ZjE5MzA1In0=",
-                run_id=f"ddp-{uuid4()}")
-        )
+    run = (
+        Run(    
+            run_id=f"ddp-{uuid4()}",
+            experiment_name="pytorch-ddp-experiment")
+    )
 
-        run.log_configs(
-        {
-            "config/learning_rate": params["learning_rate"],
-            "config/optimizer": params["optimizer"],
-            "config/batch_size": params["batch_size"],
-            "config/epochs": params["epochs"],
-        }
-        )
+    run.log_configs(
+    {
+        "config/learning_rate": params["learning_rate"],
+        "config/optimizer": params["optimizer"],
+        "config/batch_size": params["batch_size"],
+        "config/epochs": params["epochs"],
+    }
+    )
 
-        run.add_tags(tags=[params["optimizer"]], group_tags=True)
-        run.add_tags(tags=["Torch-MINST", "ddp", "single-node"])
+    run.add_tags(tags=[params["optimizer"]], group_tags=True)
+    run.add_tags(tags=["Torch-MINST", "ddp", "single-node"])
 
-    else: 
+    return run
+
+def run_ddp(rank, world_size, params):
+
+    setup(rank, world_size, "nccl")
+    train_loader, val_loader = create_dataloader_minst(rank, world_size, params["batch_size"])
+    
+    if rank ==0:
+        run = initialize_neptune_logger(params)
+    else:
         run = None
     
     model = SimpleNN()
-    train_loader, val_loader = create_dataloader_minst(rank, world_size, params["batch_size"])
     train(rank, model, params, train_loader, val_loader, run)
 
     if rank == 0:
@@ -235,6 +236,11 @@ def run_ddp(rank, world_size, params):
 
 # Run DDP
 if __name__ == "__main__":
+
+    import os
+    # Set environment variables for example to run
+    os.environ['NEPTUNE_PROJECT'] = "leo/pytorch-tutorial"
+    os.environ['NEPTUNE_API_TOKEN'] = "eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vc2NhbGUubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3NjYWxlLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiMGIyNGUwYzMtMDg2Ni00YTZlLWIyYTctZDUxN2I4ZjE5MzA1In0="
 
     # Set parameters
     params = {
