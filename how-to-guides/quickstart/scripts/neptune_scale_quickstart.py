@@ -7,7 +7,8 @@ from neptune_scale import Run
 custom_id = random()  # Sets a random value for the custom run_id
 
 run = Run(
-    run_id=f"seagull-{custom_id}",  # Specify a unique run_id
+    experiment_name="seabird-flying-skills",  # This run becomes the head of an experiment
+    run_id=f"seagull-{custom_id}",  # You can customize your run_id, but if not specified, will be generated automatically
 )
 
 # Add any tags to identify your runs
