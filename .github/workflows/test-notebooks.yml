@@ -20,8 +20,8 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         notebooks: # Add in alphabetical order
-          - how-to-guides/advanced_quickstart/notebooks/neptune_scale_quickstart.ipynb
           - how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
+          - how-to-guides/quickstart/notebooks/neptune_scale_quickstart.ipynb
         os: ["${{ inputs.os }}"]
     steps:
       - uses: actions/checkout@main
