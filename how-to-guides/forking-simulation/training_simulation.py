@@ -12,7 +12,7 @@ SIM_PARAMS = {
     "n_runs": 5,
     "checkpoint_interval": 100,
     "n_forks": 10,
-    "eval_sleep": 0.5,
+    "eval_sleep": 0,
     "flatline_probability": 0.35,
     "fast_convergence_probability": 0.1,
     "sudden_divergence_probability": 0.35,
@@ -80,6 +80,37 @@ class Parameters(TypedDict):
     optimizer: OptimizerConfig
     training: TrainingConfig
     run_index: int
+
+
+def get_parameters(run_index: int, n_steps: int = 1_000) -> Parameters:
+    """ Get random training run parameters. """
+    random.seed(run_index)
+
+    parameters = {
+        "model": {
+            "batch_size": random.choice([32, 64]),
+            "input_size": (1, 1024),
+            "num_layers": random.choice([2, 4]),  # Reduced number of layers
+            "num_heads": random.choice([4, 8]),
+            "embedding_dim": random.choice([128, 256]),
+            "dropout_rate": random.uniform(0.0, 0.1),
+            "device": random.choice(["cpu", "cuda:0", "cuda:1"]),
+            "weight_decay": random.choice([0.0, 0.01]),
+            "activation_function": random.choice(["relu", "sigmoid"]),  # Added
+        },
+        "optimizer": {
+            "lr": random.choice([1e-4, 1e-3]),
+            "lr_scheduler": random.choice(["cosine", "linear"]),
+            "algo": random.choice(["AdamW", "SGD"]),
+        },
+        "training": {
+            "epochs": 1,
+            "steps": n_steps,
+        },
+        "run_index": run_index,
+    }
+    return parameters
+
 
 class LayerState(TypedDict):
     activation_mean: float
