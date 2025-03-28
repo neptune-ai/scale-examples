@@ -1,2 +1,5 @@
 # Data files
 /how-to-guides/hpo/**/mnist
+.env
+.neptune
+checkpoints
