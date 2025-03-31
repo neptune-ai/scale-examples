@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Literal, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Type, Union
 
 import torch
 import torch.nn as nn
@@ -15,6 +15,63 @@ TENSOR_STATS = {
     "abs_mean": lambda x: x.abs().mean().item(),
 }
 
+# Common PyTorch layer types for validation
+PYTORCH_LAYERS = {
+    # Linear layers
+    nn.Linear,
+    # Convolutional layers
+    nn.Conv1d,
+    nn.Conv2d,
+    nn.Conv3d,
+    nn.ConvTranspose1d,
+    nn.ConvTranspose2d,
+    nn.ConvTranspose3d,
+    # Recurrent layers
+    nn.LSTM,
+    nn.GRU,
+    nn.RNN,
+    # Normalization layers
+    nn.BatchNorm1d,
+    nn.BatchNorm2d,
+    nn.BatchNorm3d,
+    nn.LayerNorm,
+    nn.InstanceNorm1d,
+    nn.InstanceNorm2d,
+    nn.InstanceNorm3d,
+    # Activation layers
+    nn.ReLU,
+    nn.LeakyReLU,
+    nn.ELU,
+    nn.SELU,
+    nn.GELU,
+    # Pooling layers
+    nn.MaxPool1d,
+    nn.MaxPool2d,
+    nn.MaxPool3d,
+    nn.AvgPool1d,
+    nn.AvgPool2d,
+    nn.AvgPool3d,
+    # Dropout layers
+    nn.Dropout,
+    nn.Dropout2d,
+    nn.Dropout3d,
+    # Embedding layers
+    nn.Embedding,
+    nn.EmbeddingBag,
+    # Transformer layers
+    nn.TransformerEncoderLayer,
+    nn.TransformerDecoderLayer,
+    # Attention layers
+    nn.MultiheadAttention,
+    # Flatten layers
+    nn.Flatten,
+    nn.Unflatten,
+    # Other common layers
+    nn.Sequential,
+    nn.ModuleList,
+    nn.ModuleDict,
+}
+
 
 class HookManager:
     """
@@ -27,33 +84,37 @@ class HookManager:
     - Configurable tracking
     """
 
-    def __init__(self, model: nn.Module, track_layers: Optional[List[type]] = None):
+    def __init__(self, model: nn.Module, track_layers: Optional[List[Type[nn.Module]]] = None):
         """
-        Initialize HookManager with additional configuration options.
+        Initialize HookManager with layer types to track.
 
         Args:
             model (nn.Module): The PyTorch model to track
-            track_layers (Optional[List[type]]): List of layer types to track.
-                                                 Defaults to common layer types if not specified.
+            track_layers (Optional[List[Type[nn.Module]]]): List of PyTorch layer types to track.
+                                                          If None, tracks all layers in the model.
+                                                          If specified, must contain valid PyTorch layer types.
+
+        Raises:
+            TypeError: If model is not a PyTorch model
+            ValueError: If track_layers contains invalid layer types
         """
         if not isinstance(model, nn.Module):
             raise TypeError("The model must be a PyTorch model")
+
+        # Validate that all specified layers are valid PyTorch layers if track_layers is provided
+        if track_layers is not None:
+            invalid_layers = [layer for layer in track_layers if layer not in PYTORCH_LAYERS]
+            if invalid_layers:
+                raise ValueError(
+                    f"Invalid layer types specified: {invalid_layers}. "
+                    f"Please use valid PyTorch layer types from torch.nn."
+                )
 
         self.model = model
         self.hooks: List[torch.utils.hooks.RemovableHandle] = []
         self.activations: Dict[str, torch.Tensor] = {}
         self.gradients: Dict[str, torch.Tensor] = {}
-
-        # Default layer types to track if not specified
-        self.track_layers = track_layers or [
-            nn.Linear,
-            nn.Conv1d,
-            nn.Conv2d,
-            nn.Conv3d,
-            nn.LSTM,
-            nn.GRU,
-            nn.RNN,
-        ]
+        self.track_layers = track_layers
 
     def save_activation(self, name: str):
         """Create a forward hook to save layer activations."""
@@ -94,14 +155,26 @@ class HookManager:
         # Register forward hooks for activations
         if track_activations:
             for name, module in self.model.named_modules():
-                if any(isinstance(module, layer_type) for layer_type in self.track_layers):
+                # Skip the model itself
+                if name == "":
+                    continue
+                # Track all layers if track_layers is None, otherwise only specified types
+                if self.track_layers is None or any(
+                    isinstance(module, layer_type) for layer_type in self.track_layers
+                ):
                     hook = module.register_forward_hook(self.save_activation(name))
                     self.hooks.append(hook)
 
         # Register backward hooks for gradients
         if track_gradients:
             for name, module in self.model.named_modules():
-                if any(isinstance(module, layer_type) for layer_type in self.track_layers):
+                # Skip the model itself
+                if name == "":
+                    continue
+                # Track all layers if track_layers is None, otherwise only specified types
+                if self.track_layers is None or any(
+                    isinstance(module, layer_type) for layer_type in self.track_layers
+                ):
                     hook = module.register_full_backward_hook(self.save_gradient(name))
                     self.hooks.append(hook)
 
@@ -138,19 +211,25 @@ class TorchWatcher:
         self,
         model: nn.Module,
         run: Any,  # Made more flexible to support different logging mechanisms
-        track_layers: Optional[List[type]] = None,
+        track_layers: Optional[List[Type[nn.Module]]] = None,
         tensor_stats: Optional[List[str]] = None,
     ) -> None:
         """
-        Initialize TorchWatcher with more configuration options.
+        Initialize TorchWatcher with configuration options.
 
         Args:
             model (nn.Module): The PyTorch model to watch
             run: Logging mechanism from Neptune
-            track_layers (Optional[List[type]]): Layer types to specifically track
+            track_layers (Optional[List[Type[nn.Module]]]): List of PyTorch layer types to track.
+                                                          If None, tracks all layers in the model.
+                                                          If specified, must contain valid PyTorch layer types.
             tensor_stats (Optional[List[str]]): List of statistics to compute.
                                               Available options: mean, std, norm, min, max, var, abs_mean.
                                               Defaults to ['mean'] if not specified.
+
+        Raises:
+            TypeError: If model is not a PyTorch model
+            ValueError: If track_layers contains invalid layer types
         """
         if not isinstance(model, nn.Module):
             raise TypeError("The model must be a PyTorch model")
