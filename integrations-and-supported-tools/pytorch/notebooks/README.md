@@ -20,7 +20,7 @@ A simple PyTorch hook manager for tracking model metrics during training.
 ## Installation
 
 ```bash
-pip install neptune-client
+pip install neptune_scale
 ```
 
 ## Usage
