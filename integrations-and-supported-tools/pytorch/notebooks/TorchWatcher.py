@@ -1,27 +1,39 @@
+import warnings
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import torch
 import torch.nn as nn
-from typing import Literal, List, Optional, Union, Dict, Any
-import warnings
-from contextlib import contextmanager
+
+# Predefined tensor statistics
+TENSOR_STATS = {
+    "mean": lambda x: x.mean().item(),
+    "std": lambda x: x.std().item(),
+    "norm": lambda x: x.norm().item(),
+    "min": lambda x: x.min().item(),
+    "max": lambda x: x.max().item(),
+    "var": lambda x: x.var().item(),
+    "abs_mean": lambda x: x.abs().mean().item(),
+}
+
 
 class HookManager:
     """
     A robust hook management class for PyTorch models to track activations, gradients, and parameters.
-    
+
     Improvements:
     - More comprehensive error handling
     - Flexible hook registration
     - Support for more layer types
     - Configurable tracking
     """
+
     def __init__(self, model: nn.Module, track_layers: Optional[List[type]] = None):
         """
         Initialize HookManager with additional configuration options.
-        
+
         Args:
             model (nn.Module): The PyTorch model to track
-            track_layers (Optional[List[type]]): List of layer types to track. 
+            track_layers (Optional[List[type]]): List of layer types to track.
                                                  Defaults to common layer types if not specified.
         """
         if not isinstance(model, nn.Module):
@@ -31,20 +43,21 @@ class HookManager:
         self.hooks: List[torch.utils.hooks.RemovableHandle] = []
         self.activations: Dict[str, torch.Tensor] = {}
         self.gradients: Dict[str, torch.Tensor] = {}
-        
+
         # Default layer types to track if not specified
         self.track_layers = track_layers or [
-            nn.Linear, 
-            nn.Conv1d, 
-            nn.Conv2d, 
-            nn.Conv3d, 
-            nn.LSTM, 
-            nn.GRU, 
-            nn.RNN
+            nn.Linear,
+            nn.Conv1d,
+            nn.Conv2d,
+            nn.Conv3d,
+            nn.LSTM,
+            nn.GRU,
+            nn.RNN,
         ]
 
     def save_activation(self, name: str):
         """Create a forward hook to save layer activations."""
+
         def hook(module, input, output):
             try:
                 # Handle different output types (tensor or tuple)
@@ -52,22 +65,25 @@ class HookManager:
                 self.activations[name] = activation.detach()
             except Exception as e:
                 warnings.warn(f"Could not save activation for {name}: {e}")
+
         return hook
 
     def save_gradient(self, name: str):
         """Create a backward hook to save layer gradients."""
+
         def hook(module, grad_input, grad_output):
             try:
                 # Save the first gradient output
                 self.gradients[name] = grad_output[0].detach()
             except Exception as e:
                 warnings.warn(f"Could not save gradient for {name}: {e}")
+
         return hook
 
     def register_hooks(self, track_activations: bool = True, track_gradients: bool = True):
         """
         Register hooks for the model with configurable tracking.
-        
+
         Args:
             track_activations (bool): Whether to track layer activations
             track_gradients (bool): Whether to track layer gradients
@@ -117,50 +133,69 @@ class TorchWatcher:
     """
     A comprehensive tracking mechanism for PyTorch models with enhanced logging and context management.
     """
-    def __init__(self, 
-                 model: nn.Module, 
-                 run: Any,  # Made more flexible to support different logging mechanisms
-                 track_layers: Optional[List[type]] = None
-                 ) -> None:
+
+    def __init__(
+        self,
+        model: nn.Module,
+        run: Any,  # Made more flexible to support different logging mechanisms
+        track_layers: Optional[List[type]] = None,
+        tensor_stats: Optional[List[str]] = None,
+    ) -> None:
         """
         Initialize TorchWatcher with more configuration options.
-        
+
         Args:
             model (nn.Module): The PyTorch model to watch
-            run: Logging mechanism (e.g., Weights & Biases Run object)
+            run: Logging mechanism from Neptune
             track_layers (Optional[List[type]]): Layer types to specifically track
+            tensor_stats (Optional[List[str]]): List of statistics to compute.
+                                              Available options: mean, std, norm, min, max, var, abs_mean.
+                                              Defaults to ['mean'] if not specified.
         """
+        if not isinstance(model, nn.Module):
+            raise TypeError("The model must be a PyTorch model")
+
         self.model = model
         self.run = run
         self.hm = HookManager(model, track_layers)
         self.debug_metrics: Dict[str, float] = {}
-        
+
+        # Validate and set tensor statistics
+        if tensor_stats is None:
+            tensor_stats = ["mean"]
+
+        # Validate that all requested statistics exist
+        invalid_stats = [stat for stat in tensor_stats if stat not in TENSOR_STATS]
+        if invalid_stats:
+            raise ValueError(
+                f"Invalid statistics requested: {invalid_stats}. "
+                f"Available statistics are: {list(TENSOR_STATS.keys())}"
+            )
+
+        self.tensor_stats = {stat: TENSOR_STATS[stat] for stat in tensor_stats}
+
         # Default hook registration
         self.hm.register_hooks()
 
     def _safe_tensor_stats(self, tensor: torch.Tensor) -> Dict[str, float]:
         """
         Safely compute tensor statistics with error handling.
-        
+
         Args:
             tensor (torch.Tensor): Input tensor
-        
+
         Returns:
             Dict of statistical metrics
         """
-        try:
-            return {
-                'mean': tensor.mean().item(),
-                'std': tensor.std().item(),
-                'norm': tensor.norm().item(),
-                'min': tensor.min().item(),
-                'max': tensor.max().item()
-            }
-        except Exception as e:
-            warnings.warn(f"Could not compute tensor statistics: {e}")
-            return {}
+        stats = {}
+        for stat_name, stat_func in self.tensor_stats.items():
+            try:
+                stats[stat_name] = stat_func(tensor)
+            except Exception as e:
+                warnings.warn(f"Could not compute {stat_name} statistic: {e}")
+        return stats
 
-    def track_activations(self): 
+    def track_activations(self):
         """Track layer activations with enhanced statistics."""
         activations = self.hm.get_activations()
         for layer, activation in activations.items():
@@ -186,16 +221,17 @@ class TorchWatcher:
                 for stat_name, stat_value in stats.items():
                     self.debug_metrics[f"debug/parameters/{layer}_{stat_name}"] = stat_value
 
-    def watch(self, 
-              step: Union[int, float], 
-              log: Optional[List[Literal["gradients", "parameters", "activations"]]] = None
-              ):
+    def watch(
+        self,
+        step: Union[int, float],
+        log: Optional[List[Literal["gradients", "parameters", "activations"]]] = None,
+    ):
         """
         Log debug metrics with flexible configuration.
-        
+
         Args:
             step (int|float): Logging step
-            log (Optional[List]): Specific tracking modes. 
+            log (Optional[List]): Specific tracking modes.
                                   Defaults to all if None.
         """
         # Reset metrics
@@ -223,17 +259,3 @@ class TorchWatcher:
 
         # Clear hooks
         self.hm.clear()
-
-    @contextmanager
-    def track(self, step: Union[int, float], log: Optional[List[Literal["gradients", "parameters", "activations"]]] = None):
-        """
-        Context manager for tracking with automatic hook management.
-        
-        Args:
-            step (int|float): Logging step
-            log (Optional[List]): Specific tracking modes
-        """
-        try:
-            yield self
-        finally:
-            self.watch(step, log)
