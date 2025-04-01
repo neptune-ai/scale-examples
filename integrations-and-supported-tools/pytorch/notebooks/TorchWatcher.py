@@ -275,31 +275,37 @@ class TorchWatcher:
                 warnings.warn(f"Could not compute {stat_name} statistic: {e}")
         return stats
 
+    def _track_metric(self, metric_type: str, data: Dict[str, torch.Tensor]):
+        """Track metrics with enhanced statistics for a given metric type.
+
+        Args:
+            metric_type (str): Type of metric being tracked (activation/gradient/parameters)
+            data (Dict[str, torch.Tensor]): Dictionary mapping layer names to tensors
+        """
+        for layer, tensor in data.items():
+            if tensor is not None:
+                stats = self._safe_tensor_stats(tensor)
+                for stat_name, stat_value in stats.items():
+                    self.debug_metrics[f"debug/{metric_type}/{layer}_{stat_name}"] = stat_value
+
     def track_activations(self):
         """Track layer activations with enhanced statistics."""
         activations = self.hm.get_activations()
-        for layer, activation in activations.items():
-            if activation is not None:
-                stats = self._safe_tensor_stats(activation)
-                for stat_name, stat_value in stats.items():
-                    self.debug_metrics[f"debug/activation/{layer}_{stat_name}"] = stat_value
+        self._track_metric("activation", activations)
 
     def track_gradients(self):
         """Track layer gradients with enhanced statistics."""
         gradients = self.hm.get_gradients()
-        for layer, gradient in gradients.items():
-            if gradient is not None:
-                stats = self._safe_tensor_stats(gradient)
-                for stat_name, stat_value in stats.items():
-                    self.debug_metrics[f"debug/gradient/{layer}_{stat_name}"] = stat_value
+        self._track_metric("gradient", gradients)
 
     def track_parameters(self):
         """Track model parameters with enhanced statistics."""
-        for layer, param in self.model.named_parameters():
-            if param is not None and param.grad is not None:
-                stats = self._safe_tensor_stats(param.grad)
-                for stat_name, stat_value in stats.items():
-                    self.debug_metrics[f"debug/parameters/{layer}_{stat_name}"] = stat_value
+        parameters = {
+            name: param.grad
+            for name, param in self.model.named_parameters()
+            if param is not None and param.grad is not None
+        }
+        self._track_metric("parameters", parameters)
 
     def watch(
         self,
