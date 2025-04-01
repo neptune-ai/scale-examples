@@ -204,7 +204,7 @@ class HookManager:
 
 class TorchWatcher:
     """
-    A comprehensive tracking mechanism for PyTorch models with enhanced logging and context management.
+    A comprehensive tracking mechanism for PyTorch models with enhanced logging.
     """
 
     def __init__(
@@ -244,6 +244,7 @@ class TorchWatcher:
             tensor_stats = ["mean"]
 
         # Validate that all requested statistics exist
+        # TODO: Add ability to set custom statistics
         invalid_stats = [stat for stat in tensor_stats if stat not in TENSOR_STATS]
         if invalid_stats:
             raise ValueError(
