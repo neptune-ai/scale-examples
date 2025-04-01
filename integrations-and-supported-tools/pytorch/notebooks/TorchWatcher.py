@@ -310,32 +310,29 @@ class TorchWatcher:
     def watch(
         self,
         step: Union[int, float],
-        log: Optional[List[Literal["gradients", "parameters", "activations"]]] = None,
+        track_gradients: bool = True,
+        track_parameters: bool = True, 
+        track_activations: bool = True
     ):
         """
         Log debug metrics with flexible configuration.
 
         Args:
             step (int|float): Logging step
-            log (Optional[List]): Specific tracking modes.
-                                  Defaults to all if None.
+            track_gradients (bool): Whether to track gradients. Defaults to True.
+            track_parameters (bool): Whether to track parameters. Defaults to True.
+            track_activations (bool): Whether to track activations. Defaults to True.
         """
         # Reset metrics
         self.debug_metrics.clear()
 
-        # Determine tracking modes
-        if log is None or log == "all":
+        # Track metrics based on boolean flags
+        if track_gradients:
             self.track_gradients()
+        if track_parameters:
             self.track_parameters()
+        if track_activations:
             self.track_activations()
-        else:
-            for mode in log:
-                if mode == "gradients":
-                    self.track_gradients()
-                elif mode == "parameters":
-                    self.track_parameters()
-                elif mode == "activations":
-                    self.track_activations()
 
         # Log metrics
         try:
