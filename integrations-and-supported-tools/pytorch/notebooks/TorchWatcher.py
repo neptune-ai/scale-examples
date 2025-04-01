@@ -278,7 +278,9 @@ class TorchWatcher:
                 warnings.warn(f"Could not compute {stat_name} statistic: {e}")
         return stats
 
-    def _track_metric(self, metric_type: str, data: Dict[str, torch.Tensor], namespace: Optional[str] = None):
+    def _track_metric(
+        self, metric_type: str, data: Dict[str, torch.Tensor], namespace: Optional[str] = None
+    ):
         """Track metrics with enhanced statistics for a given metric type.
 
         Args:
@@ -288,12 +290,14 @@ class TorchWatcher:
         """
         # Construct the full namespace
         full_namespace = f"{namespace}/{self.base_namespace}" if namespace else self.base_namespace
-        
+
         for layer, tensor in data.items():
             if tensor is not None:
                 stats = self._safe_tensor_stats(tensor)
                 for stat_name, stat_value in stats.items():
-                    self.debug_metrics[f"{full_namespace}/{metric_type}/{layer}_{stat_name}"] = stat_value
+                    self.debug_metrics[f"{full_namespace}/{metric_type}/{layer}_{stat_name}"] = (
+                        stat_value
+                    )
 
     def track_activations(self, namespace: Optional[str] = None):
         """Track layer activations with enhanced statistics."""
@@ -318,7 +322,7 @@ class TorchWatcher:
         self,
         step: Union[int, float],
         track_gradients: bool = True,
-        track_parameters: bool = True, 
+        track_parameters: bool = True,
         track_activations: bool = True,
         namespace: Optional[str] = None,
     ):

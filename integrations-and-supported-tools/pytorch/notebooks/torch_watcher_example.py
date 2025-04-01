@@ -1,6 +1,6 @@
+import numpy as np
 import torch
 import torch.nn as nn
-import numpy as np
 from neptune_scale import Run
 from TorchWatcher import TorchWatcher
 
@@ -69,7 +69,7 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
                     track_activations=False,
                     track_parameters=False,
                     track_gradients=True,
-                    namespace="train"
+                    namespace="train",
                 )
 
             train_loss += loss.item()
@@ -82,26 +82,27 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
         with torch.no_grad():
             val_output = model(X_val)
             val_loss = criterion(val_output, y_val)
-            
+
             # Track metrics during validation
             watcher.watch(
                 step=epoch,
                 track_activations=True,
                 track_gradients=False,
                 track_parameters=False,
-                namespace="validation"
+                namespace="validation",
             )
 
         # Log metrics
-        watcher.run.log_metrics(data={
-            "train/loss": train_loss,
-            "val/loss": val_loss.item()
-        }, step=epoch)
+        watcher.run.log_metrics(
+            data={"train/loss": train_loss, "val/loss": val_loss.item()}, step=epoch
+        )
 
         if (epoch + 1) % 10 == 0:
-            print(f"Epoch [{epoch+1}/{n_epochs}], "
-                  f"Train Loss: {train_loss:.4f}, "
-                  f"Val Loss: {val_loss.item():.4f}")
+            print(
+                f"Epoch [{epoch+1}/{n_epochs}], "
+                f"Train Loss: {train_loss:.4f}, "
+                f"Val Loss: {val_loss.item():.4f}"
+            )
 
 
 def main():
@@ -116,14 +117,14 @@ def main():
 
     # Create model and watcher
     model = SimpleNet()
-    
+
     # Initialize watcher with specific layer types to track
     watcher = TorchWatcher(
         model,
         run,
         track_layers=[nn.Linear, nn.ReLU],  # Track only Linear and ReLU layers
-        tensor_stats=['mean', 'norm'],       # Track mean and norm statistics
-        base_namespace="model_metrics"       # Default namespace for all metrics
+        tensor_stats=["mean", "norm"],  # Track mean and norm statistics
+        base_namespace="model_metrics",  # Default namespace for all metrics
     )
 
     # Train the model
@@ -134,7 +135,7 @@ def main():
     print("- Full tracking during first 5 epochs with 'train/model_metrics' namespace")
     print("- Gradient-only tracking during later epochs with 'train/model_metrics' namespace")
     print("- Activation-only tracking during validation with 'validation/model_metrics' namespace")
-    
+
     train_model(model, X_train, y_train, X_val, y_val, watcher)
     watcher.run.close()
 

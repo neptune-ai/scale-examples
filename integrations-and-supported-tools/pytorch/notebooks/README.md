@@ -46,10 +46,10 @@ for epoch in range(n_epochs):
     for batch in train_loader:
         # Forward pass
         output = model(batch)
-        
+
         # Backward pass
         loss.backward()
-        
+
         # Track metrics with default namespace
         watcher.watch(step=current_step)
 ```
