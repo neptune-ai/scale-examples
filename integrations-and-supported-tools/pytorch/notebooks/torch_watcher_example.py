@@ -1,6 +1,6 @@
-import numpy as np
 import torch
 import torch.nn as nn
+import numpy as np
 from neptune_scale import Run
 from TorchWatcher import TorchWatcher
 
@@ -34,7 +34,7 @@ def generate_data(n_samples=1000):
 
 
 def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, batch_size=32):
-    """Training function that can be used with any watcher configuration."""
+    """Training function demonstrating different ways to use TorchWatcher."""
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     criterion = nn.MSELoss()
     n_batches = len(X_train) // batch_size
@@ -60,8 +60,17 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
             loss.backward()
             optimizer.step()
 
-            # Track metrics after the forward and backward passes
-            watcher.watch(step=epoch * n_batches + i)
+            # Track metrics during training
+            if epoch < 5:  # First 5 epochs: track everything
+                watcher.watch(step=epoch * n_batches + i, namespace="train")
+            else:  # Later epochs: track only gradients for efficiency
+                watcher.watch(
+                    step=epoch * n_batches + i,
+                    track_activations=False,
+                    track_parameters=False,
+                    track_gradients=True,
+                    namespace="train"
+                )
 
             train_loss += loss.item()
 
@@ -73,18 +82,26 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
         with torch.no_grad():
             val_output = model(X_val)
             val_loss = criterion(val_output, y_val)
+            
+            # Track metrics during validation
+            watcher.watch(
+                step=epoch,
+                track_activations=True,
+                track_gradients=False,
+                track_parameters=False,
+                namespace="validation"
+            )
 
         # Log metrics
-        watcher.run.log_metrics(
-            data={"train/loss": train_loss, "val/loss": val_loss.item()}, step=epoch
-        )
+        watcher.run.log_metrics(data={
+            "train/loss": train_loss,
+            "val/loss": val_loss.item()
+        }, step=epoch)
 
         if (epoch + 1) % 10 == 0:
-            print(
-                f"Epoch [{epoch+1}/{n_epochs}], "
-                f"Train Loss: {train_loss:.4f}, "
-                f"Val Loss: {val_loss.item():.4f}"
-            )
+            print(f"Epoch [{epoch+1}/{n_epochs}], "
+                  f"Train Loss: {train_loss:.4f}, "
+                  f"Val Loss: {val_loss.item():.4f}")
 
 
 def main():
@@ -97,29 +114,29 @@ def main():
     X_train, y_train = generate_data(n_samples=1000)
     X_val, y_val = generate_data(n_samples=200)
 
-    # Example 1: Track all layers in the model
-    print("\nTraining with all layers tracked:")
-    model1 = SimpleNet()
-    watcher1 = TorchWatcher(
-        model1,
+    # Create model and watcher
+    model = SimpleNet()
+    
+    # Initialize watcher with specific layer types to track
+    watcher = TorchWatcher(
+        model,
         run,
-        tensor_stats=["mean", "norm"],  # track_layers defaults to None, tracking all layers
+        track_layers=[nn.Linear, nn.ReLU],  # Track only Linear and ReLU layers
+        tensor_stats=['mean', 'norm'],       # Track mean and norm statistics
+        base_namespace="model_metrics"       # Default namespace for all metrics
     )
-    train_model(model1, X_train, y_train, X_val, y_val, watcher1)
-    watcher1.run.close()
 
-    # Example 2: Track specific layer types
-    print("\nTraining with only Linear and ReLU layers tracked:")
-    model2 = SimpleNet()
-    run2 = Run(experiment_name="torch-watcher-example-specific")
-    watcher2 = TorchWatcher(
-        model2,
-        run2,
-        track_layers=[nn.Linear, nn.ReLU],  # Only track Linear and ReLU layers
-        tensor_stats=["mean", "norm"],
-    )
-    train_model(model2, X_train, y_train, X_val, y_val, watcher2)
-    watcher2.run.close()
+    # Train the model
+    print("\nTraining with TorchWatcher:")
+    print("- Tracking Linear and ReLU layers")
+    print("- Computing mean and norm statistics")
+    print("- Using 'model_metrics' as base namespace")
+    print("- Full tracking during first 5 epochs with 'train/model_metrics' namespace")
+    print("- Gradient-only tracking during later epochs with 'train/model_metrics' namespace")
+    print("- Activation-only tracking during validation with 'validation/model_metrics' namespace")
+    
+    train_model(model, X_train, y_train, X_val, y_val, watcher)
+    watcher.run.close()
 
 
 if __name__ == "__main__":

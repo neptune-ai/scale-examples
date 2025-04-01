@@ -1,21 +1,16 @@
 # TorchWatcher
 
-A simple PyTorch hook manager for tracking model metrics during training.
+A lightweight PyTorch model monitoring tool that automatically tracks layer activations, gradients, and parameters during training. Built for seamless integration with Neptune.ai.
 
 ## Features
 
-- Track predefined statistics for specified PyTorch layers
-- Automatic metric logging to Neptune
-- Support for both training and validation phases
-- Selective layer tracking
-- Predefined statistics options:
-  - `mean`: Mean value
-  - `std`: Standard deviation
-  - `norm`: L2 norm
-  - `min`: Minimum value
-  - `max`: Maximum value
-  - `var`: Variance
-  - `abs_mean`: Mean of absolute values
+- **Automatic Layer Tracking**: Monitors activations, gradients, and parameters of specified PyTorch layers
+- **Flexible Layer Selection**: Track all layers or specify which layer types to monitor
+- **Comprehensive Statistics**: Predefined tensor statistics including mean, standard deviation, norm, min, max, variance, and absolute mean
+- **Configurable Tracking**: Enable/disable tracking of activations, gradients, and parameters as needed
+- **Organized Logging**: Structured metric namespacing for better organization in Neptune
+- **Memory Efficient**: Clears stored tensors after each logging step
+- **Error Handling**: Robust error handling with informative warnings
 
 ## Installation
 
@@ -32,184 +27,154 @@ from neptune_scale import Run
 from TorchWatcher import TorchWatcher
 
 # Initialize Neptune run
-run = Run(
-    experiment_name="my-experiment",
-)
+run = Run(experiment_name="my-experiment")
 
-# Create your model
+# Create your PyTorch model
 model = YourModel()
 
-# Option 1: Track all layers (default)
+# Initialize TorchWatcher
 watcher = TorchWatcher(
     model,
     run,
-    tensor_stats=['mean', 'norm']   # Optional: select from predefined statistics
-)
-
-# Option 2: Track specific layer types
-layers_to_track = [
-    nn.Linear,    # Track all linear layers
-    nn.Conv2d,    # Track all convolutional layers
-    nn.ReLU,      # Track all ReLU layers
-]
-
-watcher = TorchWatcher(
-    model,
-    run,
-    track_layers=layers_to_track,  # Specify which layers to track
-    tensor_stats=['mean', 'norm']   # Optional: select from predefined statistics
+    track_layers=[nn.Linear, nn.ReLU],  # Specify which layer types to track (default is all layers)
+    tensor_stats=['mean', 'norm'],       # Choose which statistics to compute (default = "mean" only)
+    base_namespace="model_metrics"       # Set base namespace for all metrics (default = "debug")
 )
 
 # Training loop
 for epoch in range(n_epochs):
-    for batch in dataloader:
+    for batch in train_loader:
         # Forward pass
         output = model(batch)
         
         # Backward pass
         loss.backward()
         
-        # Track metrics
+        # Track metrics with default namespace
         watcher.watch(step=current_step)
 ```
 
-### Detailed Examples
+### Controlling Metric Logging
 
-#### 1. Using Default Settings
-
-The simplest way to use TorchWatcher is with default settings, which will track all layers in your model:
+The `watch()` method provides flexible control over what metrics to track and how to organize them:
 
 ```python
-# Initialize with defaults
-watcher = TorchWatcher(
-    model,
-    run
-)
-
-# This will:
-# - Track all layers in the model
-# - Use only the 'mean' statistic (default)
-# - Log all metrics (activations, gradients, parameters)
-```
-
-#### 2. Specifying Which Layers to Track
-
-You can choose to track specific layer types in your model:
-
-```python
-# Track only convolutional and linear layers
-watcher = TorchWatcher(
-    model,
-    run,
-    track_layers=[nn.Conv2d, nn.Linear]
-)
-
-# Track only normalization layers
-watcher = TorchWatcher(
-    model,
-    run,
-    track_layers=[nn.BatchNorm2d, nn.LayerNorm]
-)
-
-# Track only activation layers
-watcher = TorchWatcher(
-    model,
-    run,
-    track_layers=[nn.ReLU, nn.LeakyReLU, nn.GELU]
-)
-```
-
-#### 3. Selecting Statistics to Capture
-
-You can specify which statistics to compute for each layer:
-
-```python
-# Track multiple statistics
-watcher = TorchWatcher(
-    model,
-    run,
-    tensor_stats=['mean', 'std', 'norm', 'min', 'max']
-)
-
-# Track only basic statistics
-watcher = TorchWatcher(
-    model,
-    run,
-    tensor_stats=['mean', 'std']
-)
-
-# Track only norm-based statistics
-watcher = TorchWatcher(
-    model,
-    run,
-    tensor_stats=['norm', 'abs_mean']
-)
-```
-
-#### 4. Controlling Metric Logging
-
-The `watch()` method allows you to specify which metrics to log:
-
-```python
-# Log all metrics (default)
+# Track all metrics (default behavior)
 watcher.watch(step=current_step)
 
-# Log only activation metrics
-watcher.watch(step=current_step, log=["activations"])
+# Track specific metrics
+watcher.watch(
+    step=current_step,
+    track_activations=True,
+    track_gradients=False,
+    track_parameters=True
+)
 
-# Log only gradient metrics
-watcher.watch(step=current_step, log=["gradients"])
-
-# Log only parameter metrics
-watcher.watch(step=current_step, log=["parameters"])
-
-# Log specific combinations
-watcher.watch(step=current_step, log=["activations", "gradients"])
+# Use a namespace to organize metrics
+watcher.watch(
+    step=current_step,
+    namespace="train"  # Metrics will be under "train/model_metrics/..."
+)
 ```
 
-### Layer Types
+### Namespace Organization
 
-You can track any of these PyTorch layer types:
-- `nn.Linear`
-- `nn.Conv1d`, `nn.Conv2d`, `nn.Conv3d`
-- `nn.ConvTranspose1d`, `nn.ConvTranspose2d`, `nn.ConvTranspose3d`
-- `nn.BatchNorm1d`, `nn.BatchNorm2d`, `nn.BatchNorm3d`
-- `nn.LayerNorm`
-- `nn.InstanceNorm1d`, `nn.InstanceNorm2d`, `nn.InstanceNorm3d`
-- `nn.GroupNorm`
-- `nn.ReLU`, `nn.LeakyReLU`, `nn.PReLU`, `nn.RReLU`, `nn.ELU`, `nn.SELU`, `nn.CELU`, `nn.GELU`
-- `nn.Sigmoid`
-- `nn.Tanh`
-- `nn.Dropout`, `nn.Dropout2d`, `nn.Dropout3d`
-- `nn.MaxPool1d`, `nn.MaxPool2d`, `nn.MaxPool3d`
-- `nn.AvgPool1d`, `nn.AvgPool2d`, `nn.AvgPool3d`
-- `nn.AdaptiveMaxPool1d`, `nn.AdaptiveMaxPool2d`, `nn.AdaptiveMaxPool3d`
-- `nn.AdaptiveAvgPool1d`, `nn.AdaptiveAvgPool2d`, `nn.AdaptiveAvgPool3d`
-- `nn.LSTM`, `nn.GRU`, `nn.RNN`
-- `nn.Embedding`
-- `nn.TransformerEncoderLayer`, `nn.TransformerDecoderLayer`
+TorchWatcher provides a hierarchical namespace structure for organizing metrics:
 
-### Available Statistics
+1. **Base Namespace**: Set during initialization
+```python
+watcher = TorchWatcher(
+    model,
+    run,
+    base_namespace="model_metrics"  # All metrics will be under "model_metrics/"
+)
+```
 
-The following statistics are available for tracking:
+2. **Per-Call Namespace**: Prefix for specific tracking calls
+```python
+# During training
+watcher.watch(step=step, namespace="train")  # Metrics under "train/model_metrics/"
 
-1. Basic Statistics:
-   - `mean`: Mean value
-   - `std`: Standard deviation
-   - `norm`: L2 norm
-   - `min`: Minimum value
-   - `max`: Maximum value
-   - `var`: Variance
-   - `abs_mean`: Mean of absolute values
+# During validation
+watcher.watch(step=step, namespace="validation")  # Metrics under "validation/model_metrics/"
+```
 
-### Example
+3. **Metric Structure**: Metrics are organized as:
+```
+{namespace}/{base_namespace}/{metric_type}/{layer_name}_{statistic}
+```
 
-See `torch_watcher_example.py` for a complete example showing:
-- How to track all layers (default behavior)
-- How to specify which layers to track
-- How to select statistics to monitor
-- Integration with a training loop
-- Logging metrics to Neptune
+Example metric names:
+- `train/model_metrics/activation/fc1_mean`
+- `validation/model_metrics/gradient/fc2_norm`
+- `train/model_metrics/parameters/fc1_weight_mean`
+
+### Example Use Cases
+
+1. **Training with Full Tracking**:
+```python
+# Track everything during initial training
+watcher.watch(step=step, namespace="train")
+```
+
+2. **Validation with Limited Tracking**:
+```python
+# Track only activations during validation
+watcher.watch(
+    step=step,
+    track_activations=True,
+    track_gradients=False,
+    track_parameters=False,
+    namespace="validation"
+)
+```
+
+3. **Efficient Training**:
+```python
+# Track only gradients during later training phases
+watcher.watch(
+    step=step,
+    track_activations=False,
+    track_parameters=False,
+    track_gradients=True,
+    namespace="train"
+)
+```
+
+## Supported Layer Types
+
+TorchWatcher supports tracking of all common PyTorch layer types, including:
+- Linear layers
+- Convolutional layers
+- Recurrent layers
+- Normalization layers
+- Activation layers
+- Pooling layers
+- Dropout layers
+- Embedding layers
+- Transformer layers
+- Attention layers
+- And more...
+
+## Available Statistics
+
+Predefined tensor statistics include:
+- `mean`: Mean value
+- `std`: Standard deviation
+- `norm`: L2 norm
+- `min`: Minimum value
+- `max`: Maximum value
+- `var`: Variance
+- `abs_mean`: Mean of absolute values
+
+## Example
+
+See `torch_watcher_example.py` for a complete example demonstrating:
+- Model definition
+- Data generation
+- Training loop with different tracking configurations
+- Namespace organization
+- Integration with Neptune
 
 ## License
 
