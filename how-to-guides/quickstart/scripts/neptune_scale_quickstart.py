@@ -27,11 +27,9 @@ def get_gpu_utilization(step: int) -> float:
 def _generate_metric(
     step: int,
     factor: float = 1.0,
-    direction: Literal["inc", "dec"] = "inc",
 ) -> float:
     relative_progress = step / NUM_STEPS
     noise = np.random.uniform(-0.3, 0.3) * (1 - relative_progress)
-    noise = noise if direction == "inc" else -noise
     random_int = randint(0, 1000)
 
     return 1 / np.log(relative_progress / factor * random_int + 1.1) + noise
