@@ -1,3 +1,5 @@
+.neptune
+
 # Data files
 /how-to-guides/hpo/**/mnist
 /integrations-and-supported-tools/pytorch/data
