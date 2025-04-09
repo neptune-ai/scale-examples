@@ -68,6 +68,7 @@ class SimpleCNN(nn.Module):
         x = self.fc2(x)
         return x
 
+# Function to evaluate the model during validation
 def evaluate(model, data_loader, criterion, device):
     model.eval()  # Ensure model is in training mode if tracking gradients
     correct_preds = 0
@@ -90,7 +91,6 @@ def evaluate(model, data_loader, criterion, device):
 
     accuracy = correct_preds / total_preds
     return epoch_loss / len(data_loader), accuracy
-
 
 ## Setup distributed environment
 def setup_distributed(rank: int, world_size: int, backend: str) -> None:
@@ -209,6 +209,7 @@ def run_ddp(rank: int, world_size: int, params: Dict[str, Any]) -> None:
         setup_distributed(rank, world_size, "nccl")
         train_loader, val_loader = create_dataloader_minst(rank, world_size, params["batch_size"])
 
+        # Initialize Neptune logger only on the main process from rank 0
         if rank == 0:
             from uuid import uuid4
             from neptune_scale import Run
@@ -234,6 +235,7 @@ def run_ddp(rank: int, world_size: int, params: Dict[str, Any]) -> None:
         model = SimpleCNN()
         train(rank, model, params, train_loader, val_loader, run)
 
+        # Once training is finished, close the Neptune run from the main process
         if rank == 0:
             run.close()
     except Exception as e:
