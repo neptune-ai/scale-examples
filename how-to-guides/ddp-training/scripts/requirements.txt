@@ -1,0 +1,3 @@
+neptune-scale
+torch
+torchvision
