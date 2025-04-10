@@ -81,6 +81,8 @@ jobs:
           files: |
             **/scripts/**
             **/code/**
+          files_ignore: |
+            **/ddp-training/**
       - name: Set output
         id: output
         if: steps.changed-dirs.outputs.any_changed == 'true'

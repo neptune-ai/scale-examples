@@ -35,6 +35,12 @@ In this repo, you'll find tutorials and examples of using Neptune Scale.
 | Resume run or other object | [![docs]](https://docs-beta.neptune.ai/resume_run)
 | Use Neptune in HPO jobs | [![docs]](https://docs-beta.neptune.ai/hpo_tutorial) | [![neptune]](https://scale.neptune.ai/o/examples/org/hpo/runs/table?viewId=9d44261f-32a1-42e7-96ff-9b35edc4be66) | [![github]](how-to-guides/hpo/notebooks/Neptune_HPO.ipynb) | [![colab]](https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb) |
 
+### 👨 Advanced concepts
+
+| | Docs | Neptune | GitHub | Colab
+| ----------- | :---: | :---: | :------: | :---:
+| DDP training scripts | [![docs]]() | | [![github]](how-to-guides/ddp-training/scripts/) | |
+
 ## 🛠️ Other utilities
 
 ### 🧳 Migration tools
