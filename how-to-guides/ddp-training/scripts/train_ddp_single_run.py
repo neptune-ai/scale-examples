@@ -1,7 +1,7 @@
 # Important: This script can only be run when using multiple GPUS (> 1)
 
 import os
-from typing import Dict, Tuple, Optional, Any
+from typing import Any, Dict, Optional, Tuple
 
 import torch
 import torch.distributed as dist
@@ -11,19 +11,21 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.nn.parallel import DistributedDataParallel as DDP
 from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
 from torch.utils.data.distributed import DistributedSampler
+from torchvision import datasets, transforms
 
 
-def create_dataloader_minst(rank: int, world_size: int, batch_size: int) -> Tuple[DataLoader, DataLoader]:
+def create_dataloader_minst(
+    rank: int, world_size: int, batch_size: int
+) -> Tuple[DataLoader, DataLoader]:
     """
     Create distributed data loaders for MNIST dataset.
-    
+
     Args:
         rank (int): Process rank
         world_size (int): Total number of processes
         batch_size (int): Batch size per process
-        
+
     Returns:
         Tuple[DataLoader, DataLoader]: Training and validation data loaders
     """
@@ -47,6 +49,7 @@ def create_dataloader_minst(rank: int, world_size: int, batch_size: int) -> Tupl
 
     return train_loader, val_loader
 
+
 # Simple Convolutional Neural Network model for MNIST
 class SimpleCNN(nn.Module):
     def __init__(self):
@@ -67,6 +70,7 @@ class SimpleCNN(nn.Module):
         x = F.relu(self.fc1(x))
         x = self.fc2(x)
         return x
+
 
 # Function to evaluate the model during validation
 def evaluate(model, data_loader, criterion, device):
@@ -92,16 +96,17 @@ def evaluate(model, data_loader, criterion, device):
     accuracy = correct_preds / total_preds
     return epoch_loss / len(data_loader), accuracy
 
+
 ## Setup distributed environment
 def setup_distributed(rank: int, world_size: int, backend: str) -> None:
     """
     Initialize the distributed environment.
-    
+
     Args:
         rank (int): Process rank
         world_size (int): Total number of processes
         backend (str): Distributed backend to use
-        
+
     Raises:
         RuntimeError: If distributed initialization fails
     """
@@ -111,12 +116,18 @@ def setup_distributed(rank: int, world_size: int, backend: str) -> None:
     except Exception as e:
         raise RuntimeError(f"Failed to initialize distributed environment: {e}")
 
-def train(rank: int, model: nn.Module, params: Dict[str, Any], 
-          train_loader: DataLoader, val_loader: DataLoader, 
-          run: Optional[Any] = None) -> None:
+
+def train(
+    rank: int,
+    model: nn.Module,
+    params: Dict[str, Any],
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    run: Optional[Any] = None,
+) -> None:
     """
     Train the model using distributed data parallel.
-    
+
     Args:
         rank (int): Process rank
         model (nn.Module): Model to be trained
@@ -124,20 +135,20 @@ def train(rank: int, model: nn.Module, params: Dict[str, Any],
         train_loader (DataLoader): Training data loader
         val_loader (DataLoader): Validation data loader
         run (Optional[Any]): Neptune run object for logging
-        
+
     Raises:
         RuntimeError: If training fails
     """
     # Instantiate the device, loss function, and optimizer
     device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
     print(f"Rank {rank} using device: {device}")
-    
+
     # Move model to device first
     model = model.to(device)
-    
+
     # Then wrap with DDP
     model = DDP(model, device_ids=[rank])
-    
+
     optimizer = optim.Adam(model.parameters(), lr=params["learning_rate"])
     criterion = nn.CrossEntropyLoss()
 
@@ -193,15 +204,16 @@ def train(rank: int, model: nn.Module, params: Dict[str, Any],
     except Exception as e:
         raise RuntimeError(f"Error during training process (Rank {rank}): {e}")
 
+
 def run_ddp(rank: int, world_size: int, params: Dict[str, Any]) -> None:
     """
     Run distributed data parallel training.
-    
+
     Args:
         rank (int): Process rank
         world_size (int): Total number of processes
         params (Dict[str, Any]): Training parameters
-        
+
     Raises:
         RuntimeError: If DDP training fails
     """
@@ -212,18 +224,21 @@ def run_ddp(rank: int, world_size: int, params: Dict[str, Any]) -> None:
         # Initialize Neptune logger only on the main process from rank 0
         if rank == 0:
             from uuid import uuid4
+
             from neptune_scale import Run
 
             # Initialize Neptune logger
             run = Run(run_id=f"ddp-{uuid4()}", experiment_name="pytorch-ddp-experiment")
 
             # Log all parameters
-            run.log_configs({
-                "config/learning_rate": params["learning_rate"],
-                "config/batch_size": params["batch_size"],
-                "config/num_gpus": params["num_gpus"],
-                "config/n_classes": params["n_classes"],
-            })
+            run.log_configs(
+                {
+                    "config/learning_rate": params["learning_rate"],
+                    "config/batch_size": params["batch_size"],
+                    "config/num_gpus": params["num_gpus"],
+                    "config/n_classes": params["n_classes"],
+                }
+            )
 
             # Add descriptive tags
             run.add_tags(tags=["Torch-MINST", "ddp", "single-node", params["optimizer"]])
@@ -243,6 +258,7 @@ def run_ddp(rank: int, world_size: int, params: Dict[str, Any]) -> None:
     finally:
         if dist.is_initialized():
             dist.destroy_process_group()
+
 
 # Run DDP
 if __name__ == "__main__":
