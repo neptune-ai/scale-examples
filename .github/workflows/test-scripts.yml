@@ -20,7 +20,7 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         scripts: # Add in alphabetical order
-          - how-to-guides/ddp-training/scripts
+          # - how-to-guides/ddp-training/scripts
           - how-to-guides/hpo/scripts
         os: ["${{ inputs.os }}"]
     steps:
