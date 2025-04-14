@@ -1,10 +1,10 @@
-# Migrating from W&B to Neptune Scale
+# Migrating from W&B to Neptune
 
-This script allows you to copy run metadata from W&B to Neptune Scale.
+This script allows you to copy run metadata from W&B to Neptune.
 
 ## Prerequisites
 - A Weights and Biases account, `wandb` library installed, and environment variables set.
-- A Neptune Scale account, `neptune-scale` python library installed, and environment variables set. For details, see the [docs][docs-setup].
+- A Neptune account, `neptune-scale` python library installed, and environment variables set. For details, see the [docs][docs-setup].
 
 ## Instructions
 
@@ -16,7 +16,7 @@ To use the script, follow these steps:
 1. Enter the number of workers to use to copy the metadata. Leave blank to select the   number of workers automatically.
 1. Enter the W&B projects you want to export as comma-separated values. Leave blank to export all projects.
 1. The script will generate run logs in the working directory. You can change the directory with `logging.basicConfig()`. Live progress bars will also be rendered in the console.
-1. Neptune Scale projects corresponding to the W&B projects will be created with [*private*][docs-project-access] visibility if they don't exist. You can change the visibility later from the WebApp once the project has been created, or by updating the `create_project()` function in `copy_project()`.
+1. Neptune projects corresponding to the W&B projects will be created with [*private*][docs-project-access] visibility if they don't exist. You can change the visibility later from the WebApp once the project has been created, or by updating the `create_project()` function in `copy_project()`.
 1. The project description will be set as *Exported from <W&B project URL>*. You can change the description later from the WebApp once the project has been created, or by updating the `create_project()` function in `copy_project()`.
 
 ## Metadata mapping from W&B to Neptune
