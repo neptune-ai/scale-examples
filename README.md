@@ -12,7 +12,7 @@ With Neptune, you can monitor thousands of per-layer metrics—losses, gradients
 
 ## Examples
 
-In this repo, you'll find tutorials and examples of using Neptune.
+This repo contains tutorials and examples of how to use Neptune.
 
 ### First steps
 

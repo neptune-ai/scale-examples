@@ -4,7 +4,7 @@ This script allows you to copy run metadata from W&B to Neptune.
 
 ## Prerequisites
 - A Weights and Biases account, `wandb` library installed, and environment variables set.
-- A Neptune account, `neptune-scale` python library installed, and environment variables set. For details, see the [docs][docs-setup].
+- A Neptune account, `neptune-scale` Python library installed, and environment variables set. For details, see the [docs][docs-setup].
 
 ## Instructions
 
