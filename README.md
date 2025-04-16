@@ -14,14 +14,6 @@ With Neptune, you can monitor thousands of per-layer metrics—losses, gradients
 
 This repo contains tutorials and examples of how to use Neptune.
 
-### First steps
-
-|                          | Docs                         | Neptune                                 |
-| ------------------------ | ---------------------------- | --------------------------------------- |
-| Quickstart               | [![docs-icon]][quickstart]   | [![neptune-icon]][quickstart-example]   |
-| Analyze runs             | [![docs-icon]][analyze-runs] | [![neptune-icon]][analyze-runs-example] |
-
-### How-to guides
 |                                 | Docs                         | Neptune                                 | GitHub                         | Colab                      |
 | ------------------------------- | ---------------------------- | --------------------------------------- | ------------------------------ | -------------------------- |
 | Quickstart                      | [![docs-icon]][quickstart]   | [![neptune-icon]][quickstart-example]   | [![github-icon]][qs-notebook]  | [![colab-icon]][qs-colab]  |
@@ -54,8 +46,6 @@ This repo contains tutorials and examples of how to use Neptune.
 <!-- External -->
 [blog]: https://neptune.ai/blog
 [docs]: https://docs.neptune.ai/
-[analyze-runs]: https://docs.neptune.ai/analyze_runs
-[analyze-runs-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/compare?viewId=standard-view&detailsTab=dashboard&dash=dashboard&dashboardId=9e745b6c-2c98-4e23-abbc-9b56d8123fb8&type=run&compare=auto-3
 [from-legacy]: https://docs.neptune.ai/migration_neptune
 [from-wandb]: https://docs.neptune.ai/migration_wandb
 [hpo]: https://docs.neptune.ai/hpo_tutorial
