@@ -48,7 +48,7 @@ This repo contains tutorials and examples of how to use Neptune.
 [from-wandb-code]: utils/migration_tools/from_wandb/
 [hpo-notebook]: how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [hpo-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
-[qs-notebook]: how-to-guides/quickstart/scripts/neptune_quickstart.ipynb
+[qs-notebook]: how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 [qs-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 
 <!-- External -->
