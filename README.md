@@ -18,7 +18,7 @@ This repo contains tutorials and examples of how to use Neptune.
 
 |                          | Docs                         | Neptune                                 |
 | ------------------------ | ---------------------------- | --------------------------------------- |
-| Quickstart               | [![docs-icon]][quickstart]   |                                         |
+| Quickstart               | [![docs-icon]][quickstart]   | [![neptune-icon]][quickstart-example]   |
 | Analyze runs             | [![docs-icon]][analyze-runs] | [![neptune-icon]][analyze-runs-example] |
 
 ### How-to guides
@@ -63,6 +63,7 @@ This repo contains tutorials and examples of how to use Neptune.
 [log-metadata]: https://docs.neptune.ai/log_metadata
 [log-metadata-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/details?viewId=9e6a41f4-69a5-4d9f-951c-b1304f2acf12&detailsTab=dashboard&dashboardId=9e6a5c4c-0c39-491f-9811-87eeb39a2603&runIdentificationKey=LLM-29&type=run&compare=uMlyIDUTmecveIHVma0eEB95Ei5xu8F_9qHOh0nynbtM
 [quickstart]: https://docs.neptune.ai/quickstart
+[quickstart-example]: https://scale.neptune.ai/examples/quickstart/reports/9ea26258-2aed-4441-9b58-bab619215f6f
 [resume-run]: https://docs.neptune.ai/resume_run
 [runs-table]: https://docs.neptune.ai/runs_table
 [runs-table-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/table?viewId=9e746462-f045-4ff2-9ac4-e41fa349b04d&detailsTab=dashboard&dash=table&type=run&compare=auto-5
