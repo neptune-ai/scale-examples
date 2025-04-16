@@ -22,13 +22,9 @@ This repo contains tutorials and examples of how to use Neptune.
 | Analyze runs             | [![docs-icon]][analyze-runs] | [![neptune-icon]][analyze-runs-example] |
 
 ### How-to guides
-
-| | Docs | Neptune | GitHub | Colab
-| ----------- | :---: | :---: | :------: | :---:
-| Quickstart | [![docs]](https://docs-beta.neptune.ai/quickstart) | [![neptune]](https://scale.neptune.ai/o/examples/org/quickstart/reports/9ea26258-2aed-4441-9b58-bab619215f6f) | [![github]](how-to-guides/quickstart/scripts/neptune_scale_quickstart.ipynb) | [![colab]](https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/quickstart/notebooks/neptune_scale_quickstart.ipynb)
-| Track and organize runs | [![docs]](https://docs-beta.neptune.ai/experiments_table) | [![neptune]](https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/table?viewId=9e6a41f4-69a5-4d9f-951c-b1304f2acf12&dash=table)
 |                                 | Docs                         | Neptune                                 | GitHub                         | Colab                      |
 | ------------------------------- | ---------------------------- | --------------------------------------- | ------------------------------ | -------------------------- |
+| Quickstart                      | [![docs-icon]][quickstart]   | [![neptune-icon]][quickstart-example]   | [![github-icon]][qs-notebook]  | [![colab-icon]][qs-colab]  |
 | Log different types of metadata | [![docs-icon]][log-metadata] | [![neptune-icon]][log-metadata-example] |                                |                            |
 | Organize and filter runs        | [![docs-icon]][runs-table]   | [![neptune-icon]][runs-table-example]   |                                |                            |
 | Resume run or other object      | [![docs-icon]][resume-run]   |                                         |                                |                            |
@@ -52,6 +48,8 @@ This repo contains tutorials and examples of how to use Neptune.
 [from-wandb-code]: utils/migration_tools/from_wandb/
 [hpo-notebook]: how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [hpo-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
+[qs-notebook]: how-to-guides/quickstart/scripts/neptune_quickstart.ipynb
+[qs-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 
 <!-- External -->
 [blog]: https://neptune.ai/blog
