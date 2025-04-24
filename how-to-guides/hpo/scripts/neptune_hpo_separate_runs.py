@@ -74,7 +74,8 @@ trainloader = torch.utils.data.DataLoader(
 if __name__ == "__main__":
     sweep_id = str(uuid4())
 
-    sweep_run = Run(run_id=f"sweep-{sweep_id}")
+    sweep_run = Run()
+    print(f"Neptune sweep-level run created 🎉\nAccess at {sweep_run.get_run_url()}")
 
     sweep_run.add_tags(["sweep", "script"])
     sweep_run.add_tags([sweep_id], group_tags=True)
@@ -94,7 +95,9 @@ if __name__ == "__main__":
         desc="Trials",
     ):
         # Create a trial-level run
-        with Run(run_id=f"trial-{sweep_id}-{trial}") as trial_run:
+        with Run() as trial_run:
+            print(f"Neptune run created for trial {trial} 🎉\nAccess at {trial_run.get_run_url()}")
+
             trial_run.add_tags(["trial", "script"])
 
             # Add sweep_id to the trial-level run
