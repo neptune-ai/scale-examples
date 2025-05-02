@@ -1,10 +1,10 @@
-# Migrating from W&B to Neptune Scale
+# Migrating from W&B to Neptune
 
-This script allows you to copy run metadata from W&B to Neptune Scale.
+This script allows you to copy run metadata from W&B to Neptune.
 
 ## Prerequisites
 - A Weights and Biases account, `wandb` library installed, and environment variables set.
-- A Neptune Scale account, `neptune-scale` python library installed, and environment variables set. Read the [docs](https://docs-beta.neptune.ai/setup) to learn how to set up your installation.
+- A Neptune account, `neptune-scale` Python library installed, and environment variables set. For details, see the [docs][docs-setup].
 
 ## Instructions
 
@@ -16,7 +16,7 @@ To use the script, follow these steps:
 1. Enter the number of workers to use to copy the metadata. Leave blank to select the   number of workers automatically.
 1. Enter the W&B projects you want to export as comma-separated values. Leave blank to export all projects.
 1. The script will generate run logs in the working directory. You can change the directory with `logging.basicConfig()`. Live progress bars will also be rendered in the console.
-1. Neptune Scale projects corresponding to the W&B projects will be created with [*private*](https://docs.neptune.ai/about/workspaces_and_projects/#privacy-and-access-control) visibility if they don't exist. You can change the visibility later from the WebApp once the project has been created, or by updating the `create_project()` function in `copy_project()`.
+1. Neptune projects corresponding to the W&B projects will be created with [*private*][docs-project-access] visibility if they don't exist. You can change the visibility later from the WebApp once the project has been created, or by updating the `create_project()` function in `copy_project()`.
 1. The project description will be set as *Exported from <W&B project URL>*. You can change the description later from the WebApp once the project has been created, or by updating the `create_project()` function in `copy_project()`.
 
 ## Metadata mapping from W&B to Neptune
@@ -54,11 +54,10 @@ To use the script, follow these steps:
 † These have been excluded at the code level to prevent redundancy and noise, but can be included.
 
 ## Post-migration
-* W&B Workspace views can be recreated using Neptune's [overlaid charts](https://docs-beta.neptune.ai/charts/) and [reports](https://docs-beta.neptune.ai/reports/)
-* W&B Runs table views can be recreated using Neptune's [custom views](https://docs-beta.neptune.ai/experiments_table/#custom-views)
+* W&B Workspace views can be recreated using Neptune's [overlaid charts][docs-charts] and [reports][docs-reports]
+* W&B Runs table views can be recreated using Neptune's [custom views][docs-custom-views]
   ![Example W&B Runs table view recreated in Neptune](https://neptune.ai/wp-content/uploads/2025/01/WB_NeptuneScale.png)
-* W&B Run Overview can be recreated using Neptune's [custom dashboards](https://docs-beta.neptune.ai/custom_dashboard/)
-
+* W&B Run Overview can be recreated using Neptune's [custom dashboards][docs-custom-dashboards]
 
 ## Support and feedback
 
@@ -72,3 +71,11 @@ Licensed under the Apache License, Version 2.0 (the "License"); you may not use 
 
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and limitations under the License.
+
+
+[docs-charts]: https://docs.neptune.ai/charts/
+[docs-custom-dashboards]: https://docs.neptune.ai/custom_dashboard/
+[docs-custom-views]: https://docs.neptune.ai/runs_table#custom-views
+[docs-project-access]: https://docs.neptune.ai/project_access
+[docs-reports]: https://docs.neptune.ai/reports/
+[docs-setup]: https://docs.neptune.ai/setup

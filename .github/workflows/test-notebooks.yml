@@ -22,6 +22,7 @@ jobs:
         notebooks: # Add in alphabetical order
           - how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
           - how-to-guides/debug-model-training-runs/debug_training_runs.ipynb
+          - how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
         os: ["${{ inputs.os }}"]
     steps:
       - uses: actions/checkout@main
