@@ -1,6 +1,5 @@
 import math
 from datetime import datetime
-from uuid import uuid4
 
 import torch
 import torch.nn as nn
@@ -72,7 +71,8 @@ trainloader = torch.utils.data.DataLoader(
 )
 
 if __name__ == "__main__":
-    run = Run(run_id=f"hpo-{uuid4()}")
+    run = Run()
+    print(f"Neptune run created 🎉\nAccess at {run.get_run_url()}")
 
     run.add_tags(["all-trials", "script"])
 
