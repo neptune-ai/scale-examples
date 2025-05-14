@@ -21,7 +21,7 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         notebooks: # Add in alphabetical order
           - how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
-          - integrations-and-supported-tools/pytorch/notebooks/pytorch_text_model_debugging.ipynb
+          - how-to-guides/forking-long-runs/fork_long_training_runs.ipynb
         os: ["${{ inputs.os }}"]
     steps:
       - uses: actions/checkout@main
