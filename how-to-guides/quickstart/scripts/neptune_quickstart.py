@@ -95,6 +95,15 @@ def main():
             step=step,
         )
 
+    # Upload single file to Neptune
+    run.assign_files({"files/single_image": "sample.png"})
+
+    # Log custom string series
+    run.log_string_series(
+        data={"custom_messages/errors": "Job failed", "custom_messages/info": "Training completed"},
+        step=5,
+    )
+
     run.close()
 
 
