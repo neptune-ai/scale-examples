@@ -99,10 +99,15 @@ def main():
     run.assign_files({"files/single_image": "sample.png"})
 
     # Log custom string series
-    run.log_string_series(
-        data={"custom_messages/errors": "Job failed", "custom_messages/info": "Training completed"},
-        step=5,
-    )
+    for step in range(1, 10):
+
+        run.log_string_series(
+            data={
+                "custom_messages/errors": f"Job failed - step {step}",
+                "custom_messages/info": f"Training completed - step {step}",
+            },
+            step=step,
+        )
 
     run.close()
 
