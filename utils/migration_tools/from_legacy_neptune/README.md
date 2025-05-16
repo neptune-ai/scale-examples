@@ -83,13 +83,6 @@ python runs_migrator.py \
 
 ---
 
-## Instructions
-
-1. Execute `runs_migrator.py` with the required arguments (see Quick Start).
-1. The script will generate run logs in the working directory. You can modify this location by editing the `setup_logging()` function.
-
----
-
 ## Troubleshooting
 
 - **Project not found:** Ensure the `--legacy-project` is in the correct format and exists in your legacy workspace.
