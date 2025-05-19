@@ -40,7 +40,7 @@ python runs_migrator.py \
 | `-w`, `--new-workspace` | Yes | Name of the new workspace in Neptune 3.x. |
 | `--new-project` | No | Name of the new project in the format `PROJECT_NAME`. Project will be created if it does not already exist. If not provided, the project name will be the same as the legacy project name. |
 | `-q`, `--query` | No | Query filter for runs to be copied ([NQL syntax](https://docs-legacy.neptune.ai/usage/nql/)). |
-| `--max-workers` | No | Maximum number of parallel workers to use for copying runs. Defaults to using ThreadPoolExecutor's default. |
+| `--max-workers` | No | Maximum number of parallel workers to use for copying runs. Defaults to ThreadPoolExecutor’s default. See [ThreadPoolExecutor](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor) for details. |
 
 ---
 
@@ -53,11 +53,11 @@ python runs_migrator.py \
     - All `sys` fields (except a few) are copied to the `legacy_sys` namespace.
   - Files are first downloaded to a temporary directory and then uploaded to the new run.
     - Temporary files are stored in a `.tmp_*` directory for troubleshooting. You can delete this folder after verifying the migration. Ensure that you have sufficient space to store the temporary files.
-  - Unsupported metadata (see Caveats) is skipped.
+  - Unsupported metadata (see Notes and Limitations) is skipped.
 
 ---
 
-## Caveats and Limitations
+## Notes and Limitations
 - Runs can be copied only one project at a time.
 - If a new project name is not provided and a project with the same key as the source project already exists in the new workspace, the script will silently fail.
 - Avoid creating new runs in the source project while the script is running as these might not be copied.
