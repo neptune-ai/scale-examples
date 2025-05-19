@@ -81,11 +81,11 @@ python runs_migrator.py \
 ---
 
 ## Post-migration checklist
-[ ] Review the logs for any errors. They also contain the URLs of both the source and target runs.  
-[ ] Add users to the new project and assign them relevant roles.
-[ ] Add project description.
-[ ] Recreate [saved views](https://docs.neptune.ai/runs_table/#custom-views), [dashboards](https://docs.neptune.ai/custom_dashboard/), and [reports](https://docs.neptune.ai/reports/) in the new project.
-[ ] Delete the `.tmp_*` folder in the working directory after verifying the migration.
+- [ ] Review the logs for any errors. They also contain the URLs of both the source and target runs.  
+- [ ] Add users to the new project and assign them relevant roles.
+- [ ] Add project description.
+- [ ] Recreate [saved views](https://docs.neptune.ai/runs_table/#custom-views), [dashboards](https://docs.neptune.ai/custom_dashboard/), and [reports](https://docs.neptune.ai/reports/) in the new project.
+- [ ] Delete the `.tmp_*` folder in the working directory after verifying the migration.
 
 ---
 
