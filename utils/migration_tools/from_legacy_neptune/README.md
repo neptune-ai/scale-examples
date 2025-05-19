@@ -63,25 +63,26 @@ python runs_migrator.py \
 - Avoid creating new runs in the source project while the script is running as these might not be copied.
 - Timestamp values appended to each step of series metrics are in the local timezone of the script execution environment. This can lead to variations between the source and target run charts if the X-axis is set to relative time and the source run was created in a different timezone.
 
-### The following metadata are not copied at all
+### The following metadata are not copied in the same format
+- If the source run does not have a `custom_run_id`, the source run id (`sys/id`) will be used instead as the `run_id` of the target run
+- The `monitoring` namespace in the source run is copied to the `runtime` namespace in the target run
+- All `sys` fields except `state`, `description`, `name`, `custom_run_id`, `tags`, and `group_tags` are copied to the `legacy_sys` namespace
+- `sys/running_time` and `sys/monitoring_time` are copied to `legacy_sys/running_time` and `legacy_sys/monitoring_time` respectively as floats in seconds
+- `sys/size` is copied to `legacy_sys/size` as an integer in bytes
+
+### The following metadata are not copied or supported yet
 - Project description and members
 - Project and model metadata
 - Artifacts†
-- FileSet (including source code)†
-- All FileSeries objects†
+- FileSet (including source code)*
+- All FileSeries objects*
   - Once FileSeries are supported in Neptune 3.x, the custom steps and descriptions of files in FileSeries will still not be copied
 - Attributes:
   - Run state: `sys/state`
   - Git info: `source_code/git`
 
-† Support for these will be added in future releases.
+<sup>*</sup> Support for these will be added in upcoming releases.
 
-### The following metadata are not copied in the same format
-- The `monitoring` namespace in the source run is copied to the `runtime` namespace in the target run
-- All `sys` fields except `state`, `description`, `name`, `custom_run_id`, `tags`, and `group_tags` are copied to the `legacy_sys` namespace
-- If the source run does not have a `custom_run_id`, the source run id (`sys/id`) will be used instead as the `run_id` of the target run
-- `sys/running_time` and `sys/monitoring_time` are copied to `legacy_sys/running_time` and `legacy_sys/monitoring_time` respectively as floats in seconds
-- `sys/size` is copied to `legacy_sys/size` as an integer in bytes
 
 ---
 
@@ -90,7 +91,7 @@ python runs_migrator.py \
 [ ] Review the logs for any errors. They also contain the URLs of both the source and target runs.  
 [ ] Add users to the new project and assign them relevant roles  
 [ ] Add project description  
-[ ] Recreate saved views, dashboards, and reports in the new project  
+[ ] Recreate [saved views](https://docs.neptune.ai/runs_table/#custom-views), [dashboards](https://docs.neptune.ai/custom_dashboard/), and [reports](https://docs.neptune.ai/reports/) in the new project  
 [ ] Delete the `.tmp_{PROJECT_NAME}_migration_%Y%m%d%H%M%S` folder in the working directory after verifying the migration  
 
 ---
