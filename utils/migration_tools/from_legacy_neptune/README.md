@@ -92,7 +92,7 @@ python runs_migrator.py \
 [ ] Add users to the new project and assign them relevant roles  
 [ ] Add project description  
 [ ] Recreate [saved views](https://docs.neptune.ai/runs_table/#custom-views), [dashboards](https://docs.neptune.ai/custom_dashboard/), and [reports](https://docs.neptune.ai/reports/) in the new project  
-[ ] Delete the `.tmp_{PROJECT_NAME}_migration_%Y%m%d%H%M%S` folder in the working directory after verifying the migration  
+[ ] Delete the `.tmp_*` folder in the working directory after verifying the migration  
 
 ---
 
