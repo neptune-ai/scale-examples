@@ -17,7 +17,6 @@ This script helps you copy runs from Neptune Legacy (2.x) to Neptune (3.x).
 
 ---
 
-## Quick Start
 ## Quickstart
 ```bash
 python runs_migrator.py \
@@ -37,15 +36,12 @@ python runs_migrator.py \
 | `--new-token` | Yes | API token for the new Neptune workspace (3.x). |
 | `--legacy-project` | Yes | Name of the legacy project in the format `WORKSPACE_NAME/PROJECT_NAME`. |
 | `-w`, `--new-workspace` | Yes | Name of the new workspace in Neptune 3.x. |
-| `--new-project` | No | Name of the new project in the format `PROJECT_NAME`. Project will be created if it does not already exist. If not provided, the project name will be the same as the legacy project name. |
 | `--new-project` | No | Name of the new project in the format `PROJECT_NAME`. The project will be created if it doesn't already exist. If not provided, the project name will be the same as the legacy project name. |
 | `--max-workers` | No | Maximum number of parallel workers to use for copying runs. Defaults to ThreadPoolExecutor’s default. See [ThreadPoolExecutor](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor) for details. |
 
 ---
 
-## How It Works
 ## How it works
-- The target project is created in the new workspace if it does not already exist.
 - The target project is created in the new workspace if it doesn't already exist.
   - Metrics and parameters are copied from memory
     - The `monitoring/` namespace in the source run is copied to the `runtime/` namespace in the target run.
@@ -56,26 +52,25 @@ python runs_migrator.py \
 
 ---
 
-## Notes and Limitations
-- Runs can be copied only one project at a time.
-- If a new project name is not provided and a project with the same key as the source project already exists in the new workspace, the script will silently fail.
+## Notes and limitations
+- Runs can be copied only from one project at a time.
+- If a new project name isn't provided and a project with the same key as the source project already exists in the new workspace, the script will silently fail.  
 - Avoid creating new runs in the source project while the script is running as these might not be copied.
 - Timestamp values appended to each step of series metrics are in the local timezone of the script execution environment. This can lead to variations between the source and target run charts if the X-axis is set to relative time and the source run was created in a different timezone.
 
-### The following metadata are not copied in the same format
+### Metadata that isn't copied in the same format
 - If the source run does not have a `custom_run_id`, the source run id (`sys/id`) will be used instead as the `run_id` of the target run
 - The `monitoring` namespace in the source run is copied to the `runtime` namespace in the target run
 - All `sys` attributes except `state`, `description`, `name`, `custom_run_id`, `tags`, and `group_tags` are copied to the `legacy_sys` namespace
 - `sys/running_time` and `sys/monitoring_time` are copied to `legacy_sys/running_time` and `legacy_sys/monitoring_time` respectively as floats in seconds
 - `sys/size` is copied to `legacy_sys/size` as an integer in bytes
 
-### The following metadata are not copied or supported yet
+### Data that isn't copied at all or supported yet
 - Project description and members
 - Project and model metadata
 - Artifacts†
 - FileSet (including source code)*
 - All FileSeries objects*
-  - Once FileSeries are supported in Neptune 3.x, the custom steps and descriptions of files in FileSeries will still not be copied
   - Once FileSeries are supported in Neptune 3.x, the custom steps and descriptions of files in FileSeries still won't be copied
   - Run state: `sys/state`
   - Git info: `source_code/git`
@@ -85,13 +80,12 @@ python runs_migrator.py \
 
 ---
 
-## Post-Migration Checklist
 ## Post-migration checklist
 [ ] Review the logs for any errors. They also contain the URLs of both the source and target runs.  
-[ ] Add users to the new project and assign them relevant roles  
-[ ] Add project description  
-[ ] Recreate [saved views](https://docs.neptune.ai/runs_table/#custom-views), [dashboards](https://docs.neptune.ai/custom_dashboard/), and [reports](https://docs.neptune.ai/reports/) in the new project  
-[ ] Delete the `.tmp_*` folder in the working directory after verifying the migration  
+[ ] Add users to the new project and assign them relevant roles.
+[ ] Add project description.
+[ ] Recreate [saved views](https://docs.neptune.ai/runs_table/#custom-views), [dashboards](https://docs.neptune.ai/custom_dashboard/), and [reports](https://docs.neptune.ai/reports/) in the new project.
+[ ] Delete the `.tmp_*` folder in the working directory after verifying the migration.
 
 ---
 
@@ -117,7 +111,6 @@ A: Use the `--query` argument with [NQL syntax](https://docs-legacy.neptune.ai/u
 
 ---
 
-## Documentation
 ## Documentation
 
 - [Neptune 2.x documentation](https://docs-legacy.neptune.ai/)
