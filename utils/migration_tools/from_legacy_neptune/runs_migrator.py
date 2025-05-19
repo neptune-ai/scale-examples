@@ -408,7 +408,7 @@ def fetch_args() -> argparse.Namespace:
         "--new-project",
         type=str,
         default=None,
-        help="New project name (without workspace name). Project will be created if it does not already exist. If not provided, the project name will be the same as the legacy project name.",
+        help="The project will be created if it doesn't already exist. If not provided, the project name will be the same as the legacy project name.",
     )
     parser.add_argument(
         "-q",

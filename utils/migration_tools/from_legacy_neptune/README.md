@@ -9,8 +9,7 @@ This script helps you copy runs from Neptune Legacy (2.x) to Neptune (3.x).
 ---
 
 ## Prerequisites
-- A Neptune 2.x workspace with runs to migrate.
-- A Neptune 3.x workspace with write access to migrate the runs to.
+- A workspace in Neptune 3.x, and an API token that has access to the workspace.
 - Latest versions of the `neptune-scale` and `neptune` Python packages installed:
   ```bash
   pip install -U neptune-scale neptune
@@ -19,7 +18,7 @@ This script helps you copy runs from Neptune Legacy (2.x) to Neptune (3.x).
 ---
 
 ## Quick Start
-
+## Quickstart
 ```bash
 python runs_migrator.py \
   --legacy-token <NEPTUNE_2.X_API_TOKEN> \
@@ -39,18 +38,18 @@ python runs_migrator.py \
 | `--legacy-project` | Yes | Name of the legacy project in the format `WORKSPACE_NAME/PROJECT_NAME`. |
 | `-w`, `--new-workspace` | Yes | Name of the new workspace in Neptune 3.x. |
 | `--new-project` | No | Name of the new project in the format `PROJECT_NAME`. Project will be created if it does not already exist. If not provided, the project name will be the same as the legacy project name. |
-| `-q`, `--query` | No | Query filter for runs to be copied ([NQL syntax](https://docs-legacy.neptune.ai/usage/nql/)). |
+| `--new-project` | No | Name of the new project in the format `PROJECT_NAME`. The project will be created if it doesn't already exist. If not provided, the project name will be the same as the legacy project name. |
 | `--max-workers` | No | Maximum number of parallel workers to use for copying runs. Defaults to ThreadPoolExecutor’s default. See [ThreadPoolExecutor](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor) for details. |
 
 ---
 
 ## How It Works
-
+## How it works
 - The target project is created in the new workspace if it does not already exist.
-- All runs that match the query are copied from the legacy project to the new project.
+- The target project is created in the new workspace if it doesn't already exist.
   - Metrics and parameters are copied from memory
     - The `monitoring/` namespace in the source run is copied to the `runtime/` namespace in the target run.
-    - All `sys` fields (except a few) are copied to the `legacy_sys` namespace.
+    - Most `sys` attributes are copied to the `legacy_sys` namespace. For details, see [Notes and Limitations](#notes-and-limitations).
   - Files are first downloaded to a temporary directory and then uploaded to the new run.
     - Temporary files are stored in a `.tmp_*` directory for troubleshooting. You can delete this folder after verifying the migration. Ensure that you have sufficient space to store the temporary files.
   - Unsupported metadata (see Notes and Limitations) is skipped.
@@ -66,7 +65,7 @@ python runs_migrator.py \
 ### The following metadata are not copied in the same format
 - If the source run does not have a `custom_run_id`, the source run id (`sys/id`) will be used instead as the `run_id` of the target run
 - The `monitoring` namespace in the source run is copied to the `runtime` namespace in the target run
-- All `sys` fields except `state`, `description`, `name`, `custom_run_id`, `tags`, and `group_tags` are copied to the `legacy_sys` namespace
+- All `sys` attributes except `state`, `description`, `name`, `custom_run_id`, `tags`, and `group_tags` are copied to the `legacy_sys` namespace
 - `sys/running_time` and `sys/monitoring_time` are copied to `legacy_sys/running_time` and `legacy_sys/monitoring_time` respectively as floats in seconds
 - `sys/size` is copied to `legacy_sys/size` as an integer in bytes
 
@@ -77,7 +76,7 @@ python runs_migrator.py \
 - FileSet (including source code)*
 - All FileSeries objects*
   - Once FileSeries are supported in Neptune 3.x, the custom steps and descriptions of files in FileSeries will still not be copied
-- Attributes:
+  - Once FileSeries are supported in Neptune 3.x, the custom steps and descriptions of files in FileSeries still won't be copied
   - Run state: `sys/state`
   - Git info: `source_code/git`
 
@@ -87,7 +86,7 @@ python runs_migrator.py \
 ---
 
 ## Post-Migration Checklist
-
+## Post-migration checklist
 [ ] Review the logs for any errors. They also contain the URLs of both the source and target runs.  
 [ ] Add users to the new project and assign them relevant roles  
 [ ] Add project description  
@@ -108,10 +107,10 @@ python runs_migrator.py \
 ## FAQ
 
 **Q: Can I rerun the script if it fails?**  
-A: Yes, the script is idempotent for already-migrated runs.
+A: Yes, runs already migrated will not be duplicated.
 
 **Q: Are artifacts and files copied?**  
-A: Not yet. See the Caveats section for details.
+A: Not yet. See the [Notes and Limitations](#notes-and-limitations) section for details.
 
 **Q: How do I filter which runs to migrate?**  
 A: Use the `--query` argument with [NQL syntax](https://docs-legacy.neptune.ai/usage/nql/).
@@ -119,15 +118,15 @@ A: Use the `--query` argument with [NQL syntax](https://docs-legacy.neptune.ai/u
 ---
 
 ## Documentation
+## Documentation
 
-- [Neptune 2.x Documentation](https://docs-legacy.neptune.ai/)
-- [Neptune 3.x Documentation](https://docs.neptune.ai/)
-- [NQL Query Syntax](https://docs-legacy.neptune.ai/usage/nql/)
+- [Neptune 2.x documentation](https://docs-legacy.neptune.ai/)
+- [Neptune 3.x documentation](https://docs.neptune.ai/)
+- [NQL query syntax](https://docs-legacy.neptune.ai/usage/nql/)
 
 ---
 
-## Support and Feedback
-
+## Support and feedback
 We welcome your feedback and contributions to help improve the script. Please submit any issues or feature requests as [GitHub Issues](https://github.com/neptune-ai/scale-examples/issues).
 
 For help, reach out via our support channels:
