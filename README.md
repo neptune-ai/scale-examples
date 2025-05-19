@@ -27,7 +27,7 @@ This repo contains tutorials and examples of how to use Neptune.
 |                                         | Docs                         | GitHub                            |
 | --------------------------------------- | -----------------------------| --------------------------------- |
 | Import runs from Weights & Biases       | [![docs-icon]][from-wandb]   | [![github-icon]][from-wandb-code] |
-| Migrate code from Neptune Legacy client | [![docs-icon]][from-legacy]  |                                   |
+| Migrate code from Neptune Legacy client | [![docs-icon]][from-legacy]  | [![github-icon]][from-legacy-code] |
 
 ## Can't find what you're looking for?
 
@@ -38,6 +38,7 @@ This repo contains tutorials and examples of how to use Neptune.
 
 <!-- Internal -->
 [from-wandb-code]: utils/migration_tools/from_wandb/
+[from-legacy-code]: utils/migration_tools/from_legacy_neptune/
 [hpo-notebook]: how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [hpo-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [qs-notebook]: how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
