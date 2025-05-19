@@ -58,17 +58,17 @@ python runs_migrator.py \
 - Avoid creating new runs in the source project while the script is running as these might not be copied.
 - Timestamp values appended to each step of series metrics are in the local timezone of the script execution environment. This can lead to variations between the source and target run charts if the X-axis is set to relative time and the source run was created in a different timezone.
 
-### Metadata that isn't copied in the same format
-- If the source run does not have a `custom_run_id`, the source run id (`sys/id`) will be used instead as the `run_id` of the target run
+### Data that isn't copied in the same format
+- If the source run doesn't have a `custom_run_id`, the source run ID (`sys/id`) will be used instead as the `run_id` of the target run
 - The `monitoring` namespace in the source run is copied to the `runtime` namespace in the target run
 - All `sys` attributes except `state`, `description`, `name`, `custom_run_id`, `tags`, and `group_tags` are copied to the `legacy_sys` namespace
 - `sys/running_time` and `sys/monitoring_time` are copied to `legacy_sys/running_time` and `legacy_sys/monitoring_time` respectively as floats in seconds
 - `sys/size` is copied to `legacy_sys/size` as an integer in bytes
 
-### Data that isn't copied at all or supported yet
+### Data that isn't copied
 - Project description and members
 - Project and model metadata
-- Artifacts†
+- Artifacts*
 - FileSet (including source code)*
 - All FileSeries objects*
   - Once FileSeries are supported in Neptune 3.x, the custom steps and descriptions of files in FileSeries still won't be copied
