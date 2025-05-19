@@ -6,14 +6,20 @@ This script helps you copy runs from Neptune Legacy (2.x) to Neptune (3.x).
 ## Changelog
 - 2025-05-19 - Initial release
 
+---
+
+## Prerequisites
+- A Neptune 2.x workspace with runs to migrate.
+- A Neptune 3.x workspace with write access to migrate the runs to.
+- Latest versions of the `neptune-scale` and `neptune` Python packages installed:
+  ```bash
+  pip install -U neptune-scale neptune
+  ```
+
+---
+
 ## Quick Start
 
-Install the required packages:
-```bash
-pip install -U neptune-scale neptune
-```
-
-Run the migration script:
 ```bash
 python runs_migrator.py \
   --legacy-token <NEPTUNE_2.X_API_TOKEN> \
@@ -26,23 +32,15 @@ python runs_migrator.py \
 
 ## Arguments
 
-- `--legacy-token` (required): API token for the legacy Neptune workspace (2.x).
-- `--new-token` (required): API token for the new Neptune workspace (3.x).
-- `--legacy-project` (required): Name of the legacy project in the format `WORKSPACE_NAME/PROJECT_NAME`.
-- `--new-workspace` (required): Name of the new workspace in Neptune 3.x.
-- `--new-project` (optional): Name of the new project in the format `PROJECT_NAME`. Project will be created if it does not already exist. If not provided, the project name will be the same as the legacy project name.
-- `--query` (optional): Query filter for runs to be copied ([NQL syntax](https://docs-legacy.neptune.ai/usage/nql/)).
-- `--max-workers` (optional): Maximum number of parallel workers to use for copying runs. Defaults to using ThreadPoolExecutor's default.
-
----
-
-## Prerequisites
-- A Neptune 2.x workspace with runs to migrate.
-- A Neptune 3.x workspace with write access to migrate the runs to.
-- Latest versions of the `neptune-scale` and `neptune` Python packages installed:
-  ```bash
-  pip install -U neptune-scale neptune
-  ```
+| Argument | Required | Description |
+| --- | --- | --- |
+| `--legacy-token` | Yes | API token for the legacy Neptune workspace (2.x). |
+| `--new-token` | Yes | API token for the new Neptune workspace (3.x). |
+| `--legacy-project` | Yes | Name of the legacy project in the format `WORKSPACE_NAME/PROJECT_NAME`. |
+| `-w`, `--new-workspace` | Yes | Name of the new workspace in Neptune 3.x. |
+| `--new-project` | No | Name of the new project in the format `PROJECT_NAME`. Project will be created if it does not already exist. If not provided, the project name will be the same as the legacy project name. |
+| `-q`, `--query` | No | Query filter for runs to be copied ([NQL syntax](https://docs-legacy.neptune.ai/usage/nql/)). |
+| `--max-workers` | No | Maximum number of parallel workers to use for copying runs. Defaults to using ThreadPoolExecutor's default. |
 
 ---
 
@@ -87,6 +85,16 @@ python runs_migrator.py \
 
 ---
 
+## Post-Migration Checklist
+
+[ ] Review the logs for any errors. They also contain the URLs of both the source and target runs.  
+[ ] Add users to the new project and assign them relevant roles  
+[ ] Add project description  
+[ ] Recreate saved views, dashboards, and reports in the new project  
+[ ] Delete the `.tmp_{PROJECT_NAME}_migration_%Y%m%d%H%M%S` folder in the working directory after verifying the migration  
+
+---
+
 ## Troubleshooting
 
 - **Project not found:** Ensure the `--legacy-project` is in the correct format and exists in your legacy workspace.
@@ -114,16 +122,6 @@ A: Use the `--query` argument with [NQL syntax](https://docs-legacy.neptune.ai/u
 - [Neptune 2.x Documentation](https://docs-legacy.neptune.ai/)
 - [Neptune 3.x Documentation](https://docs.neptune.ai/)
 - [NQL Query Syntax](https://docs-legacy.neptune.ai/usage/nql/)
-
----
-
-## Post-Migration Checklist
-
-[ ] Review the logs for any errors. They also contain the URLs of both the source and target runs.  
-[ ] Add users to the new project and assign them relevant roles  
-[ ] Add project description  
-[ ] Recreate saved views, dashboards, and reports in the new project  
-[ ] Delete the `.tmp_{PROJECT_NAME}_migration_%Y%m%d%H%M%S` folder in the working directory after verifying the migration  
 
 ---
 
