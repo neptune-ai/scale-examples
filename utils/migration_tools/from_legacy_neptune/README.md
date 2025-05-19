@@ -4,7 +4,7 @@ This script helps you copy runs from Neptune Legacy (2.x) to Neptune (3.x).
 
 ---
 ## Changelog
-- 2025-05-16 - Initial release
+- 2025-05-19 - Initial release
 
 ## Quick Start
 
@@ -28,8 +28,9 @@ python runs_migrator.py \
 
 - `--legacy-token` (required): API token for the legacy Neptune workspace (2.x).
 - `--new-token` (required): API token for the new Neptune workspace (3.x).
-- `--new-workspace` (required): Name of the new workspace in Neptune 3.x.
 - `--legacy-project` (required): Name of the legacy project in the format `WORKSPACE_NAME/PROJECT_NAME`.
+- `--new-workspace` (required): Name of the new workspace in Neptune 3.x.
+- `--new-project` (optional): Name of the new project in the format `PROJECT_NAME`. Project will be created if it does not already exist. If not provided, the project name will be the same as the legacy project name.
 - `--query` (optional): Query filter for runs to be copied ([NQL syntax](https://docs-legacy.neptune.ai/usage/nql/)).
 - `--max-workers` (optional): Maximum number of parallel workers to use for copying runs. Defaults to using ThreadPoolExecutor's default.
 
@@ -38,26 +39,29 @@ python runs_migrator.py \
 ## Prerequisites
 - A Neptune 2.x workspace with runs to migrate.
 - A Neptune 3.x workspace with write access to migrate the runs to.
-- Latest versions of the `neptune-scale` and `neptune` Python packages installed.
+- Latest versions of the `neptune-scale` and `neptune` Python packages installed:
+  ```bash
+  pip install -U neptune-scale neptune
+  ```
 
 ---
 
 ## How It Works
 
-- Runs are copied from the legacy project to a project with the same name, key and visibility in the new workspace.
-- The script fetches all runs from the specified legacy project that match the query.
-- For each run, it copies supported metadata and metrics to a new run in the target workspace/project.
-- **Namespace mapping:**
-  - The `monitoring/` namespace in the source run is copied to the `runtime/` namespace in the target run.
-  - All `sys` fields (except a few) are copied to the `legacy_sys` namespace.
-- Unsupported metadata (see Caveats) is skipped.
-- Temporary files are stored in a `.tmp_*` directory for troubleshooting. You can delete this folder after verifying the migration.
+- The target project is created in the new workspace if it does not already exist.
+- All runs that match the query are copied from the legacy project to the new project.
+  - Metrics and parameters are copied from memory
+    - The `monitoring/` namespace in the source run is copied to the `runtime/` namespace in the target run.
+    - All `sys` fields (except a few) are copied to the `legacy_sys` namespace.
+  - Files are first downloaded to a temporary directory and then uploaded to the new run.
+    - Temporary files are stored in a `.tmp_*` directory for troubleshooting. You can delete this folder after verifying the migration. Ensure that you have sufficient space to store the temporary files.
+  - Unsupported metadata (see Caveats) is skipped.
 
 ---
 
 ## Caveats and Limitations
 - Runs can be copied only one project at a time.
-- If a project with the same key as the source project already exists in the new workspace, the script will silently fail.
+- If a new project name is not provided and a project with the same key as the source project already exists in the new workspace, the script will silently fail.
 - Avoid creating new runs in the source project while the script is running as these might not be copied.
 - Timestamp values appended to each step of series metrics are in the local timezone of the script execution environment. This can lead to variations between the source and target run charts if the X-axis is set to relative time and the source run was created in a different timezone.
 

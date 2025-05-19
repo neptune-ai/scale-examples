@@ -16,12 +16,6 @@
 # Instructions on how to use this script can be found at
 # https://github.com/neptune-ai/scale-examples/blob/main/utils/migration_tools/from_legacy_neptune/README.md
 
-# TODO: Check the following cases:
-# - 1 run copied using 1 worker
-# - 1 run copied using multiple workers
-# - Multiple runs copied using 1 worker
-# - Multiple runs copied using multiple workers
-
 import argparse
 import base64
 import contextlib
@@ -45,21 +39,28 @@ from neptune.exceptions import MetadataInconsistency, MissingFieldException
 from neptune.types import File
 from neptune_scale import Run
 from neptune_scale.exceptions import (
+    NeptuneAttributePathNonWritable,
     NeptuneSeriesStepNonIncreasing,
     NeptuneSeriesTimestampDecreasing,
 )
 from neptune_scale.projects import create_project
 from tqdm.auto import tqdm
 
-logging.getLogger("httpx").setLevel(logging.ERROR)
-logging.getLogger("urllib3").setLevel(logging.ERROR)
-logging.getLogger("neptune").setLevel(logging.ERROR)
-logging.getLogger("neptune_scale").setLevel(logging.ERROR)
+for logger in [
+    "httpx",
+    "urllib3",
+    "requests",
+    "neptune",
+    "azure.core.pipeline.policies.http_logging_policy",
+    "neptune_scale",
+]:
+    logging.getLogger(logger).setLevel(logging.ERROR)
 
 READ_ONLY_NAMESPACES = {
     "sys/id",
     "sys/modification_time",
     "sys/monitoring_time",
+    "sys/name",
     "sys/owner",
     "sys/ping_time",
     "sys/running_time",
@@ -67,7 +68,8 @@ READ_ONLY_NAMESPACES = {
     "sys/trashed",
 }
 
-UNFETCHABLE_NAMESPACES = {
+UNCOPYABLE_NAMESPACES = {
+    "sys/creation_time",
     "sys/state",
     "source_code/git",
 }
@@ -131,7 +133,7 @@ def setup_logging(project: str) -> tuple[logging.Logger, str]:
     logging.basicConfig(
         filename=log_filename,
         filemode="a",
-        format="%(asctime)s\t%(levelname)s\t%(message)s",
+        format="%(asctime)s %(funcName)-20s %(levelname)-8s %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         level=logging.INFO,
         force=True,
@@ -290,7 +292,7 @@ def copy_metadata(
     _local_path = os.path.join(tmpdirname, object_id)
 
     for namespace in namespaces:
-        if namespace in UNFETCHABLE_NAMESPACES:
+        if namespace in UNCOPYABLE_NAMESPACES:
             continue
 
         mapped_namespace = map_namespace(namespace)
@@ -330,9 +332,24 @@ def init_target_run(
     source_run: neptune.Run, args: argparse.Namespace, logger: logging.Logger
 ) -> Run:
     def _error_callback(exc: BaseException, ts: Optional[float]) -> None:
-        if isinstance(exc, (NeptuneSeriesStepNonIncreasing, NeptuneSeriesTimestampDecreasing)):
-            logger.warning(f"Encountered {exc} error while copying {source_run['sys/id'].fetch()}")
+        if isinstance(
+            exc,
+            (
+                NeptuneSeriesStepNonIncreasing,
+                NeptuneSeriesTimestampDecreasing,
+                NeptuneAttributePathNonWritable,
+            ),
+        ):
+            logger.warning(
+                f"Encountered {exc.__class__.__name__} error while copying {source_run['sys/id'].fetch()}. Skipping affected attribute."
+            )
         else:
+            logger.exception(
+                f"""Encountered error while copying {source_run["sys/id"].fetch()}:
+{exc}
+Aborting copy of the run.
+                """
+            )
             target_run.close()
 
     custom_run_id = source_run["sys/id"].fetch()
@@ -341,7 +358,9 @@ def init_target_run(
 
     target_run = Run(
         run_id=custom_run_id,
-        project=f"{args.new_workspace}/{args.legacy_project.split('/')[1]}",
+        project=(
+            f"{args.new_workspace}/{args.new_project}" if args.new_project else args.legacy_project
+        ),
         api_token=args.new_token,
         creation_time=source_run["sys/creation_time"].fetch(),
         enable_console_log_capture=False,
@@ -373,6 +392,12 @@ def fetch_args() -> argparse.Namespace:
         "--new-token", type=str, required=True, help="API token for the new workspace"
     )
     parser.add_argument(
+        "--legacy-project",
+        type=str,
+        required=True,
+        help="Legacy project name (in WORKSPACE_NAME/PROJECT_NAME format)",
+    )
+    parser.add_argument(
         "-w",
         "--new-workspace",
         type=str,
@@ -380,11 +405,10 @@ def fetch_args() -> argparse.Namespace:
         help="New workspace name",
     )
     parser.add_argument(
-        "-p",
-        "--legacy-project",
+        "--new-project",
         type=str,
-        required=True,
-        help="Legacy project name (in WORKSPACE_NAME/PROJECT_NAME format)",
+        default=None,
+        help="New project name (without workspace name). Project will be created if it does not already exist. If not provided, the project name will be the same as the legacy project name.",
     )
     parser.add_argument(
         "-q",
@@ -415,15 +439,16 @@ def main():
     create_project(
         api_token=args.new_token,
         workspace=args.new_workspace,
-        name=args.legacy_project.split("/")[1],
-        key=legacy_project_details["key"],
+        name=args.new_project or args.legacy_project.split("/")[1],
+        key=None if args.new_project else legacy_project_details["key"],
         visibility=legacy_project_details["visibility"],
     )
-
+    if args.query:
+        logger.info(f"Filter query: {args.query}")
     logger.info(f"Source project URL: {legacy_project_details['url']}runs")
     scale_instance_url = json.loads(base64.urlsafe_b64decode(args.new_token))["api_url"]
     logger.info(
-        f"Target project URL: {scale_instance_url}/o/{args.new_workspace}/org/{args.legacy_project.split('/')[1]}/runs"
+        f"Target project URL: {scale_instance_url}/o/{args.new_workspace}/org/{args.new_project or args.legacy_project.split('/')[1]}/runs"
     )
 
     source_run_ids = fetch_source_runs(args.legacy_token, args.legacy_project, args.query)
@@ -450,7 +475,7 @@ def main():
             print("\nDone!")
     except Exception as e:
         logger.exception(f"Error during export: {e}")
-        print("\nError!")
+        print("\nError!", file=sys.stderr)
         raise e
 
     finally:
