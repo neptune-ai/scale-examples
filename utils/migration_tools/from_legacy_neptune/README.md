@@ -75,7 +75,7 @@ python runs_migrator.py \
   - Run state: `sys/state`
   - Git info: `source_code/git`
 
-<sup>*</sup> Support for these will be added in upcoming releases.
+\* Support for these will be added in upcoming releases.
 
 
 ---
