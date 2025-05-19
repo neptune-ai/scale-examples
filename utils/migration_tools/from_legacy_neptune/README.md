@@ -65,8 +65,8 @@ python runs_migrator.py \
 - FileSet (including source code)*
 - All FileSeries objects*
   - Once FileSeries are supported in Neptune 3.x, the custom steps and descriptions of files in FileSeries still won't be copied
-  - Run state: `sys/state`
-  - Git info: `source_code/git`
+- Run state: `sys/state`
+- Git info: `source_code/git`
 
 \* Support for these will be added in upcoming releases.
 
