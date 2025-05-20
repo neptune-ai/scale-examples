@@ -37,6 +37,7 @@ python runs_migrator.py \
 | `--legacy-project` | Yes | Name of the legacy project in the format `WORKSPACE_NAME/PROJECT_NAME`. |
 | `-w`, `--new-workspace` | Yes | Name of the new workspace in Neptune 3.x. |
 | `--new-project` | No | Name of the new project in the format `PROJECT_NAME`. The project will be created if it doesn't already exist. If not provided, the project name will be the same as the legacy project name. |
+| `-q`, `--query` | No | Query filter for runs to be copied, in [NQL](https://docs-legacy.neptune.ai/usage/nql/) syntax. |
 | `--max-workers` | No | Maximum number of parallel workers to use for copying runs. Defaults to ThreadPoolExecutor’s default. See [ThreadPoolExecutor](https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor) for details. |
 
 ---
