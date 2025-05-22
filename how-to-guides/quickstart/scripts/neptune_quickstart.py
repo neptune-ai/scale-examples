@@ -96,7 +96,24 @@ def main():
         )
 
     # Upload single file to Neptune
-    run.assign_files({"files/single_image": "sample.png"})
+    run.assign_files(
+        {
+            "files/single/image": "sample.png",
+            "files/single/video": "../data_examples/elephant.wav",
+            "files/single/audio": "../data_examples/t-rex.mp3",
+        }
+    )
+
+    # Upload a series of files to Neptune
+    for step in range(1, 10):
+        run.log_files(
+            files={
+                "files/series/image": "sample.png",
+                "files/series/video": "../data_examples/elephant.wav",
+                "files/series/audio": "../data_examples/t-rex.mp3",
+            },
+            step=step,
+        )
 
     # Log custom string series
     for step in range(1, 10):
