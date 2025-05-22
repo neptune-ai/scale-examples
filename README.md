@@ -21,6 +21,7 @@ This repo contains tutorials and examples of how to use Neptune.
 | Organize and filter runs        | [![docs-icon]][runs-table]   | [![neptune-icon]][runs-table-example]   |                                |                            |
 | Resume run or other object      | [![docs-icon]][resume-run]   |                                         |                                |                            |
 | Use Neptune in HPO jobs         | [![docs-icon]][hpo]          | [![neptune-icon]][hpo-example]          | [![github-icon]][hpo-notebook] | [![colab-icon]][hpo-colab] |
+| Debug training runs             | [![docs-icon]][debug]        | [![neptune-icon]][debug-example]        | [![github-icon]][debug-notebook] | [![colab-icon]][debug-colab] |
 
 ### Migration tools
 
@@ -43,6 +44,8 @@ This repo contains tutorials and examples of how to use Neptune.
 [hpo-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [qs-notebook]: how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 [qs-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
+[debug-notebook]: how-to-guides/debug-model-training-runs/debug_training_runs.ipynb
+[debug-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/debug-model-training-runs/debug_training_runs.ipynb
 
 <!-- External -->
 [blog]: https://neptune.ai/blog
@@ -58,6 +61,8 @@ This repo contains tutorials and examples of how to use Neptune.
 [resume-run]: https://docs.neptune.ai/resume_run
 [runs-table]: https://docs.neptune.ai/runs_table
 [runs-table-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/table?viewId=9e746462-f045-4ff2-9ac4-e41fa349b04d&detailsTab=dashboard&dash=table&type=run&compare=auto-5
+[debug]: TODO - Add link to docs
+[debug-example]: TODO - Add link to final Neptune project "examples/debug-training-runs"
 
 <!-- Clickable icons -->
 [docs-icon]: https://neptune.ai/wp-content/uploads/2023/06/file_icon.svg "Read the documentation"
