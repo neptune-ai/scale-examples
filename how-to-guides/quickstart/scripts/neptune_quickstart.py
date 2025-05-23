@@ -99,7 +99,7 @@ def main():
     run.assign_files(
         {
             "files/single/image": "sample.png",
-            "files/single/video": "../data_examples/elephant.wav",
+            "files/single/video": "../data_examples/sac-rl.mp4",
             "files/single/audio": "../data_examples/t-rex.mp3",
         }
     )
@@ -109,7 +109,7 @@ def main():
         run.log_files(
             files={
                 "files/series/image": "sample.png",
-                "files/series/video": "../data_examples/elephant.wav",
+                "files/series/video": "../data_examples/sac-rl.mp4",
                 "files/series/audio": "../data_examples/t-rex.mp3",
             },
             step=step,
