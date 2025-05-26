@@ -1,5 +1,5 @@
 neptune_scale
-numpy
+numpy<"2.0.0"
 Pillow
 torch
 torchvision
