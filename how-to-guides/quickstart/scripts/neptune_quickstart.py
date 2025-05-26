@@ -2,9 +2,22 @@ from random import randint
 from typing import Literal
 
 import numpy as np
+import torch
 from neptune_scale import Run
+from PIL import Image
+from torchvision import datasets, transforms
 
 NUM_STEPS = 2000  # Determines how long the training will run for
+
+
+def tensor_to_pil_image(tensor):
+    """
+    Convert a PyTorch tensor to PIL Image format.
+    """
+    img_np = tensor.squeeze().numpy()
+    img_np = (img_np * 255).astype(np.uint8)
+
+    return Image.fromarray(img_np)
 
 
 def get_gradient_norm(layer: int, step: int) -> float:
@@ -72,7 +85,15 @@ def main():
         }
     )
 
-    for step in range(NUM_STEPS):
+    # Log a message at the beginning of the training
+    run.log_string_series(
+        data={
+            "status": "Starting training",
+        },
+        step=0,
+    )
+
+    for step in range(1, NUM_STEPS):
         train_accuracy, train_loss = training_step(step)
         valid_accuracy, valid_loss = validation_step(step)
         test_accuracy, test_loss = test_step(step)
@@ -95,23 +116,51 @@ def main():
             step=step,
         )
 
+        if step % 1000 == 0:
+            # Log a message every 1000 steps
+            run.log_string_series(
+                data={
+                    "status": f"Training at step {step}",
+                },
+                step=step,
+            )
+
+    # Log a final message
+    run.log_string_series(
+        data={
+            "status": "Training complete!",
+        },
+        step=10,
+    )
     # Upload single file to Neptune
     run.assign_files(
         {
             "files/single/image": "sample.png",
-            "files/single/video": "../data_examples/sac-rl.mp4",
-            "files/single/audio": "../data_examples/t-rex.mp3",
+            "files/single/video": "sac-rl.mp4",
+            "files/single/audio": "t-rex.mp3",
         }
     )
 
     # Upload a series of files to Neptune
+    import torch
+    from torchvision import datasets, transforms
+
+    train_dataset = datasets.MNIST(
+        root="./data",
+        train=True,
+        download=True,
+        transform=transforms.Compose([transforms.ToTensor()]),
+    )
+
+    # Upload a series of files to Neptune
     for step in range(1, 10):
+        img, label = train_dataset[step]
+        pil_img = tensor_to_pil_image(img)
+        # Save image to disk before upload
+        pil_img.save(f"sample_{step}_label_{label}.png")
+
         run.log_files(
-            files={
-                "files/series/image": "sample.png",
-                "files/series/video": "../data_examples/sac-rl.mp4",
-                "files/series/audio": "../data_examples/t-rex.mp3",
-            },
+            files={f"files/series/mnist_sample": f"sample_{step}_label_{label}.png"},
             step=step,
         )
 

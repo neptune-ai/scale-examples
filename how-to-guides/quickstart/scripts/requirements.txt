@@ -1,2 +1,6 @@
 neptune_scale
 numpy
+Pillow
+torch
+torchvision
+tqdm
