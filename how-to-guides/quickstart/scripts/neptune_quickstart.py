@@ -141,26 +141,26 @@ def main():
         }
     )
 
-    # Upload a series of files to Neptune
-    import torch
-    from torchvision import datasets, transforms
+    # Download sample MNIST dataset
+    import requests
 
-    train_dataset = datasets.MNIST(
-        root="./data",
-        train=True,
-        download=True,
-        transform=transforms.Compose([transforms.ToTensor()]),
-    )
+    for image_num in range(1, 10):
+        try:
+            response = requests.get(
+                f"https://neptune.ai/wp-content/uploads/2025/05/mnist_sample_{image_num}.png"
+            )
+            response.raise_for_status()
+            with open(f"mnist_sample_{image_num}.png", "wb") as f:
+                f.write(response.content)
+            print(f"Downloaded mnist_sample_{image_num}.png")
+        except Exception as e:
+            print(f"Failed to download mnist_sample_{image_num}.png: {e}")
 
     # Upload a series of files to Neptune
     for step in range(1, 10):
-        img, label = train_dataset[step]
-        pil_img = tensor_to_pil_image(img)
-        # Save image to disk before upload
-        pil_img.save(f"sample_{step}_label_{label}.png")
 
         run.log_files(
-            files={f"files/series/mnist_sample": f"sample_{step}_label_{label}.png"},
+            files={f"files/series/mnist_sample": f"mnist_sample_{step}.png"},
             step=step,
         )
 
