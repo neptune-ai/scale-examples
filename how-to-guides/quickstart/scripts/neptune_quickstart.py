@@ -3,7 +3,6 @@ from typing import Literal
 
 import numpy as np
 from neptune_scale import Run
-from PIL import Image
 
 NUM_STEPS = 2000  # Determines how long the training will run for
 
