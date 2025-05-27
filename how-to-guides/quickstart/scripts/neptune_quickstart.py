@@ -2,10 +2,8 @@ from random import randint
 from typing import Literal
 
 import numpy as np
-import torch
 from neptune_scale import Run
 from PIL import Image
-from torchvision import datasets, transforms
 
 NUM_STEPS = 2000  # Determines how long the training will run for
 
