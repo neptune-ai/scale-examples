@@ -1,2 +1,3 @@
 neptune_scale
+numpy
 tqdm
