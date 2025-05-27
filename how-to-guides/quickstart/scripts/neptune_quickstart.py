@@ -6,17 +6,6 @@ from neptune_scale import Run
 
 NUM_STEPS = 2000  # Determines how long the training will run for
 
-
-def tensor_to_pil_image(tensor):
-    """
-    Convert a PyTorch tensor to PIL Image format.
-    """
-    img_np = tensor.squeeze().numpy()
-    img_np = (img_np * 255).astype(np.uint8)
-
-    return Image.fromarray(img_np)
-
-
 def get_gradient_norm(layer: int, step: int) -> float:
     time_decay = 1.0 / (1.0 + step / 1000)
     layer_factor = np.exp(-0.5 * ((layer - 5) ** 2) / 4)
