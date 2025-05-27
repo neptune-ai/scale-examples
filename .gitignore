@@ -1,4 +1,9 @@
+# Temporary files
 .neptune
+.tmp*
 
 # Data files
 **ubyte**
+
+# Logs
+*.log

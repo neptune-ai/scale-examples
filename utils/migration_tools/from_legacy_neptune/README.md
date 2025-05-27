@@ -4,7 +4,9 @@ This script helps you copy runs from Neptune Legacy (2.x) to Neptune (3.x).
 
 ---
 ## Changelog
-- 2025-05-19 - Initial release
+
+- **2025-05-26** - Added FileSeries support
+- **2025-05-19** - Initial release
 
 ---
 
@@ -64,8 +66,7 @@ python runs_migrator.py \
 - Project and model metadata
 - Artifacts*
 - FileSet (including source code)*
-- All FileSeries objects*
-  - Once FileSeries are supported in Neptune 3.x, the custom steps and descriptions of files in FileSeries still won't be copied
+- Custom steps and descriptions of files in FileSeries
 - Run state: `sys/state`
 - Git info: `source_code/git`
 
@@ -103,7 +104,7 @@ python runs_migrator.py \
 **Q: Can I rerun the script if it fails?**  
 A: Yes, runs already migrated will not be duplicated.
 
-**Q: Are artifacts and files copied?**  
+**Q: Are artifacts copied?**  
 A: Not yet. See the [Notes and Limitations](#notes-and-limitations) section for details.
 
 **Q: How do I filter which runs to migrate?**  
