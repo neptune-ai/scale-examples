@@ -280,7 +280,7 @@ def copy_console_output(neptune_run: Run, download_path: str) -> None:  # type: 
     # with open(download_path) as f:
     #     for line in f:
     #         neptune_run["monitoring/stdout"].append(line)
-    raise NotImplementedError("Console logging is not implemented in Neptune Scale yet")
+    raise NotImplementedError("Console logging is not implemented in Neptune yet")
 
 
 def copy_source_code(
@@ -294,18 +294,18 @@ def copy_source_code(
     #     neptune_run["source_code/files"].upload_files(
     #         filename.replace("code/", ""), wait=True
     #     )
-    raise NotImplementedError("Source code logging is not implemented in Neptune Scale yet")
+    raise NotImplementedError("Source code logging is not implemented in Neptune yet")
 
 
 def copy_requirements(neptune_run: Run, download_path: str) -> None:
     # neptune_run["source_code/requirements"].upload(download_path)
-    raise NotImplementedError("Requirements logging is not implemented in Neptune Scale yet")
+    raise NotImplementedError("Requirements logging is not implemented in Neptune yet")
 
 
 def copy_other_files(neptune_run: Run, download_path: str, filename: str, namespace: str) -> None:
     # with threadsafe_change_directory(download_path.replace(filename, "")):
     #     neptune_run[namespace].upload_files(filename, wait=True)
-    raise NotImplementedError("File logging is not implemented in Neptune Scale yet")
+    raise NotImplementedError("File logging is not implemented in Neptune yet")
 
 
 def copy_files(neptune_run: Run, wandb_run) -> None:  # type: ignore
@@ -338,7 +338,7 @@ def copy_files(neptune_run: Run, wandb_run) -> None:  # type: ignore
     #                 )
     #         except Exception as e:
     #             logger.error(f"Failed to copy {download_path} for {wandb_run.name} due to exception:\n{e}")
-    raise NotImplementedError("File logging is not implemented in Neptune Scale yet")
+    raise NotImplementedError("File logging is not implemented in Neptune yet")
 
 
 def copy_project(wandb_project) -> None:  # type: ignore
@@ -382,7 +382,7 @@ if __name__ == "__main__":
     logger.info(f"Copying from W&B entity {wandb_entity} to Neptune workspace {neptune_workspace}")
 
     # Create temporary directory to store local metadata
-    # Not needed for Neptune Scale as file upload is not supported
+    # Not needed for Neptune as file upload is not supported
     # tmpdirname = os.path.abspath(
     #     os.path.join(os.getcwd(), "tmp_" + now.strftime("%Y%m%d%H%M%S"))
     # )
