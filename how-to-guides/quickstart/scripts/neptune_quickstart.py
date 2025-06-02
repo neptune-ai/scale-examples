@@ -6,7 +6,6 @@ from neptune_scale import Run
 
 NUM_STEPS = 2000  # Determines how long the training will run for
 
-
 def get_gradient_norm(layer: int, step: int) -> float:
     time_decay = 1.0 / (1.0 + step / 1000)
     layer_factor = np.exp(-0.5 * ((layer - 5) ** 2) / 4)
@@ -72,7 +71,15 @@ def main():
         }
     )
 
-    for step in range(NUM_STEPS):
+    # Log a message at the beginning of the training
+    run.log_string_series(
+        data={
+            "status": "Starting training",
+        },
+        step=0,
+    )
+
+    for step in range(1, NUM_STEPS):
         train_accuracy, train_loss = training_step(step)
         valid_accuracy, valid_loss = validation_step(step)
         test_accuracy, test_loss = test_step(step)
@@ -92,6 +99,65 @@ def main():
 
         run.log_metrics(
             data=metrics_to_log,
+            step=step,
+        )
+
+        if step % 1000 == 0:
+            # Log a message every 1000 steps
+            run.log_string_series(
+                data={
+                    "status": f"Training at step {step}",
+                },
+                step=step,
+            )
+
+    # Log a final message
+    run.log_string_series(
+        data={
+            "status": "Training complete!",
+        },
+        step=10,
+    )
+    # Upload single file to Neptune
+    run.assign_files(
+        {
+            "files/single/image": "sample.png",
+            "files/single/video": "sac-rl.mp4",
+            "files/single/audio": "t-rex.mp3",
+        }
+    )
+
+    # Download sample MNIST dataset
+    import requests
+
+    for image_num in range(1, 10):
+        try:
+            response = requests.get(
+                f"https://neptune.ai/wp-content/uploads/2025/05/mnist_sample_{image_num}.png"
+            )
+            response.raise_for_status()
+            with open(f"mnist_sample_{image_num}.png", "wb") as f:
+                f.write(response.content)
+            print(f"Downloaded mnist_sample_{image_num}.png")
+        except Exception as e:
+            print(f"Failed to download mnist_sample_{image_num}.png: {e}")
+
+    # Upload a series of files to Neptune
+    for step in range(1, 10):
+
+        run.log_files(
+            files={f"files/series/mnist_sample": f"mnist_sample_{step}.png"},
+            step=step,
+        )
+
+    # Log custom string series
+    for step in range(1, 10):
+
+        run.log_string_series(
+            data={
+                "custom_messages/errors": f"Job failed - step {step}",
+                "custom_messages/info": f"Training completed - step {step}",
+            },
             step=step,
         )
 
