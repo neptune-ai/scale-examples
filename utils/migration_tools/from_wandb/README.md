@@ -2,6 +2,10 @@
 
 This script allows you to copy run metadata from W&B to Neptune.
 
+## Changelog
+- **2025-05-27** - Added console logs and file support. Updated namespace of hardware metrics to `runtime` from `system`
+- **2025-01-08** - Initial release
+
 ## Prerequisites
 - A Weights and Biases account, `wandb` library installed, and environment variables set.
 - A Neptune account, `neptune-scale` Python library installed, and environment variables set. For details, see the [docs][docs-setup].
@@ -33,25 +37,26 @@ To use the script, follow these steps:
 | Config | run.config | run.config<sup>3</sup> |
 | Run summary | run.summary | run.summary<sup>3</sup> |
 | Run metrics | run.scan_history() | run.<METRIC_NAME><sup>4</sup> |
-| System metrics | run.history(stream="system") | run.system.<METRIC_NAME><sup>5</sup> |
+| System metrics | run.history(stream="system") | run.runtime.<METRIC_NAME><sup>5</sup> |
+| Console logs | Logs section of the W&B run | run.runtime.stdout<sup>6</sup> |
 | All W&B attributes | run.* | run.wandb.* |
 
 <sup>1</sup> Underscores `_` in a W&B project name are replaced by a hyphen `-` in Neptune  
 <sup>2</sup> Passing the wandb.run.id as neptune.run.custom_run_id ensures that duplicate Neptune runs are not created for the same W&B run even if the script is run multiple times  
 <sup>3</sup> Values are converted to a string in Neptune  
 <sup>4</sup> `_step` and `_timestamp` associated with a metric are logged as `step` and `timestamp` respectively with a Neptune metric  
-<sup>5</sup> `system.` prefix is removed when logging to Neptune
+<sup>5</sup> `system.` prefix is removed when logging to Neptune  
+<sup>6</sup> Lines from the `output.log` file in W&B are logged as `stdout` in Neptune. Not all W&B runs have an `output.log` file, and even those that do don't necessarily have the same information as the console logs displayed in the _Logs_ section of the W&B run. Steps are logged as the line number of the `output.log` file, and the timestamp associated with each step is the current time of the script execution, not the timestamp logged to the W&B run.
 
 ## What is not exported
 - Project-level metadata
-- All files (artifacts, source code, requirements.txt, images, etc.)
 - Models
 - W&B specific objects and data types
 - Forking details
-- `run.summary` keys starting with `_`†
-- Metrics and W&B attributes starting with `_`†
+- `run.summary` keys starting with `_`*
+- Metrics and W&B attributes starting with `_`*
 
-† These have been excluded at the code level to prevent redundancy and noise, but can be included.
+\* These have been excluded at the code level to prevent redundancy and noise, but can be included.
 
 ## Post-migration
 * W&B Workspace views can be recreated using Neptune's [overlaid charts][docs-charts] and [reports][docs-reports]

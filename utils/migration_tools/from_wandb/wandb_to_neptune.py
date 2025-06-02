@@ -46,10 +46,8 @@ sys.excepthook = exc_handler
 
 # Configure logging to silence specific messages
 logger = None
-logging.getLogger("httpx").setLevel(logging.ERROR)
-logging.getLogger("urllib3").setLevel(logging.ERROR)
-logging.getLogger("wandb").setLevel(logging.ERROR)
-logging.getLogger("neptune").setLevel(logging.ERROR)
+for logger_name in ["httpx", "urllib3", "wandb", "neptune_scale", "neptune"]:
+    logging.getLogger(logger_name).setLevel(logging.ERROR)
 
 
 def setup_logging() -> tuple[logging.Logger, str]:
@@ -150,6 +148,7 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
         experiment_name=wandb_run.name,
         creation_time=datetime.fromisoformat(wandb_run.created_at.replace("Z", "+00:00")),
         on_error_callback=_error_callback,
+        enable_console_log_capture=False,
     ) as neptune_run:
         # Add run description
         if wandb_run.notes:
@@ -188,7 +187,7 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
             copy_summary(neptune_run, wandb_run)
             copy_metrics(neptune_run, wandb_run)
             copy_system_metrics(neptune_run, wandb_run)
-            # copy_files(neptune_run, wandb_run)
+            copy_files(neptune_run, wandb_run)
             neptune_run.wait_for_processing()
         except Exception as e:
             logger.error(f"Failed to copy {wandb_run.name} due to exception:\n{e}")
@@ -266,7 +265,7 @@ def copy_system_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
                 continue
             try:
                 neptune_run.log_metrics(
-                    {f"system/{key.replace('system.', '')}": value},
+                    {f"runtime/{key.replace('system.', '')}": value},
                     step=step,
                     timestamp=datetime.fromtimestamp(record.get("_timestamp")),
                 )
@@ -277,10 +276,9 @@ def copy_system_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
 
 
 def copy_console_output(neptune_run: Run, download_path: str) -> None:  # type: ignore
-    # with open(download_path) as f:
-    #     for line in f:
-    #         neptune_run["monitoring/stdout"].append(line)
-    raise NotImplementedError("Console logging is not implemented in Neptune yet")
+    with open(download_path) as f:
+        for step, line in enumerate(f):
+            neptune_run.log_string_series({"runtime/stdout": line}, step=step)
 
 
 def copy_source_code(
@@ -309,36 +307,34 @@ def copy_other_files(neptune_run: Run, download_path: str, filename: str, namesp
 
 
 def copy_files(neptune_run: Run, wandb_run) -> None:  # type: ignore
-    # EXCLUDED_PATHS = {"artifact/", "config.yaml", "media/", "wandb-"}
-    # download_folder = os.path.join(tmpdirname, wandb_run.project, wandb_run.id)
-    # for file in wandb_run.files():
-    #     if (
-    #         file.size and not any(file.name.startswith(path) for path in EXCLUDED_PATHS)
-    #     ):  # A zero-byte file will be returned even when the `output.log` file does not exist
-    #         download_path = os.path.join(download_folder, file.name)
-    #         try:
-    #             file.download(root=download_folder, replace=True, exist_ok=True)
-    #             if file.name == "output.log":
-    #                 copy_console_output(neptune_run, download_path)
+    EXCLUDED_PATHS = {"artifact/", "config.yaml", "media/", "wandb-"}
+    download_folder = os.path.join(tmpdirname, wandb_run.project, wandb_run.id)
+    for file in wandb_run.files():
+        if file.size and not any(
+            file.name.startswith(path) for path in EXCLUDED_PATHS
+        ):  # A zero-byte file will be returned even when the `output.log` file does not exist
+            download_path = os.path.join(download_folder, file.name)
+            try:
+                file.download(root=download_folder, replace=True, exist_ok=True)
+                if file.name == "output.log":
+                    copy_console_output(neptune_run, download_path)
 
-    #             elif file.name.startswith("code/"):
-    #                 copy_source_code(neptune_run, download_path, file.name)
+                # elif file.name.startswith("code/"):
+                #     copy_source_code(neptune_run, download_path, file.name)
 
-    #             elif file.name == "requirements.txt":
-    #                 copy_requirements(neptune_run, download_path)
+                # elif file.name == "requirements.txt":
+                #     copy_requirements(neptune_run, download_path)
 
-    #             elif "ckpt" in file.name or "checkpoint" in file.name:
-    #                 copy_other_files(
-    #                     neptune_run, download_path, file.name, namespace="checkpoints"
-    #                 )
+                # elif "ckpt" in file.name or "checkpoint" in file.name:
+                #     copy_other_files(neptune_run, download_path, file.name, namespace="checkpoints")
 
-    #             else:
-    #                 copy_other_files(
-    #                     neptune_run, download_path, file.name, namespace="files"
-    #                 )
-    #         except Exception as e:
-    #             logger.error(f"Failed to copy {download_path} for {wandb_run.name} due to exception:\n{e}")
-    raise NotImplementedError("File logging is not implemented in Neptune yet")
+                # else:
+                #     copy_other_files(neptune_run, download_path, file.name, namespace="files")
+            except Exception as e:
+                logger.error(
+                    f"Failed to copy {download_path} for {wandb_run.name} due to exception:\n{e}"
+                )
+                raise NotImplementedError("File logging is not implemented in Neptune yet")
 
 
 def copy_project(wandb_project) -> None:  # type: ignore
@@ -382,12 +378,11 @@ if __name__ == "__main__":
     logger.info(f"Copying from W&B entity {wandb_entity} to Neptune workspace {neptune_workspace}")
 
     # Create temporary directory to store local metadata
-    # Not needed for Neptune as file upload is not supported
-    # tmpdirname = os.path.abspath(
-    #     os.path.join(os.getcwd(), "tmp_" + now.strftime("%Y%m%d%H%M%S"))
-    # )
-    # os.makedirs(tmpdirname, exist_ok=True)
-    # logger.info(f"Temporary directory created at {tmpdirname}")
+    tmpdirname = os.path.abspath(
+        os.path.join(os.getcwd(), "tmp_" + datetime.now().strftime("%Y%m%d%H%M%S"))
+    )
+    os.makedirs(tmpdirname, exist_ok=True)
+    logger.info(f"Temporary directory created at {tmpdirname}")
 
     wandb_projects = [
         project for project in client.projects()
