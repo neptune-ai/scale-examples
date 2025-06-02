@@ -96,9 +96,8 @@ def main():
 
     # Step 3: Track gradient norms during training
     step_counter = 0
-    for epoch in range(1, params["epochs"]):
+    for epoch in range(params["epochs"]):
         model.train()
-        running_loss = 0.0
 
         for batch_idx, (data, target) in enumerate(train_loader):
             # Move data to device
