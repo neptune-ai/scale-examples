@@ -1,9 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from neptune_scale import Run
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
-from neptune_scale import Run
+
 
 class SimpleModel(nn.Module):
     def __init__(self, input_size: int = 784, hidden_size: int = 128, output_size: int = 10):
@@ -44,6 +45,7 @@ class SimpleModel(nn.Module):
 
         return gradient_norms
 
+
 def main():
 
     # Training parameters
@@ -55,7 +57,9 @@ def main():
     }
 
     # Data transformations
-    transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))])
+    transform = transforms.Compose(
+        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+    )
 
     # Load MNIST dataset
     train_dataset = datasets.MNIST("./data", train=True, download=True, transform=transform)
@@ -69,7 +73,6 @@ def main():
     model = SimpleModel().to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=params["lr"])
-
 
     # Step 1: Initialize Neptune Run object
     run = Run(
@@ -85,7 +88,7 @@ def main():
             "config/epochs": params["epochs"],
             "config/lr": params["lr"],
         }
-    )   
+    )
 
     run.add_tags(tags=["debug", "gradient-norm"])
 
@@ -129,6 +132,7 @@ def main():
     # 2. Advanced metric filtering
     # 3. Create custom charts and dashboards
     # 4. Dynamic metric analysis
+
 
 if __name__ == "__main__":
     main()

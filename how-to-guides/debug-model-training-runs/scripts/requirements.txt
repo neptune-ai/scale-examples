@@ -1,4 +1,4 @@
 neptune_scale
-torch 
-torchvision
 numpy<2
+torch
+torchvision
