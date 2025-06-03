@@ -24,7 +24,7 @@ try:
     import pynvml
 
     _pynvml_available = True
-    _pynvml_initialized = False
+
 except ImportError:
     logging.warning(
         "`pynvml` is not installed. GPU monitoring will be disabled. Install using `pip install nvidia-ml-py` if you want GPU metrics."
@@ -73,8 +73,7 @@ class SystemMetricsMonitor:
                 pynvml.nvmlInit()
                 self.gpu_count = pynvml.nvmlDeviceGetCount()
                 self.has_gpu = True
-                global _pynvml_initialized
-                _pynvml_initialized = True
+
                 # Register NVML shutdown at exit
                 atexit.register(pynvml.nvmlShutdown)
             except Exception:
