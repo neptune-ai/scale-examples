@@ -17,6 +17,7 @@ An extensible Python module for logging system and process hardware metrics (CPU
 - Added `namespace` and `sampling_rate` arguments to `SystemMetricsMonitor` to allow for custom metric namespaces and sampling rates.
 - Made `pynvml` and `torch` optional dependencies.
 - Added process memory, threads, and file descriptors metrics.
+- Updated default namespace to `runtime` from `system`.
 - Removed `node_rank` from metric namespaces.
 - Improved console logging.
 
@@ -120,13 +121,13 @@ runtime/monitoring/process/rss_memory_MB
 [![Explore in Neptune](https://neptune.ai/wp-content/uploads/2024/01/neptune-badge.svg)](https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=attributes&runIdentificationKey=hardware_monitoring&type=experiment&compare=uiR6bnResm5Dc79uAlyMySpGVJXsCp6medoKxSlVtJGQ&path=runtime%2F)
 ---
 
-Create [custom dashboards](https://docs.neptune.ai/custom_dashboard) to visualize all important hardware metrics
+Create [custom dashboards](https://docs.neptune.ai/custom_dashboard) to visualize all important hardware metrics.
 
-[![Explore in Neptune](https://neptune.ai/wp-content/uploads/2024/01/neptune-badge.svg)](https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=dashboard&dashboardId=9f11330c-e4ff-413a-9faa-9e10e5b3f7ee&runIdentificationKey=hardware_monitoring&type=experiment&compare=uiR6bnResm5Dc79uAlyMySpGVJXsCp6medoKxSlVtJGQ)
+__Example dashboard__: [![Explore in Neptune](https://neptune.ai/wp-content/uploads/2024/01/neptune-badge.svg)](https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=dashboard&dashboardId=9f11330c-e4ff-413a-9faa-9e10e5b3f7ee&runIdentificationKey=hardware_monitoring&type=experiment&compare=uiR6bnResm5Dc79uAlyMySpGVJXsCp6medoKxSlVtJGQ)
 
 - Add single metric charts, like _#threads_
 - Add multi-metric charts, like _Network IO_
-- Dynamically select metrics so that the chart is up-to-date even when the number of metrics is unknown or changes, like _GPU Utilization (%)_ and _GPU Power Usage (W)_
+- [Dynamically select metrics](https://docs.neptune.ai/chart_widget/#dynamic-metric-selection) so that the chart is up-to-date even when the number of metrics is unknown or changes, like _GPU Utilization (%)_ and _GPU Power Usage (W)_
 
 ---
 
