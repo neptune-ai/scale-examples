@@ -1,6 +1,6 @@
 <div align="center">
-    <img src="https://raw.githubusercontent.com/neptune-ai/neptune-client/assets/readme/Github-cover-022025.png" width="1500" />
-    &nbsp;
+ <img src="https://raw.githubusercontent.com/neptune-ai/neptune-client/assets/readme/Github-cover-022025.png" width="1500" />
+ &nbsp;
  <h1><a href="https://neptune.ai">neptune.ai</a> examples</h1>
 </div>
 
@@ -14,20 +14,25 @@ With Neptune, you can monitor thousands of per-layer metrics—losses, gradients
 
 This repo contains tutorials and examples of how to use Neptune.
 
-|                                 | Docs                         | Neptune                                 | GitHub                         | Colab                      |
-| ------------------------------- | ---------------------------- | --------------------------------------- | ------------------------------ | -------------------------- |
-| Quickstart                      | [![docs-icon]][quickstart]   | [![neptune-icon]][quickstart-example]   | [![github-icon]][qs-notebook]  | [![colab-icon]][qs-colab]  |
-| Log different types of metadata | [![docs-icon]][log-metadata] | [![neptune-icon]][log-metadata-example] |                                |                            |
-| Organize and filter runs        | [![docs-icon]][runs-table]   | [![neptune-icon]][runs-table-example]   |                                |                            |
-| Resume run or other object      | [![docs-icon]][resume-run]   |                                         |                                |                            |
-| Use Neptune in HPO jobs         | [![docs-icon]][hpo]          | [![neptune-icon]][hpo-example]          | [![github-icon]][hpo-notebook] | [![colab-icon]][hpo-colab] |
+| | Docs | Neptune | GitHub | Colab |
+| -- | :--: | :--: | :--: | :--: |
+| Quickstart | [![docs-icon]][quickstart] | [![neptune-icon]][quickstart-example] | [![github-icon]][qs-notebook] | [![colab-icon]][qs-colab] |
+| Log different types of metadata | [![docs-icon]][log-metadata] | [![neptune-icon]][log-metadata-example] | | |
+| Organize and filter runs | [![docs-icon]][runs-table] | [![neptune-icon]][runs-table-example] | | |
+| Resume run or other object | [![docs-icon]][resume-run] | | | |
+| Use Neptune in HPO jobs | [![docs-icon]][hpo] | [![neptune-icon]][hpo-example] | [![github-icon]][hpo-notebook] | [![colab-icon]][hpo-colab] |
 
 ### Migration tools
 
-|                                         | Docs                         | GitHub                            |
-| --------------------------------------- | -----------------------------| --------------------------------- |
-| Import runs from Weights & Biases       | [![docs-icon]][from-wandb]   | [![github-icon]][from-wandb-code] |
-| Migrate code from Neptune Legacy client | [![docs-icon]][from-legacy]  | [![github-icon]][from-legacy-code] |
+| | Docs | GitHub |
+| -- | :--: | :--: |
+| Import runs from Weights & Biases | [![docs-icon]][from-wandb] | [![github-icon]][from-wandb-code] |
+| Migrate code from Neptune Legacy client | [![docs-icon]][from-legacy] | [![github-icon]][from-legacy-code] |
+
+### Monitoring tools
+| | Docs | Neptune | GitHub |
+| -- | :--: | :--: | :--: |
+| Hardware monitoring | [![docs-icon]][hardware-monitoring] | [![neptune-icon]][hardware-monitoring-example] | [![github-icon]][hardware-monitoring-code] |
 
 ## Can't find what you're looking for?
 
@@ -49,6 +54,10 @@ This repo contains tutorials and examples of how to use Neptune.
 [docs]: https://docs.neptune.ai/
 [from-legacy]: https://docs.neptune.ai/migration_neptune
 [from-wandb]: https://docs.neptune.ai/migration_wandb
+<!-- TO BE ADDED -->
+[hardware-monitoring]: https://docs.neptune.ai/monitoring_tools/hardware_monitoring
+[hardware-monitoring-code]: utils/monitoring_tools/hardware_monitoring/
+[hardware-monitoring-example]: https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=dashboard&dashboardId=9f11330c-e4ff-413a-9faa-9e10e5b3f7ee&runIdentificationKey=hardware_monitoring&type=experiment&compare=uiR6bnResm5Dc79uAlyMySpGVJXsCp6medoKxSlVtJGQ
 [hpo]: https://docs.neptune.ai/hpo_tutorial
 [hpo-example]: https://scale.neptune.ai/o/examples/org/hpo/runs/table?viewId=9d44261f-32a1-42e7-96ff-9b35edc4be66
 [log-metadata]: https://docs.neptune.ai/log_metadata

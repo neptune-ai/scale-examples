@@ -1,38 +1,60 @@
+import atexit
 import contextlib
 import os
 import socket
 import threading
 import time
 import traceback
-import warnings
-from typing import Optional
+from typing import Any, Dict, Optional
 
 import psutil
-import torch
 from neptune_scale import Run
+from neptune_scale.util.logger import get_logger
+
+logging = get_logger()
+
+try:
+    import torch
+
+    _torch_available = True
+except ImportError:
+    _torch_available = False
 
 try:
     import pynvml
-except ImportError as e:
-    raise ImportError("`pynvml` is not installed. Install using `pip install nvidia-ml-py`.") from e
+
+    _pynvml_available = True
+    _pynvml_initialized = False
+except ImportError:
+    logging.warning(
+        "`pynvml` is not installed. GPU monitoring will be disabled. Install using `pip install nvidia-ml-py` if you want GPU metrics."
+    )
+    _pynvml_available = False
+    _pynvml_initialized = False
 
 
 class SystemMetricsMonitor:
-    """Monitor system metrics in a background thread and log them to Neptune."""
+    """
+    Monitors system and process metrics in a background thread and logs them to Neptune.
+
+    This class collects metrics such as CPU, memory, disk, network, GPU (if available), and process resource usage.
+    Metrics are logged at a configurable sampling rate to a Neptune run, under a specified namespace.
+    The monitor is robust to partial hardware failures and can be used as a context manager.
+    """
 
     def __init__(
         self,
         run: Run,
         sampling_rate: float = 5.0,
         namespace: str = "runtime",
-    ):
+    ) -> None:
         """
-        Initialize the system metrics monitor.
+        Initialize the SystemMetricsMonitor.
 
         Args:
-            run: Neptune Run object for logging metrics
-            sampling_rate (default=5.0): How often to sample metrics (in seconds)
-            namespace (default="runtime"): Namespace where the metrics will be logged in the Neptune run
+            run (Run): Neptune Run object for logging metrics.
+            sampling_rate (float, optional): How often to sample metrics (in seconds). Default is 5.0.
+            namespace (str, optional): Namespace where the metrics will be logged in the Neptune run. Default is "runtime".
         """
         self.run = run
         self.namespace = namespace
@@ -42,16 +64,26 @@ class SystemMetricsMonitor:
         self._monitoring_step = 0
 
         self.hostname = socket.gethostname()
-        self.node_rank = int(os.environ.get("NODE_RANK", 0))
 
-        try:
-            pynvml.nvmlInit()
-            self.gpu_count = pynvml.nvmlDeviceGetCount()
-            self.has_gpu = True
-        except pynvml.NVMLError:
-            warnings.warn(
-                "No NVIDIA GPU available or driver issues. GPU monitoring will be disabled."
-            )
+        # Prime psutil.cpu_percent to avoid initial 0.0 reading
+        psutil.cpu_percent()
+
+        if _pynvml_available:
+            try:
+                pynvml.nvmlInit()
+                self.gpu_count = pynvml.nvmlDeviceGetCount()
+                self.has_gpu = True
+                global _pynvml_initialized
+                _pynvml_initialized = True
+                # Register NVML shutdown at exit
+                atexit.register(pynvml.nvmlShutdown)
+            except Exception:
+                logging.warning(
+                    "No NVIDIA GPU available or driver issues. GPU monitoring will be disabled."
+                )
+                self.has_gpu = False
+                self.gpu_count = 0
+        else:
             self.has_gpu = False
             self.gpu_count = 0
 
@@ -59,102 +91,174 @@ class SystemMetricsMonitor:
 
         self.start()
 
-    def _log_system_details(self):
-        """Log static system details as configs."""
+    def _log_system_details(self) -> None:
+        """
+        Log static system details (device, CPU, GPU, hostname) as Neptune run configs.
+        Also logs GPU names if available.
+        """
         system_details = {
-            "device": str(torch.device("cuda" if torch.cuda.is_available() else "cpu")),
             "gpu_num": self.gpu_count,
             "cpu_num": psutil.cpu_count(logical=False),
             "cpu_logical_num": psutil.cpu_count(logical=True),
             "hostname": self.hostname,
         }
 
+        if _torch_available:
+            system_details["device"] = str(
+                torch.device("cuda" if torch.cuda.is_available() else "cpu")
+            )
+
         self.run.log_configs(
-            {
-                f"{self.namespace}/details/node_{self.node_rank}/{key}": value
-                for key, value in system_details.items()
-            }
+            {f"{self.namespace}/details/{key}": value for key, value in system_details.items()}
         )
 
-        if self.has_gpu:
+        if self.has_gpu and _pynvml_available:
             try:
                 for i in range(self.gpu_count):
                     handle = pynvml.nvmlDeviceGetHandleByIndex(i)
                     name = pynvml.nvmlDeviceGetName(handle)
-                    self.run.log_configs(
-                        {f"{self.namespace}/details/node_{self.node_rank}/gpu/name/{i}": name}
-                    )
-            except pynvml.NVMLError as e:
-                warnings.warn(
-                    f"Error getting GPU details on node {self.hostname} (rank {self.node_rank}): {e}"
-                )
+                    self.run.log_configs({f"{self.namespace}/details/gpu/name/{i}": name})
+            except Exception as e:
+                logging.warning(f"Error getting GPU details on {self.hostname}: {e}")
 
-    def _collect_gpu_metrics(self, metrics: dict):
-        """Collect GPU metrics if available."""
-        if not self.has_gpu:
-            return
+    def _collect_metrics(self) -> Dict[str, Any]:
+        """
+        Collect current system and process metrics.
 
-        prefix = f"{self.namespace}/monitoring/node_{self.node_rank}"
+        Returns:
+            dict: Dictionary of collected metrics, keyed by metric name.
+        """
+        prefix = f"{self.namespace}/monitoring"
+        metrics = {}
+        self._collect_cpu_metrics(metrics, prefix)
+        self._collect_memory_metrics(metrics, prefix)
+        self._collect_disk_metrics(metrics, prefix)
+        self._collect_network_metrics(metrics, prefix)
+        self._collect_gpu_metrics(metrics, prefix)
+        self._collect_process_metrics(metrics, prefix)
+        return metrics
 
-        try:
-            for i in range(self.gpu_count):
-                handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+    def _collect_cpu_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
+        """
+        Collect CPU usage metrics and add them to the metrics dictionary.
 
-                memory = pynvml.nvmlDeviceGetMemoryInfo(handle)
-                metrics[f"{prefix}/gpu/{i}/memory_used_GB"] = memory.used / (1024**3)
-                metrics[f"{prefix}/gpu/{i}/memory_total_GB"] = memory.total / (1024**3)
-                metrics[f"{prefix}/gpu/{i}/memory_free_GB"] = memory.free / (1024**3)
-                metrics[f"{prefix}/gpu/{i}/memory_utilized_percent"] = (
-                    memory.used / memory.total
-                ) * 100
+        Args:
+            metrics (dict): The metrics dictionary to update.
+            prefix (str): The namespace prefix for metric keys.
+        """
+        metrics[f"{prefix}/cpu/percent"] = psutil.cpu_percent()
 
-                temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
-                metrics[f"{prefix}/gpu/{i}/temperature_celsius"] = temp
+    def _collect_memory_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
+        """
+        Collect memory and swap usage metrics and add them to the metrics dictionary.
 
-                utilization = pynvml.nvmlDeviceGetUtilizationRates(handle)
-                metrics[f"{prefix}/gpu/{i}/gpu_utilization_percent"] = utilization.gpu
-                metrics[f"{prefix}/gpu/{i}/memory_utilization_percent"] = utilization.memory
-
-                with contextlib.suppress(pynvml.NVMLError):
-                    power = pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0  # Convert mW to W
-                    metrics[f"{prefix}/gpu/{i}/power_usage_watts"] = power
-
-        except pynvml.NVMLError as e:
-            warnings.warn(
-                f"Error collecting GPU metrics on node {self.hostname} (rank {self.node_rank}): {e}"
-            )
-
-    def _collect_metrics(self) -> dict:
-        """Collect current system metrics."""
-
-        prefix = f"{self.namespace}/monitoring/node_{self.node_rank}"
-
-        metrics = {f"{prefix}/cpu/percent": psutil.cpu_percent()}
-
+        Args:
+            metrics (dict): The metrics dictionary to update.
+            prefix (str): The namespace prefix for metric keys.
+        """
         virtual_memory = psutil.virtual_memory()
         metrics[f"{prefix}/memory/virtual_used_GB"] = virtual_memory.used / (1024**3)
         metrics[f"{prefix}/memory/virtual_utilized_percent"] = virtual_memory.percent
-
         swap_memory = psutil.swap_memory()
         metrics[f"{prefix}/memory/swap_used_GB"] = swap_memory.used / (1024**3)
         metrics[f"{prefix}/memory/swap_utilized_percent"] = swap_memory.percent
 
+    def _collect_disk_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
+        """
+        Collect disk I/O metrics and add them to the metrics dictionary.
+
+        Args:
+            metrics (dict): The metrics dictionary to update.
+            prefix (str): The namespace prefix for metric keys.
+        """
         disk_io = psutil.disk_io_counters()
         metrics[f"{prefix}/disk/read_count"] = disk_io.read_count
         metrics[f"{prefix}/disk/write_count"] = disk_io.write_count
         metrics[f"{prefix}/disk/read_GB"] = disk_io.read_bytes / (1024**3)
         metrics[f"{prefix}/disk/write_GB"] = disk_io.write_bytes / (1024**3)
 
+    def _collect_network_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
+        """
+        Collect network I/O metrics and add them to the metrics dictionary.
+
+        Args:
+            metrics (dict): The metrics dictionary to update.
+            prefix (str): The namespace prefix for metric keys.
+        """
         network_io = psutil.net_io_counters()
         metrics[f"{prefix}/network/sent_MB"] = network_io.bytes_sent / (1024**2)
         metrics[f"{prefix}/network/recv_MB"] = network_io.bytes_recv / (1024**2)
 
-        self._collect_gpu_metrics(metrics)
+    def _collect_gpu_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
+        """
+        Collect GPU metrics for all available GPUs and add them to the metrics dictionary.
+        Handles errors on a per-GPU and per-metric basis to ensure partial failures do not prevent collection from other GPUs.
 
-        return metrics
+        Args:
+            metrics (dict): The metrics dictionary to update.
+            prefix (str): The namespace prefix for metric keys.
+        """
+        if not self.has_gpu or not _pynvml_available:
+            return
+        for i in range(self.gpu_count):
+            try:
+                handle = pynvml.nvmlDeviceGetHandleByIndex(i)
+            except Exception as e:
+                logging.warning(f"Error getting handle for GPU {i} on {self.hostname}: {e}")
+                continue
+            # Memory info
+            try:
+                memory = pynvml.nvmlDeviceGetMemoryInfo(handle)
+                metrics[f"{prefix}/gpu/{i}/memory_used_GB"] = memory.used / (1024**3)
+                metrics[f"{prefix}/gpu/{i}/memory_total_GB"] = memory.total / (1024**3)
+                metrics[f"{prefix}/gpu/{i}/memory_free_GB"] = memory.free / (1024**3)
+                metrics[f"{prefix}/gpu/{i}/memory_utilized_percent"] = (
+                    (memory.used / memory.total) * 100 if memory.total else 0.0
+                )
+            except Exception as e:
+                logging.warning(f"Error getting memory info for GPU {i} on {self.hostname}: {e}")
+            # Temperature
+            try:
+                temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
+                metrics[f"{prefix}/gpu/{i}/temperature_celsius"] = temp
+            except Exception as e:
+                logging.warning(f"Error getting temperature for GPU {i} on {self.hostname}: {e}")
+            # Utilization
+            try:
+                utilization = pynvml.nvmlDeviceGetUtilizationRates(handle)
+                metrics[f"{prefix}/gpu/{i}/gpu_utilization_percent"] = utilization.gpu
+            except Exception as e:
+                logging.warning(f"Error getting utilization for GPU {i} on {self.hostname}: {e}")
+            # Power usage (if available)
+            try:
+                power = pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0  # Convert mW to W
+                metrics[f"{prefix}/gpu/{i}/power_usage_watts"] = power
+            except Exception as e:
+                logging.warning(f"Error getting power usage for GPU {i} on {self.hostname}: {e}")
 
-    def _monitoring_loop(self):
-        """Main monitoring loop that runs in background thread."""
+    def _collect_process_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
+        """
+        Collect resource usage metrics for the current Python process (memory, threads, file descriptors).
+
+        Args:
+            metrics (dict): The metrics dictionary to update.
+            prefix (str): The namespace prefix for metric keys.
+        """
+        proc = psutil.Process(os.getpid())
+        mem_info = proc.memory_info()
+        metrics[f"{prefix}/process/rss_memory_MB"] = mem_info.rss / (1024**2)
+        metrics[f"{prefix}/process/vms_memory_MB"] = mem_info.vms / (1024**2)
+        metrics[f"{prefix}/process/num_threads"] = proc.num_threads()
+        # Open file descriptors (Unix only)
+        if hasattr(proc, "num_fds"):
+            metrics[f"{prefix}/process/num_fds"] = proc.num_fds()
+
+    def _monitoring_loop(self) -> None:
+        """
+        Main monitoring loop that runs in a background thread.
+        Collects and logs metrics at the configured sampling rate.
+        Handles and logs errors during metric collection.
+        """
         while not self._stop_event.is_set():
             start_time = time.time()
 
@@ -164,36 +268,54 @@ class SystemMetricsMonitor:
                 self._monitoring_step += 1
 
             except Exception as e:
-                warnings.warn(f"Error collecting metrics: {e}\n{traceback.format_exc()}")
+                logging.warning(f"Error collecting metrics: {e}\n{traceback.format_exc()}")
 
             finally:
                 elapsed = time.time() - start_time
+                if elapsed > self.sampling_rate:
+                    logging.debug(
+                        f"Metric collection took {elapsed:.2f}s which exceeds the sampling rate of {self.sampling_rate}s."
+                    )
                 sleep_time = max(0, self.sampling_rate - elapsed)
                 time.sleep(sleep_time)
 
-    def start(self):
-        """Start the monitoring thread if not already running."""
+    def start(self) -> None:
+        """
+        Start the monitoring thread if not already running.
+        """
         if self._monitoring_thread is None or not self._monitoring_thread.is_alive():
             self._stop_event.clear()
             self._monitoring_thread = threading.Thread(target=self._monitoring_loop, daemon=True)
             self._monitoring_thread.start()
 
-    def stop(self):
-        """Stop the monitoring thread and wait for it to finish."""
+    def stop(self) -> None:
+        """
+        Stop the monitoring thread and wait for it to finish.
+        Also shuts down NVML if GPU monitoring was enabled.
+        """
         if self._monitoring_thread and self._monitoring_thread.is_alive():
             self._stop_event.set()
             self._monitoring_thread.join(timeout=5)
             self._monitoring_thread = None
 
-            if self.has_gpu:
-                with contextlib.suppress(pynvml.NVMLError):
+            if self.has_gpu and _pynvml_available:
+                with contextlib.suppress(Exception):
                     pynvml.nvmlShutdown()
 
-    def __enter__(self):
-        """Context manager support."""
+    def __enter__(self) -> "SystemMetricsMonitor":
+        """
+        Enter the context manager, starting the monitoring thread.
+
+        Returns:
+            SystemMetricsMonitor: The monitor instance.
+        """
         self.start()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        """Ensure monitoring is stopped when exiting context."""
+    def __exit__(
+        self, exc_type: Optional[type], exc_val: Optional[BaseException], exc_tb: Optional[Any]
+    ) -> None:
+        """
+        Exit the context manager, ensuring monitoring is stopped.
+        """
         self.stop()
