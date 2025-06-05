@@ -54,10 +54,9 @@ This repo contains tutorials and examples of how to use Neptune.
 [docs]: https://docs.neptune.ai/
 [from-legacy]: https://docs.neptune.ai/migration_neptune
 [from-wandb]: https://docs.neptune.ai/migration_wandb
-<!-- TO BE ADDED -->
-[hardware-monitoring]: https://docs.neptune.ai/monitoring_tools/hardware_monitoring
+[hardware-monitoring]: https://docs.neptune.ai/hardware_monitoring
 [hardware-monitoring-code]: utils/monitoring_tools/hardware_monitoring/
-[hardware-monitoring-example]: https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=dashboard&dashboardId=9f11330c-e4ff-413a-9faa-9e10e5b3f7ee&runIdentificationKey=hardware_monitoring&type=experiment&compare=uiR6bnResm5Dc79uAlyMySpGVJXsCp6medoKxSlVtJGQ
+[hardware-monitoring-example]: https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=dashboard&dashboardId=9f11330c-e4ff-413a-9faa-9e10e5b3f7ee&runIdentificationKey=hardware_monitoring&type=experiment&experimentsOnly=true&runsLineage=FULL&lbViewUnpacked=true&sortBy=%5B%22sys%2Fcreation_time%22%5D&sortFieldType=%5B%22datetime%22%5D&sortFieldAggregationMode=%5B%22auto%22%5D&sortDirection=%5B%22descending%22%5D&suggestionsEnabled=false&query=&experimentOnly=true
 [hpo]: https://docs.neptune.ai/hpo_tutorial
 [hpo-example]: https://scale.neptune.ai/o/examples/org/hpo/runs/table?viewId=9d44261f-32a1-42e7-96ff-9b35edc4be66
 [log-metadata]: https://docs.neptune.ai/log_metadata

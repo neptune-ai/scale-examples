@@ -30,7 +30,6 @@ except ImportError:
         "`pynvml` is not installed. GPU monitoring will be disabled. Install using `pip install nvidia-ml-py` if you want GPU metrics."
     )
     _pynvml_available = False
-    _pynvml_initialized = False
 
 
 class SystemMetricsMonitor:
@@ -62,6 +61,7 @@ class SystemMetricsMonitor:
         self._stop_event = threading.Event()
         self._monitoring_thread: Optional[threading.Thread] = None
         self._monitoring_step = 0
+        self._proc = psutil.Process(os.getpid())
 
         self.hostname = socket.gethostname()
 
@@ -87,8 +87,6 @@ class SystemMetricsMonitor:
             self.gpu_count = 0
 
         self._log_system_details()
-
-        self.start()
 
     def _log_system_details(self) -> None:
         """
@@ -116,7 +114,7 @@ class SystemMetricsMonitor:
                 for i in range(self.gpu_count):
                     handle = pynvml.nvmlDeviceGetHandleByIndex(i)
                     name = pynvml.nvmlDeviceGetName(handle)
-                    self.run.log_configs({f"{self.namespace}/details/gpu/name/{i}": name})
+                    self.run.log_configs({f"{self.namespace}/details/gpu/{i}/name": name})
             except Exception as e:
                 logging.warning(f"Error getting GPU details on {self.hostname}: {e}")
 
@@ -156,10 +154,10 @@ class SystemMetricsMonitor:
             prefix (str): The namespace prefix for metric keys.
         """
         virtual_memory = psutil.virtual_memory()
-        metrics[f"{prefix}/memory/virtual_used_GB"] = virtual_memory.used / (1024**3)
+        metrics[f"{prefix}/memory/virtual_used_GiB"] = virtual_memory.used / (1024**3)
         metrics[f"{prefix}/memory/virtual_utilized_percent"] = virtual_memory.percent
         swap_memory = psutil.swap_memory()
-        metrics[f"{prefix}/memory/swap_used_GB"] = swap_memory.used / (1024**3)
+        metrics[f"{prefix}/memory/swap_used_MiB"] = swap_memory.used / (1024**2)
         metrics[f"{prefix}/memory/swap_utilized_percent"] = swap_memory.percent
 
     def _collect_disk_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
@@ -171,10 +169,30 @@ class SystemMetricsMonitor:
             prefix (str): The namespace prefix for metric keys.
         """
         disk_io = psutil.disk_io_counters()
-        metrics[f"{prefix}/disk/read_count"] = disk_io.read_count
-        metrics[f"{prefix}/disk/write_count"] = disk_io.write_count
-        metrics[f"{prefix}/disk/read_GB"] = disk_io.read_bytes / (1024**3)
-        metrics[f"{prefix}/disk/write_GB"] = disk_io.write_bytes / (1024**3)
+
+        if hasattr(self, "_previous_disk_io"):
+            # Calculate deltas for disk I/O metrics
+            metrics[f"{prefix}/disk/read_count"] = (
+                disk_io.read_count - self._previous_disk_io.read_count
+            )
+            metrics[f"{prefix}/disk/write_count"] = (
+                disk_io.write_count - self._previous_disk_io.write_count
+            )
+            metrics[f"{prefix}/disk/read_MiB"] = (
+                disk_io.read_bytes - self._previous_disk_io.read_bytes
+            ) / (1024**2)
+            metrics[f"{prefix}/disk/write_MiB"] = (
+                disk_io.write_bytes - self._previous_disk_io.write_bytes
+            ) / (1024**2)
+        else:
+            # Initialize metrics with zero deltas for the first interval
+            metrics[f"{prefix}/disk/read_count"] = 0
+            metrics[f"{prefix}/disk/write_count"] = 0
+            metrics[f"{prefix}/disk/read_MiB"] = 0
+            metrics[f"{prefix}/disk/write_MiB"] = 0
+
+        # Update previous disk I/O counters
+        self._previous_disk_io = disk_io
 
     def _collect_network_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
         """
@@ -185,8 +203,19 @@ class SystemMetricsMonitor:
             prefix (str): The namespace prefix for metric keys.
         """
         network_io = psutil.net_io_counters()
-        metrics[f"{prefix}/network/sent_MB"] = network_io.bytes_sent / (1024**2)
-        metrics[f"{prefix}/network/recv_MB"] = network_io.bytes_recv / (1024**2)
+
+        if hasattr(self, "_previous_network_io"):
+            metrics[f"{prefix}/network/sent_MiB"] = (
+                network_io.bytes_sent - self._previous_network_io.bytes_sent
+            ) / (1024**2)
+            metrics[f"{prefix}/network/recv_MiB"] = (
+                network_io.bytes_recv - self._previous_network_io.bytes_recv
+            ) / (1024**2)
+        else:
+            metrics[f"{prefix}/network/sent_MiB"] = 0
+            metrics[f"{prefix}/network/recv_MiB"] = 0
+
+        self._previous_network_io = network_io
 
     def _collect_gpu_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
         """
@@ -208,9 +237,9 @@ class SystemMetricsMonitor:
             # Memory info
             try:
                 memory = pynvml.nvmlDeviceGetMemoryInfo(handle)
-                metrics[f"{prefix}/gpu/{i}/memory_used_GB"] = memory.used / (1024**3)
-                metrics[f"{prefix}/gpu/{i}/memory_total_GB"] = memory.total / (1024**3)
-                metrics[f"{prefix}/gpu/{i}/memory_free_GB"] = memory.free / (1024**3)
+                metrics[f"{prefix}/gpu/{i}/memory_used_MiB"] = memory.used / (1024**2)
+                metrics[f"{prefix}/gpu/{i}/memory_total_MiB"] = memory.total / (1024**2)
+                metrics[f"{prefix}/gpu/{i}/memory_free_MiB"] = memory.free / (1024**2)
                 metrics[f"{prefix}/gpu/{i}/memory_utilized_percent"] = (
                     (memory.used / memory.total) * 100 if memory.total else 0.0
                 )
@@ -243,14 +272,17 @@ class SystemMetricsMonitor:
             metrics (dict): The metrics dictionary to update.
             prefix (str): The namespace prefix for metric keys.
         """
-        proc = psutil.Process(os.getpid())
-        mem_info = proc.memory_info()
-        metrics[f"{prefix}/process/rss_memory_MB"] = mem_info.rss / (1024**2)
-        metrics[f"{prefix}/process/vms_memory_MB"] = mem_info.vms / (1024**2)
-        metrics[f"{prefix}/process/num_threads"] = proc.num_threads()
-        # Open file descriptors (Unix only)
-        if hasattr(proc, "num_fds"):
-            metrics[f"{prefix}/process/num_fds"] = proc.num_fds()
+        mem_info = self._proc.memory_info()
+        metrics[f"{prefix}/process/rss_memory_MiB"] = mem_info.rss / (1024**2)
+        metrics[f"{prefix}/process/vms_memory_GiB"] = mem_info.vms / (1024**3)
+        metrics[f"{prefix}/process/num_threads"] = self._proc.num_threads()
+
+        # Open file descriptors (Unix)
+        if hasattr(self._proc, "num_fds"):
+            metrics[f"{prefix}/process/num_fds"] = self._proc.num_fds()
+        # Open handles (Windows)
+        elif hasattr(self._proc, "num_handles"):
+            metrics[f"{prefix}/process/num_fds"] = self._proc.num_handles()
 
     def _monitoring_loop(self) -> None:
         """
@@ -259,7 +291,7 @@ class SystemMetricsMonitor:
         Handles and logs errors during metric collection.
         """
         while not self._stop_event.is_set():
-            start_time = time.time()
+            start_time = time.monotonic()
 
             try:
                 metrics = self._collect_metrics()
@@ -294,7 +326,7 @@ class SystemMetricsMonitor:
         """
         if self._monitoring_thread and self._monitoring_thread.is_alive():
             self._stop_event.set()
-            self._monitoring_thread.join(timeout=5)
+            self._monitoring_thread.join(timeout=self.sampling_rate + 2)
             self._monitoring_thread = None
 
             if self.has_gpu and _pynvml_available:

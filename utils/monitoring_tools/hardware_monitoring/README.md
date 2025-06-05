@@ -1,10 +1,6 @@
-# Neptune Hardware Monitoring
+# Neptune hardware monitoring
 
-<div align="center">
-<a target="_blank" href="https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=dashboard&dashboardId=9f11330c-e4ff-413a-9faa-9e10e5b3f7ee&runIdentificationKey=hardware_monitoring&type=experiment&compare=uiR6bnResm5Dc79uAlyMySpGVJXsCp6medoKxSlVtJGQ">
-  <img alt="Explore in Neptune" src="https://neptune.ai/wp-content/uploads/2024/01/neptune-badge.svg">
-</a>
-</div>
+[![Explore in Neptune][Explore in Neptune badge]][Neptune dashboard]
 
 
 An extensible Python module for logging system and process hardware metrics (CPU, memory, disk, network, GPU, and more) to Neptune.
@@ -13,7 +9,7 @@ An extensible Python module for logging system and process hardware metrics (CPU
 
 ## Changelog
 
-**v0.2.0** (2025-06-03)
+**v0.2.0** (2025-06-05)
 - Added `namespace` and `sampling_rate` arguments to `SystemMetricsMonitor` to allow for custom metric namespaces and sampling rates.
 - Made `pynvml` and `torch` optional dependencies.
 - Added process memory, threads, and file descriptors metrics.
@@ -56,13 +52,14 @@ An extensible Python module for logging system and process hardware metrics (CPU
 
 3. Download and place `neptune_hardware_monitoring.py` in your project directory.
 
-4. **Integrate the monitor in your script:**  
+4. **Integrate the monitoring class in your script:**  
    - Using a context manager:
     ```python
     from neptune_scale import Run
     from neptune_hardware_monitoring import SystemMetricsMonitor
 
-    run = Run()
+    run = Run(experiment_name=...)
+
     with SystemMetricsMonitor(run=run):
         # Your training or workload code here
         ...
@@ -72,7 +69,8 @@ An extensible Python module for logging system and process hardware metrics (CPU
     from neptune_scale import Run
     from neptune_hardware_monitoring import SystemMetricsMonitor
 
-    run = Run()
+    run = Run(experiment_name=...)
+
     monitor = SystemMetricsMonitor(run=run)
 
     monitor.start()
@@ -82,7 +80,7 @@ An extensible Python module for logging system and process hardware metrics (CPU
 
 5. **Metrics will be logged to Neptune automatically** under the specified namespace.
 
-## API Reference
+## API reference
 
 ```python
 class SystemMetricsMonitor(
@@ -93,55 +91,54 @@ class SystemMetricsMonitor(
 ```
 - **run**: Neptune Run object for logging metrics.
 - **sampling_rate**: How often to sample metrics (in seconds). Default is `5.0`.
-- **namespace**: [Namespace](https://docs.neptune.ai/namespaces_and_attributes/) where the metrics will be logged in the Neptune run. Default is `"runtime"`.
+- **namespace**: [Namespace][Docs namespaces and attributes] where the metrics will be logged in the Neptune run. Default is `"runtime"`.
 
 ---
 
-## Caveats
+## Note
 
 - **GPU monitoring requires `pynvml` and a compatible NVIDIA GPU.** If not available, GPU metrics are skipped and a warning is shown.
-- **File descriptor metrics** are only available on Unix-like systems.
 - **Each process logs its own metrics.** In multi-process scenarios when logging to the same Neptune run, ensure that each process uses a different `namespace`.
+- Windows will log `num_handles` to the file descriptor (`process/num_fds`) attribute.
 
 ---
 
-## Example Output
+Details and metrics are logged to Neptune in a structured namespace. Example:
 
-Details and metrics are logged to Neptune in a structured namespace, e.g.:
 ```
-runtime/details/gpu/name/0
+runtime/details/gpu/0/name
 runtime/details/gpu_num
 runtime/monitoring/cpu/percent
-runtime/monitoring/memory/virtual_used_GB
-runtime/monitoring/gpu/0/memory_used_GB
-runtime/monitoring/process/rss_memory_MB
+runtime/monitoring/memory/virtual_used_GiB
+runtime/monitoring/gpu/0/memory_used_MiB
+runtime/monitoring/process/rss_memory_MiB
 ...
 ```
 
-[![Explore in Neptune](https://neptune.ai/wp-content/uploads/2024/01/neptune-badge.svg)](https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=attributes&runIdentificationKey=hardware_monitoring&type=experiment&compare=uiR6bnResm5Dc79uAlyMySpGVJXsCp6medoKxSlVtJGQ&path=runtime%2F)
+[Explore the structure in Neptune][Neptune attributes]
+
 ---
+To visualize all important hardware metrics, create [custom dashboards][Docs custom dashboards].
 
-Create [custom dashboards](https://docs.neptune.ai/custom_dashboard) to visualize all important hardware metrics.
+[Explore a sample dashboard in Neptune][Neptune dashboard]
 
-__Example dashboard__: [![Explore in Neptune](https://neptune.ai/wp-content/uploads/2024/01/neptune-badge.svg)](https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=dashboard&dashboardId=9f11330c-e4ff-413a-9faa-9e10e5b3f7ee&runIdentificationKey=hardware_monitoring&type=experiment&compare=uiR6bnResm5Dc79uAlyMySpGVJXsCp6medoKxSlVtJGQ)
-
-- Add single metric charts, like _#threads_
+- Add single metric charts, like _CPU Utilization %_
 - Add multi-metric charts, like _Network IO_
-- [Dynamically select metrics](https://docs.neptune.ai/chart_widget/#dynamic-metric-selection) so that the chart is up-to-date even when the number of metrics is unknown or changes, like _GPU Utilization (%)_ and _GPU Power Usage (W)_
+- [Dynamically select metrics][Docs dynamic metric selection] so that the chart is up-to-date even when the number of metrics is unknown or changes, like _GPU Utilization (%)_ and _GPU Power Usage (W)_
 
 ---
 
-## Extending the Monitor
+## Extending the monitor
 
 To add custom metrics, extend the class with new `_collect_*_metrics` methods and call them from `_collect_metrics`.
 
 ---
 
-## Support and Feedback
+## Support and feedback
 
-We welcome your feedback and contributions!  
-- For issues, feature requests, or questions, please open a [GitHub Issue](https://github.com/neptune-ai/scale-examples/issues).
-- For general Neptune support, visit the [Neptune support center](https://support.neptune.ai/).
+We welcome your feedback and contributions!
+- For issues, feature requests, or questions, please open a [GitHub Issue][Github issues].
+- For general Neptune support, visit the [Neptune support center][Support center].
 
 ---
 
@@ -156,3 +153,13 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and limitations under the License.
+
+<!-- Ref links -->
+[Docs custom dashboards]: https://docs.neptune.ai/custom_dashboard
+[Docs dynamic metric selection]: https://docs.neptune.ai/chart_widget/#dynamic-metric-selection
+[Docs namespaces and attributes]: https://docs.neptune.ai/namespaces_and_attributes/
+[Explore in Neptune badge]: https://neptune.ai/wp-content/uploads/2024/01/neptune-badge.svg
+[Github issues]: https://github.com/neptune-ai/scale-examples/issues/new
+[Neptune attributes]: https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=attributes&runIdentificationKey=hardware_monitoring&type=experiment&experimentsOnly=true&runsLineage=FULL&lbViewUnpacked=true&sortBy=%5B%22sys%2Fcreation_time%22%5D&sortFieldType=%5B%22datetime%22%5D&sortFieldAggregationMode=%5B%22auto%22%5D&sortDirection=%5B%22descending%22%5D&suggestionsEnabled=false&query=&experimentOnly=true&path=runtime%2F
+[Neptune dashboard]: https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=9f113328-75aa-4c61-9aa8-5bbdffa90879&detailsTab=dashboard&dashboardId=9f11330c-e4ff-413a-9faa-9e10e5b3f7ee&runIdentificationKey=hardware_monitoring&type=experiment&experimentsOnly=true&runsLineage=FULL&lbViewUnpacked=true&sortBy=%5B%22sys%2Fcreation_time%22%5D&sortFieldType=%5B%22datetime%22%5D&sortFieldAggregationMode=%5B%22auto%22%5D&sortDirection=%5B%22descending%22%5D&suggestionsEnabled=false&query=&experimentOnly=true
+[Support center]: https://support.neptune.ai/
