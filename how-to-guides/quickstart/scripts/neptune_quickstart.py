@@ -6,6 +6,7 @@ from neptune_scale import Run
 NUM_STEPS = 2000  # Determines how long the training will run for
 NUM_LAYERS = 10  # Determines the theoretical number of layers to simulate
 
+
 def get_gradient_norm(layer: int, step: int) -> float:
     time_decay = 1.0 / (1.0 + step / 1000)
     layer_factor = np.exp(-0.5 * ((layer - 5) ** 2) / 4)
@@ -13,11 +14,13 @@ def get_gradient_norm(layer: int, step: int) -> float:
 
     return (0.5 + layer_factor) * time_decay + noise
 
+
 def get_activation_distribution(layer: int, step: int) -> tuple[np.ndarray, np.ndarray]:
     base_activation = np.random.normal(0, 1, 1000)
     counts, bin_edges = np.histogram(base_activation, bins=50, range=(-3, 3))
 
     return counts, bin_edges
+
 
 def get_gpu_utilization(step: int) -> float:
     base_util = 0.85
@@ -26,6 +29,7 @@ def get_gpu_utilization(step: int) -> float:
     noise = np.random.uniform(-0.05, 0.05)
 
     return base_util - data_loading_drop + update_spike + noise
+
 
 def _generate_metric(
     step: int,
@@ -37,20 +41,24 @@ def _generate_metric(
 
     return 1 / np.log(relative_progress / factor * random_int + 1.1) + noise
 
+
 def training_step(step: int) -> tuple[float, float]:
     accuracy = 0.45 + 1 / (1 + np.exp(_generate_metric(step)))
     loss = _generate_metric(step)
     return accuracy, loss
+
 
 def validation_step(step: int) -> tuple[float, float]:
     accuracy = 0.45 + 1 / (1 + np.exp(_generate_metric(step, 20)))
     loss = _generate_metric(step, 20)
     return accuracy, loss
 
+
 def test_step(step: int) -> tuple[float, float]:
     accuracy = 0.45 + 1 / (1 + np.exp(_generate_metric(step, 30)))
     loss = _generate_metric(step, 30)
     return accuracy, loss
+
 
 def main():
     run = Run(experiment_name="quickstart-experiment")
