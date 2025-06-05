@@ -40,7 +40,7 @@ An extensible Python module for logging system and process hardware metrics (CPU
    pip install neptune-scale
 
    # For GPU monitoring if using NVIDIA GPUs:
-   pip install -U nvidia-ml-py<13.0.0
+   pip install -U 'nvidia-ml-py<13.0.0'
    ```
 
 2. **Set up Neptune:**
