@@ -11,7 +11,7 @@ import psutil
 from neptune_scale import Run
 from neptune_scale.util.logger import get_logger
 
-logging = get_logger()
+logger = get_logger()
 
 try:
     import torch
@@ -26,7 +26,7 @@ try:
     _pynvml_available = True
 
 except ImportError:
-    logging.warning(
+    logger.warning(
         "`pynvml` is not installed. GPU monitoring will be disabled. Install using `pip install nvidia-ml-py` if you want GPU metrics."
     )
     _pynvml_available = False
@@ -77,7 +77,7 @@ class SystemMetricsMonitor:
                 # Register NVML shutdown at exit
                 atexit.register(pynvml.nvmlShutdown)
             except Exception:
-                logging.warning(
+                logger.warning(
                     "No NVIDIA GPU available or driver issues. GPU monitoring will be disabled."
                 )
                 self.has_gpu = False
@@ -116,7 +116,7 @@ class SystemMetricsMonitor:
                     name = pynvml.nvmlDeviceGetName(handle)
                     self.run.log_configs({f"{self.namespace}/details/gpu/{i}/name": name})
             except Exception as e:
-                logging.warning(f"Error getting GPU details on {self.hostname}: {e}")
+                logger.warning(f"Error getting GPU details on {self.hostname}: {e}")
 
     def _collect_metrics(self) -> Dict[str, Any]:
         """
@@ -232,7 +232,7 @@ class SystemMetricsMonitor:
             try:
                 handle = pynvml.nvmlDeviceGetHandleByIndex(i)
             except Exception as e:
-                logging.warning(f"Error getting handle for GPU {i} on {self.hostname}: {e}")
+                logger.warning(f"Error getting handle for GPU {i} on {self.hostname}: {e}")
                 continue
             # Memory info
             try:
@@ -244,25 +244,25 @@ class SystemMetricsMonitor:
                     (memory.used / memory.total) * 100 if memory.total else 0.0
                 )
             except Exception as e:
-                logging.warning(f"Error getting memory info for GPU {i} on {self.hostname}: {e}")
+                logger.warning(f"Error getting memory info for GPU {i} on {self.hostname}: {e}")
             # Temperature
             try:
                 temp = pynvml.nvmlDeviceGetTemperature(handle, pynvml.NVML_TEMPERATURE_GPU)
                 metrics[f"{prefix}/gpu/{i}/temperature_celsius"] = temp
             except Exception as e:
-                logging.warning(f"Error getting temperature for GPU {i} on {self.hostname}: {e}")
+                logger.warning(f"Error getting temperature for GPU {i} on {self.hostname}: {e}")
             # Utilization
             try:
                 utilization = pynvml.nvmlDeviceGetUtilizationRates(handle)
                 metrics[f"{prefix}/gpu/{i}/gpu_utilization_percent"] = utilization.gpu
             except Exception as e:
-                logging.warning(f"Error getting utilization for GPU {i} on {self.hostname}: {e}")
+                logger.warning(f"Error getting utilization for GPU {i} on {self.hostname}: {e}")
             # Power usage (if available)
             try:
                 power = pynvml.nvmlDeviceGetPowerUsage(handle) / 1000.0  # Convert mW to W
                 metrics[f"{prefix}/gpu/{i}/power_usage_watts"] = power
             except Exception as e:
-                logging.warning(f"Error getting power usage for GPU {i} on {self.hostname}: {e}")
+                logger.warning(f"Error getting power usage for GPU {i} on {self.hostname}: {e}")
 
     def _collect_process_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
         """
@@ -299,12 +299,12 @@ class SystemMetricsMonitor:
                 self._monitoring_step += 1
 
             except Exception as e:
-                logging.warning(f"Error collecting metrics: {e}\n{traceback.format_exc()}")
+                logger.warning(f"Error collecting metrics: {e}\n{traceback.format_exc()}")
 
             finally:
-                elapsed = time.time() - start_time
+                elapsed = time.monotonic() - start_time
                 if elapsed > self.sampling_rate:
-                    logging.debug(
+                    logger.debug(
                         f"Metric collection took {elapsed:.2f}s which exceeds the sampling rate of {self.sampling_rate}s."
                     )
                 sleep_time = max(0, self.sampling_rate - elapsed)
@@ -327,6 +327,10 @@ class SystemMetricsMonitor:
         if self._monitoring_thread and self._monitoring_thread.is_alive():
             self._stop_event.set()
             self._monitoring_thread.join(timeout=self.sampling_rate + 2)
+            if self._monitoring_thread.is_alive():
+                logger.debug(
+                    "Monitoring thread did not terminate after join(). Potential hang-up detected."
+                )
             self._monitoring_thread = None
 
             if self.has_gpu and _pynvml_available:

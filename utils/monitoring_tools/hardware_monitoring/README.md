@@ -103,6 +103,7 @@ class SystemMetricsMonitor(
 
 ---
 
+## Output
 Details and metrics are logged to Neptune in a structured namespace. Example:
 
 ```
@@ -125,6 +126,10 @@ To visualize all important hardware metrics, create [custom dashboards][Docs cus
 - Add single metric charts, like _CPU Utilization %_
 - Add multi-metric charts, like _Network IO_
 - [Dynamically select metrics][Docs dynamic metric selection] so that the chart is up-to-date even when the number of metrics is unknown or changes, like _GPU Utilization (%)_ and _GPU Power Usage (W)_
+
+> [!TIP]
+> Since hardware metrics are logged in a separate thread from the model training, their steps might not be in sync with the model training steps. We recommend using [Relative time as the x-axis][Docs configure the x-axis] for hardware metrics.
+
 
 ---
 
@@ -155,6 +160,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and limitations under the License.
 
 <!-- Ref links -->
+[Docs configure the x-axis]: https://docs.neptune.ai/chart_widget/#configure-the-x-axis
 [Docs custom dashboards]: https://docs.neptune.ai/custom_dashboard
 [Docs dynamic metric selection]: https://docs.neptune.ai/chart_widget/#dynamic-metric-selection
 [Docs namespaces and attributes]: https://docs.neptune.ai/namespaces_and_attributes/
