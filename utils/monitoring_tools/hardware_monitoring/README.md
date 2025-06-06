@@ -44,39 +44,39 @@ An extensible Python module for logging system and process hardware metrics (CPU
    ```
 
 2. **Set up Neptune:**
-   - Set your Neptune API token and project as environment variables:
-     ```bash
-     export NEPTUNE_API_TOKEN=your_token
-     export NEPTUNE_PROJECT=your_workspace/your_project
-     ```
+   Set your Neptune API token and project as environment variables:
+   ```bash
+   export NEPTUNE_API_TOKEN=your_token
+   export NEPTUNE_PROJECT=your_workspace/your_project
+   ```
 
 3. Download and place `neptune_hardware_monitoring.py` in your project directory.
 
 4. **Integrate the monitoring class in your script:**  
    - Using a context manager:
-    ```python
-    from neptune_scale import Run
-    from neptune_hardware_monitoring import SystemMetricsMonitor
-
-    run = Run(experiment_name=...)
-
-    with SystemMetricsMonitor(run=run):
-        # Your training or workload code here
-        ...
-    ```
+       ```python
+       from neptune_scale import Run
+       from neptune_hardware_monitoring import SystemMetricsMonitor
+   
+       run = Run(experiment_name=...)
+   
+       with SystemMetricsMonitor(run=run):
+           # Your training or workload code here
+           ...
+       ```
     - Using `start()` and `stop()` methods:
-    ```python
-    from neptune_scale import Run
-    from neptune_hardware_monitoring import SystemMetricsMonitor
-
-    run = Run(experiment_name=...)
-
-    monitor = SystemMetricsMonitor(run=run)
-
-    monitor.start()
-    # Your training or workload code here
-    monitor.stop()
-    ```
+       ```python
+       from neptune_scale import Run
+       from neptune_hardware_monitoring import SystemMetricsMonitor
+   
+       run = Run(experiment_name=...)
+   
+       monitor = SystemMetricsMonitor(run=run)
+   
+       monitor.start()
+       # Your training or workload code here
+       monitor.stop()
+       ```
 
 5. **Metrics will be logged to Neptune automatically** under the specified namespace.
 
@@ -142,7 +142,7 @@ To add custom metrics, extend the class with new `_collect_*_metrics` methods an
 ## Support and feedback
 
 We welcome your feedback and contributions!
-- For issues, feature requests, or questions, please open a [GitHub Issue][Github issues].
+- For issues or feature requests related to this script, please open a [GitHub Issue][Github issues].
 - For general Neptune support, visit the [Neptune support center][Support center].
 
 ---
