@@ -7,14 +7,18 @@ from torchvision import datasets, transforms
 
 
 class SimpleModel(nn.Module):
-    def __init__(self, input_size: int = 784, hidden_size: int = 128, output_size: int = 10):
+    def __init__(
+        self,
+        input_size: int = 784,
+        hidden_size: int = 128,
+        output_size: int = 10,
+        num_layers: int = 10,
+    ):
         super().__init__()
 
-        layers = []
-        layers.append(nn.Linear(input_size, hidden_size))
-        layers.append(nn.ReLU())
+        layers = [nn.Linear(input_size, hidden_size), nn.ReLU()]
 
-        for _ in range(18):
+        for _ in range(num_layers):
             layers.append(nn.Linear(hidden_size, hidden_size))
             layers.append(nn.ReLU())
 
@@ -63,14 +67,12 @@ def main():
 
     # Load MNIST dataset
     train_dataset = datasets.MNIST("./data", train=True, download=True, transform=transform)
-    # test_dataset = datasets.MNIST('./data', train=False, transform=transform)
 
     train_loader = DataLoader(train_dataset, batch_size=params["batch_size"], shuffle=True)
-    # test_loader = DataLoader(test_dataset, batch_size=batch_size)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     # Initialize model, loss function, and optimizer
-    model = SimpleModel().to(device)
+    model = SimpleModel(num_layers=params["num_layers"]).to(device)
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr=params["lr"])
 
