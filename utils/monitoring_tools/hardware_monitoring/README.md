@@ -9,7 +9,7 @@ An extensible Python module for logging system and process hardware metrics (CPU
 
 ## Changelog
 
-**v0.2.0** (2025-06-05)
+**v0.2.0** (2025-06-06)
 - Added `namespace` and `sampling_rate` arguments to `SystemMetricsMonitor` to allow for custom metric namespaces and sampling rates.
 - Made `pynvml` and `torch` optional dependencies.
 - Added process memory, threads, and file descriptors metrics.
