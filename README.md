@@ -61,7 +61,7 @@ This repo contains tutorials and examples of how to use Neptune.
 [resume-run]: https://docs.neptune.ai/resume_run
 [runs-table]: https://docs.neptune.ai/runs_table
 [runs-table-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/table?viewId=9e746462-f045-4ff2-9ac4-e41fa349b04d&detailsTab=dashboard&dash=table&type=run&compare=auto-5
-[debug]: TODO - Add link to docs
+[debug]: https://docs.neptune.ai/debug_runs_tutorial
 [debug-example]: https://scale.neptune.ai/o/examples/org/debug-training-metrics/runs/table?viewId=standard-view&dash=table&compareChartsFilter-compound=udzSoRe3VmlvolZ8TbuB_zvfcAcgJmla8UuNku1rGWdg
 
 <!-- Clickable icons -->
