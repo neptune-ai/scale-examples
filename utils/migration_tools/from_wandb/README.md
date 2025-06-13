@@ -3,8 +3,13 @@
 This script allows you to copy run metadata from W&B to Neptune.
 
 ## Changelog
-- **2025-05-27** - Added console logs and file support. Updated namespace of hardware metrics to `runtime` from `system`
-- **2025-01-08** - Initial release
+- **v0.2.0** (2025-06-13)
+  - Added console logs and file support.
+  - Updated namespace of hardware metrics to `runtime` from `system`.
+  - Replaced `.` in system metric names with `/` to match the Neptune metric namespace format.
+
+- **v0.1.0** (2025-01-08)
+  - Initial release
 
 ## Prerequisites
 - A Weights and Biases account, `wandb` library installed, and environment variables set.
@@ -17,7 +22,7 @@ To use the script, follow these steps:
 1. Run `wandb_to_neptune.py`.
 1. Enter the source W&B entity name. Leave blank to use your default entity.
 1. Enter the destination Neptune workspace name. Leave blank to read from the `NEPTUNE_PROJECT` environment variable.
-1. Enter the number of workers to use to copy the metadata. Leave blank to select the   number of workers automatically.
+1. Enter the number of workers to use to copy the metadata. Leave blank to use a single worker (slower, but more stable).
 1. Enter the W&B projects you want to export as comma-separated values. Leave blank to export all projects.
 1. The script will generate run logs in the working directory. You can change the directory with `logging.basicConfig()`. Live progress bars will also be rendered in the console.
 1. Neptune projects corresponding to the W&B projects will be created with [*private*][docs-project-access] visibility if they don't exist. You can change the visibility later from the WebApp once the project has been created, or by updating the `create_project()` function in `copy_project()`.
@@ -38,15 +43,20 @@ To use the script, follow these steps:
 | Run summary | run.summary | run.summary<sup>3</sup> |
 | Run metrics | run.scan_history() | run.<METRIC_NAME><sup>4</sup> |
 | System metrics | run.history(stream="system") | run.runtime.<METRIC_NAME><sup>5</sup> |
-| Console logs | Logs section of the W&B run | run.runtime.stdout<sup>6</sup> |
+| Console logs | Files > `output.log` | run.runtime.stdout<sup>6</sup> |
+| Source code | Files > `code/` | run.source_code.files<sup>7</sup> |
+| Requirements | Files > `requirements.txt` | run.source_code.requirements |
+| Checkpoints | Files > `ckpt/`/`checkpoint/` | run.checkpoints |
+| Other files | Files | run.files |
 | All W&B attributes | run.* | run.wandb.* |
 
 <sup>1</sup> Underscores `_` in a W&B project name are replaced by a hyphen `-` in Neptune  
 <sup>2</sup> Passing the wandb.run.id as neptune.run.custom_run_id ensures that duplicate Neptune runs are not created for the same W&B run even if the script is run multiple times  
 <sup>3</sup> Values are converted to a string in Neptune  
 <sup>4</sup> `_step` and `_timestamp` associated with a metric are logged as `step` and `timestamp` respectively with a Neptune metric  
-<sup>5</sup> `system.` prefix is removed when logging to Neptune  
-<sup>6</sup> Lines from the `output.log` file in W&B are logged as `stdout` in Neptune. Not all W&B runs have an `output.log` file, and even those that do don't necessarily have the same information as the console logs displayed in the _Logs_ section of the W&B run. Steps are logged as the line number of the `output.log` file, and the timestamp associated with each step is the current time of the script execution, not the timestamp logged to the W&B run.
+<sup>5</sup> `system.` prefix is removed when logging to Neptune. The `.` in the metric name is replaced with `/` to match the Neptune metric namespace format.  
+<sup>6</sup> Lines from the `output.log` file in W&B are logged as `stdout` in Neptune. Not all W&B runs have an `output.log` file, and even those that do don't necessarily have the same information as the console logs displayed in the _Logs_ section of the W&B run. Steps are logged as the line number of the `output.log` file, and the timestamp associated with each step is the current time of the script execution, not the timestamp logged to the W&B run.  
+<sup>7</sup> All source code files are rendered as plain text in the Neptune web app.
 
 ## What is not exported
 - Project-level metadata
