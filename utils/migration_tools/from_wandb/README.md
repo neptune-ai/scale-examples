@@ -3,10 +3,11 @@
 This script allows you to copy run metadata from W&B to Neptune.
 
 ## Changelog
-- **v0.2.0** (2025-06-13)
+- **v0.2.0** (2025-06-16)
   - Added console logs and file support.
   - Updated namespace of hardware metrics to `runtime` from `system`.
   - Updated script to use only CLI arguments.
+  - Defaulted `num-workers` to 1 instead of `ThreadPoolExecutor`'s defaults.
   - Replaced `.` in system metric names with `/` to match the Neptune metric namespace format.
 
 - **v0.1.0** (2025-01-08)
