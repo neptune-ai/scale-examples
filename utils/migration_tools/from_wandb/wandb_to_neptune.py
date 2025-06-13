@@ -55,16 +55,16 @@ for logger_name in ["httpx", "urllib3", "wandb", "neptune_scale", "neptune"]:
     logging.getLogger(logger_name).setLevel(logging.ERROR)
 
 
-def setup_logging() -> tuple[logging.Logger, str]:
+def setup_logging(log_level: str) -> tuple[logging.Logger, str]:
     now = datetime.now()
     log_filename = now.strftime("wandb_to_neptune_%Y%m%d%H%M%S.log")
-
+    level = getattr(logging, log_level.upper(), logging.INFO)
     logging.basicConfig(
         filename=log_filename,
         filemode="a",
-        format="%(asctime)s\t%(levelname)s\t%(message)s",
+        format="%(asctime)s %(levelname)-8s %(funcName)20s:%(lineno)-4d %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
-        level=logging.INFO,
+        level=level,
         force=True,
     )
 
@@ -73,55 +73,6 @@ def setup_logging() -> tuple[logging.Logger, str]:
     print(f"Logs available at {log_filename}\n")
 
     return logger, log_filename
-
-
-def get_input(
-    client: wandb.Api,
-    wandb_entity_arg=None,
-    neptune_workspace_arg=None,
-    num_workers_arg=None,
-    projects_arg=None,
-):  # type: ignore
-    if wandb_entity_arg is not None:
-        wandb_entity = wandb_entity_arg
-    elif client.default_entity:
-        print(f"Running version {__version__}\n")
-        wandb_entity = (
-            input(
-                f"Enter W&B entity name. Leave blank to use the default entity ({client.default_entity}): "
-            ).strip()
-            or client.default_entity
-        )
-    else:
-        wandb_entity = input("Enter W&B entity name: ").strip()
-
-    if neptune_workspace_arg is not None:
-        neptune_workspace = neptune_workspace_arg
-    elif default_neptune_workspace := os.getenv("NEPTUNE_PROJECT"):
-        default_neptune_workspace = default_neptune_workspace.split("/")[0]
-        neptune_workspace = (
-            input(
-                f"Enter Neptune workspace name. Leave blank to use the default workspace ({default_neptune_workspace}): "
-            ).strip()
-            or default_neptune_workspace
-        )
-    else:
-        neptune_workspace = input("Enter Neptune workspace name: ").strip()
-
-    if num_workers_arg is not None:
-        num_workers = int(num_workers_arg)
-    else:
-        num_workers = input(
-            "Enter the number of workers to use (int). Leave empty to use a single worker (slower, but more stable): "
-        ).strip()
-        num_workers = 1 if num_workers == "" else int(num_workers)
-
-    if projects_arg is not None:
-        selected_projects = [p.strip() for p in projects_arg.split(",") if p.strip()]
-    else:
-        selected_projects = None  # Will prompt later in __main__
-
-    return wandb_entity, neptune_workspace, num_workers, selected_projects
 
 
 def stringify_unsupported(d, parent_key="", sep="/"):
@@ -165,7 +116,7 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
         else:
             neptune_run.close()
 
-    logger.info(f"Starting copy of run {wandb_run.project}/{wandb_run.name}")
+    logger.debug(f"Starting copy of run {wandb_run.project}/{wandb_run.name}")
 
     try:
         with Run(
@@ -389,7 +340,7 @@ def copy_project(wandb_project) -> None:  # type: ignore
         ):
             wandb_run = future_to_run[future]
             try:
-                future.result(timeout=60)  # 1 minute per run
+                future.result(timeout=timeout)
             except TimeoutError:
                 logger.error(f"Timeout copying run {wandb_run.project}/{wandb_run.name}")
                 FAILED_RUNS.append((wandb_run.project, wandb_run.name, "Timeout"))
@@ -405,24 +356,47 @@ def copy_project(wandb_project) -> None:  # type: ignore
 
 
 if __name__ == "__main__":
+    client = wandb.Api(timeout=120)
     parser = argparse.ArgumentParser(description="Migrate W&B runs to Neptune.")
-    parser.add_argument("--wandb-entity", type=str, help="W&B entity name")
-    parser.add_argument("--neptune-workspace", type=str, help="Neptune workspace name")
-    parser.add_argument("--num-workers", type=int, help="Number of workers to use")
-    parser.add_argument("--projects", type=str, help="Comma-separated list of projects to copy")
+    parser.add_argument(
+        "--wandb-entity", type=str, default=client.default_entity, help="W&B entity name"
+    )
+    parser.add_argument(
+        "--neptune-workspace",
+        type=str,
+        default=(
+            os.getenv("NEPTUNE_PROJECT").split("/")[0] if os.getenv("NEPTUNE_PROJECT") else None
+        ),
+        help="Neptune workspace name",
+    )
+    parser.add_argument("--num-workers", type=int, default=1, help="Number of workers to use")
+    parser.add_argument(
+        "--projects",
+        type=str,
+        default=None,
+        help="Comma-separated list of projects to copy. Leave blank to copy all projects in the entity.",
+    )
+    parser.add_argument(
+        "--log-level",
+        type=str,
+        choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
+        default="INFO",
+        help="Logging level",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=int,
+        default=600,
+        help="Timeout in seconds for each run/project (default: 600)",
+    )
     args = parser.parse_args()
 
-    client = wandb.Api(timeout=120)
+    wandb_entity = args.wandb_entity
+    neptune_workspace = args.neptune_workspace
+    num_workers = args.num_workers
+    timeout = args.timeout
 
-    wandb_entity, neptune_workspace, num_workers, selected_projects = get_input(
-        client,
-        wandb_entity_arg=args.wandb_entity,
-        neptune_workspace_arg=args.neptune_workspace,
-        num_workers_arg=args.num_workers,
-        projects_arg=args.projects,
-    )
-
-    logger, log_filename = setup_logging()
+    logger, log_filename = setup_logging(args.log_level)
     logger.info(f"Running version {__version__}")
     logger.info(f"Copying from W&B entity {wandb_entity} to Neptune workspace {neptune_workspace}")
 
@@ -438,16 +412,10 @@ if __name__ == "__main__":
     ]  # sourcery skip: identity-comprehension
     wandb_project_names = [project.name for project in wandb_projects]
 
-    print(f"W&B projects found ({len(wandb_project_names)}): {wandb_project_names}")
-
-    if selected_projects is None:
-        selected_projects = input(
-            "Enter projects you want to copy (comma-separated). Leave blank to copy all projects:  "
-        ).strip()
-        if selected_projects == "":
-            selected_projects = wandb_project_names
-        else:
-            selected_projects = [project.strip() for project in selected_projects.split(",")]
+    if args.projects:
+        selected_projects = [p.strip() for p in args.projects.split(",") if p.strip()]
+    else:
+        selected_projects = wandb_project_names
 
     if not_found := set(selected_projects) - set(wandb_project_names):
         print(f"Projects not found: {not_found}")
@@ -473,7 +441,7 @@ if __name__ == "__main__":
             ):
                 wandb_project = future_to_project[future]
                 try:
-                    future.result(timeout=60)  # 1 minute per project
+                    future.result(timeout=timeout)
                 except TimeoutError:
                     logger.error(f"Timeout copying project {wandb_project.name}")
                     FAILED_PROJECTS.append((wandb_project.name, "Timeout"))

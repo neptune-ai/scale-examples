@@ -6,6 +6,7 @@ This script allows you to copy run metadata from W&B to Neptune.
 - **v0.2.0** (2025-06-13)
   - Added console logs and file support.
   - Updated namespace of hardware metrics to `runtime` from `system`.
+  - Updated script to use only CLI arguments.
   - Replaced `.` in system metric names with `/` to match the Neptune metric namespace format.
 
 - **v0.1.0** (2025-01-08)
@@ -15,18 +16,42 @@ This script allows you to copy run metadata from W&B to Neptune.
 - A Weights and Biases account, `wandb` library installed, and environment variables set.
 - A Neptune account, `neptune-scale` Python library installed, and environment variables set. For details, see the [docs][docs-setup].
 
-## Instructions
+## Usage
 
-To use the script, follow these steps:
+Run the script with CLI arguments:
 
-1. Run `wandb_to_neptune.py`.
-1. Enter the source W&B entity name. Leave blank to use your default entity.
-1. Enter the destination Neptune workspace name. Leave blank to read from the `NEPTUNE_PROJECT` environment variable.
-1. Enter the number of workers to use to copy the metadata. Leave blank to use a single worker (slower, but more stable).
-1. Enter the W&B projects you want to export as comma-separated values. Leave blank to export all projects.
-1. The script will generate run logs in the working directory. You can change the directory with `logging.basicConfig()`. Live progress bars will also be rendered in the console.
-1. Neptune projects corresponding to the W&B projects will be created with [*private*][docs-project-access] visibility if they don't exist. You can change the visibility later from the WebApp once the project has been created, or by updating the `create_project()` function in `copy_project()`.
-1. The project description will be set as *Exported from <W&B project URL>*. You can change the description later from the WebApp once the project has been created, or by updating the `create_project()` function in `copy_project()`.
+```sh
+python wandb_to_neptune.py \
+  [--wandb-entity <wandb_entity>] \
+  [--neptune-workspace <neptune_workspace>] \
+  [--projects <project1,project2,...>] \
+  [--num-workers <int>] \
+  [--log-level <DEBUG|INFO|WARNING|ERROR|CRITICAL>]
+```
+
+### Arguments
+- `--wandb-entity` (str, optional): W&B entity name. Defaults to your W&B default entity if available.
+- `--neptune-workspace` (str, optional): Neptune workspace name. Defaults to the value of the `NEPTUNE_PROJECT` environment variable (the part before `/`).
+- `--projects` (str, optional): Comma-separated list of W&B projects to copy. If omitted or blank, **all projects** in the entity will be copied.
+- `--num-workers` (int, optional): Number of worker threads to use. Default: 1 (recommended for stability).
+- `--log-level` (str, optional): Logging verbosity. One of `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. Default: `INFO`.
+- `--timeout` (int, optional): Timeout in seconds for each run/project. Default: 600.
+
+### Example
+Copy all projects from your default W&B entity to your default Neptune workspace:
+```sh
+python wandb_to_neptune.py
+```
+
+Copy specific projects with debug logging, 2 worker threads, and a 5 minute timeout:
+```sh
+python wandb_to_neptune.py --wandb-entity myentity --neptune-workspace myworkspace --projects proj1,proj2 --log-level DEBUG --num-workers 2 --timeout 300
+```
+
+### Note
+- Neptune projects corresponding to the W&B projects will be created with [*private*][docs-project-access] visibility
+if they don't exist. The project description will be set as *Exported from <W&B project URL>*. Both of these can be changed later from the WebApp, or by updating the `create_project()` function in `copy_project()`.
+- A `tmp_<timestamp>` directory is created in the current working directory to store the files and logs. Ensure that the current working directory is writable, and that there is enough disk space. This directory can be deleted after the script has finished running and the requires sanity checks have been performed.
 
 ## Metadata mapping from W&B to Neptune
 
@@ -73,6 +98,13 @@ To use the script, follow these steps:
 * W&B Runs table views can be recreated using Neptune's [custom views][docs-custom-views]
   ![Example W&B Runs table view recreated in Neptune](https://neptune.ai/wp-content/uploads/2025/01/WB_NeptuneScale.png)
 * W&B Run Overview can be recreated using Neptune's [custom dashboards][docs-custom-dashboards]
+
+## Troubleshooting
+
+- If you see timeouts, try increasing the `--timeout` value.
+- If the migration is slow, you can increase `--num-workers`, but be aware that high concurrency may cause issues with the Neptune client and hit API rate limits.
+- If you hit API rate limits, try reducing the number of workers or spacing out your migrations.
+- Check the log file (`wandb_to_neptune_<timestamp>.log`) for detailed error messages. Reduce the `--log-level` to `DEBUG` for more detailed logs.
 
 ## Support and feedback
 
