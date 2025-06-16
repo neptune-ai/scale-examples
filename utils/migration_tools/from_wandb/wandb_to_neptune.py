@@ -251,7 +251,7 @@ def copy_system_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
 
 
 def copy_console_output(neptune_run: Run, download_path: str) -> None:  # type: ignore
-    with open(download_path) as f:
+    with open(download_path, encoding="utf-8", errors="ignore") as f:
         for step, line in enumerate(f):
             neptune_run.log_string_series({"runtime/stdout": line}, step=step)
 
