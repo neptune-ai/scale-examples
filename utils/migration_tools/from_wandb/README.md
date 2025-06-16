@@ -36,7 +36,7 @@ python wandb_to_neptune.py \
 
 ### Arguments
 - `--wandb-entity` (str, optional): W&B entity name. Defaults to your W&B default entity if available.
-- `--neptune-workspace` (str, optional): Neptune workspace name. Defaults to the value of the [`NEPTUNE_PROJECT`][docs-neptune-project-env-variable] environment variable (the part before `/`).
+- `--neptune-workspace` (str, optional): Neptune workspace name. Defaults to the first part of the [`NEPTUNE_PROJECT`][docs-neptune-project-env-variable] environment variable.
 - `--projects` (str, optional): Comma-separated list of W&B projects to copy. If omitted or blank, **all projects** in the entity will be copied.
 - `--num-workers` (int, optional): Number of worker threads to use. Defaults to 1. This number is recommended for stability.  
 - `--log-level` (str, optional): Logging verbosity. One of: `DEBUG`, `INFO`, `WARNING`, `ERROR`, `CRITICAL`. Defaults to `INFO`.  
@@ -54,7 +54,7 @@ python wandb_to_neptune.py --wandb-entity myentity --neptune-workspace myworkspa
 ```
 
 ### Note
-- If they don't exist yet, Neptune projects corresponding to the W&B projects will be created as [*private*][docs-project-access]. The project description will be set as *Exported from <W&B project URL>*. To change the project visibility or description, use the web app or update the `create_project()` function in `copy_project()`.  
+- If they don't exist yet, Neptune projects corresponding to the W&B projects will be created as [*private*][docs-project-access] with project description set to *Exported from <W&B project URL>*. To change the project visibility or description, use the web app or update the `create_project()` function in `copy_project()`.  
 - A `tmp_<timestamp>` directory is created in the current working directory to store the files and logs. Ensure that the current working directory is writable, and that there is enough disk space. You can delete this directory after the script has finished running and the required sanity checks have been performed.
 
 ## Metadata mapping from W&B to Neptune
