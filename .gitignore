@@ -1,9 +1,11 @@
 # Temporary files
 .neptune
 .tmp*
+.env
 
 # Data files
 **ubyte**
 
 # Logs
 *.log
+/how-to-guides/hpo/**/mnist

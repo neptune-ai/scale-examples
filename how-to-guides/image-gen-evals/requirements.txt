@@ -1,0 +1,9 @@
+diffusers>=0.33
+numpy>=2.3.0
+tqdm>=4.67.1
+neptune-scale>=0.14
+neptune-fetcher>=0.15
+ipykernel
+torch>=2.7
+torchvision>=0.22
+matplotlib>=3.10
