@@ -170,13 +170,11 @@ def main():
         },
     }
 
-    # Store results for aggregation
-    results = {eval_name: defaultdict(list) for eval_name in evaluations.keys()}
     all_results = {eval_name: [] for eval_name in evaluations.keys()}
-
     with tempfile.TemporaryDirectory() as tmpdir:
         for digit in range(10):
             print(f"\n--- Evaluating digit {digit} ---")
+            digit_results = {eval_name: [] for eval_name in evaluations.keys()}
 
             # Generate all samples for this digit in parallel (one batch)
             print(f"Generating {args.n_samples} samples for digit {digit}")
@@ -220,7 +218,7 @@ def main():
                     score = eval_config["parse_score"](eval_output, digit)
                     print(f"  {eval_name}: {eval_output} -> {score}")
 
-                    results[eval_name][digit].append(score)
+                    digit_results[eval_name].append(score)
                     all_results[eval_name].append(score)
 
                     run.log_metrics(
@@ -232,13 +230,13 @@ def main():
                     log_preview_scores(
                         data={
                             f"evals/{eval_name}/scores/digit={digit}/avg": statistics.mean(
-                                results[eval_name][digit]
+                                digit_results[eval_name]
                             ),
                             f"evals/{eval_name}/scores/digit={digit}/max": max(
-                                results[eval_name][digit]
+                                digit_results[eval_name]
                             ),
                             f"evals/{eval_name}/scores/digit={digit}/min": min(
-                                results[eval_name][digit]
+                                digit_results[eval_name]
                             ),
                         },
                         progress=(sample_idx + 1) / args.n_samples,
@@ -248,10 +246,15 @@ def main():
                             f"evals/{eval_name}/scores/avg": statistics.mean(
                                 all_results[eval_name]
                             ),
-                            f"evals/{eval_name}/scores/max": max(all_results[eval_name]),
-                            f"evals/{eval_name}/scores/min": min(all_results[eval_name]),
+                            f"evals/{eval_name}/scores/max": max(
+                                all_results[eval_name]
+                            ),
+                            f"evals/{eval_name}/scores/min": min(
+                                all_results[eval_name]
+                            ),
                         },
-                        progress=len(all_results[eval_name]) / (len(evaluations) * args.n_samples * 10),
+                        progress=len(all_results[eval_name])
+                        / (args.n_samples * 10),
                     )
 
     # Wait for Neptune processing and close
