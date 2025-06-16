@@ -23,10 +23,8 @@ import argparse
 import logging
 import os
 import sys
-import threading
 import traceback
 from concurrent.futures import ThreadPoolExecutor, TimeoutError, as_completed
-from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional
 
@@ -41,6 +39,8 @@ from neptune_scale.types import File
 from tqdm.auto import tqdm
 
 SUPPORTED_DATATYPES = [int, float, str, datetime, bool, list, set]
+
+EXCLUDED_PATHS = {"artifact/", "config.yaml", "media/", "wandb-"}
 
 
 def exc_handler(exctype, value, tb):
@@ -96,19 +96,6 @@ def stringify_unsupported(d, parent_key="", sep="/"):
     return items
 
 
-@contextmanager
-def threadsafe_change_directory(new_dir):
-    lock = threading.Lock()
-    old_dir = os.getcwd()
-    try:
-        with lock:
-            os.chdir(new_dir)
-        yield
-    finally:
-        with lock:
-            os.chdir(old_dir)
-
-
 def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
     def _error_callback(exc: BaseException, ts: Optional[float]) -> None:
         if isinstance(exc, (NeptuneSeriesStepNonIncreasing, NeptuneSeriesTimestampDecreasing)):
@@ -116,7 +103,7 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
         else:
             neptune_run.close()
 
-    logger.debug(f"Starting copy of run {wandb_run.project}/{wandb_run.name}")
+    logger.debug(f"Starting copy of run {wandb_run.project}/{wandb_run.name} (id: {wandb_run.id})")
 
     try:
         with Run(
@@ -129,6 +116,7 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
         ) as neptune_run:
             # Add run description
             if wandb_run.notes:
+                logger.debug(f"Logging run description for {wandb_run.name}")
                 neptune_run.log_configs({"sys/description": wandb_run.notes})
 
             # Add W&B run attributes
@@ -142,11 +130,13 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
                         # Skip unsupported attributes
                         continue
                     if attr == "group":
-                        # Add group tags
+                        logger.debug(f"Adding group tags for {wandb_run.name}")
                         neptune_run.add_tags([wandb_run.group], group_tags=True)
                     elif attr == "config":
+                        logger.debug(f"Copying config for {wandb_run.name}")
                         copy_config(neptune_run, wandb_run)
                     elif attr == "tags":
+                        logger.debug(f"Adding tags for {wandb_run.name}")
                         neptune_run.add_tags(wandb_run.tags)
                     elif isinstance(getattr(wandb_run, attr), dict):
                         for k, v in stringify_unsupported(getattr(wandb_run, attr)).items():
@@ -164,7 +154,8 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
                 copy_summary(neptune_run, wandb_run)
                 copy_metrics(neptune_run, wandb_run)
                 copy_system_metrics(neptune_run, wandb_run)
-                copy_files(neptune_run, wandb_run)
+                download_folder = os.path.join(tmpdirname, wandb_run.project, wandb_run.id)
+                copy_files(neptune_run, wandb_run, download_folder)
             except Exception as e:
                 logger.error(f"Failed to copy {wandb_run.name} due to exception:\n{e}")
             else:
@@ -173,7 +164,9 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
                 )
 
     finally:
-        logger.debug(f"Finished copy of run {wandb_run.project}/{wandb_run.name}")
+        logger.debug(
+            f"Finished copy of run {wandb_run.project}/{wandb_run.name} (id: {wandb_run.id})"
+        )
 
 
 def copy_config(neptune_run: Run, wandb_run) -> None:  # type: ignore
@@ -189,6 +182,7 @@ def copy_config(neptune_run: Run, wandb_run) -> None:  # type: ignore
 
 
 def copy_summary(neptune_run: Run, wandb_run) -> None:  # type: ignore
+    logger.debug(f"Copying summary for {wandb_run.name}")
     summary = wandb_run.summary
     for key, value in summary.items():
         if key.startswith("_") or (isinstance(value, wandb.old.summary.SummarySubDict)):
@@ -209,6 +203,7 @@ def copy_summary(neptune_run: Run, wandb_run) -> None:  # type: ignore
 
 
 def copy_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
+    logger.debug(f"Copying metrics for {wandb_run.name}")
     for record in wandb_run.scan_history():
         for key, value in record.items():
             if (
@@ -234,6 +229,7 @@ def copy_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
 
 
 def copy_system_metrics(neptune_run: Run, wandb_run) -> None:  # type: ignore
+    logger.debug(f"Copying system metrics for {wandb_run.name}")
     for step, record in enumerate(wandb_run.history(stream="system", pandas=False)):
         for key in record:
             if key.startswith("_"):  # Excluding '_runtime', '_timestamp', '_wandb'
@@ -265,11 +261,11 @@ def copy_source_code(
     download_path: str,
     filename: str,
 ) -> None:
-    with threadsafe_change_directory(os.path.join(download_path.replace(filename, ""), "code")):
-        filename = filename.replace("code/", "")
-        neptune_run.assign_files(
-            {f"source_code/files/{filename}": File(source=filename, mime_type="text/plain")}
-        )
+    abs_path = os.path.abspath(download_path)
+    rel_filename = filename.replace("code/", "")
+    neptune_run.assign_files(
+        {f"source_code/files/{rel_filename}": File(source=abs_path, mime_type="text/plain")}
+    )
 
 
 def copy_requirements(neptune_run: Run, download_path: str) -> None:
@@ -279,33 +275,37 @@ def copy_requirements(neptune_run: Run, download_path: str) -> None:
 
 
 def copy_other_files(neptune_run: Run, download_path: str, filename: str, namespace: str) -> None:
-    with threadsafe_change_directory(download_path.replace(filename, "")):
-        neptune_run.assign_files({f"{namespace}/{filename}": File(source=filename)})
+    abs_path = os.path.abspath(download_path)
+    neptune_run.assign_files({f"{namespace}/{filename}": File(source=abs_path)})
 
 
-def copy_files(neptune_run: Run, wandb_run) -> None:  # type: ignore
-    EXCLUDED_PATHS = {"artifact/", "config.yaml", "media/", "wandb-"}
-    download_folder = os.path.join(tmpdirname, wandb_run.project, wandb_run.id)
+def copy_files(neptune_run: Run, wandb_run, download_folder: str) -> None:  # type: ignore
     for file in wandb_run.files():
-        if file.size and not any(
-            file.name.startswith(path) for path in EXCLUDED_PATHS
-        ):  # A zero-byte file will be returned even when the `output.log` file does not exist
+        if file.size and not any(file.name.startswith(path) for path in EXCLUDED_PATHS):
             download_path = os.path.join(download_folder, file.name)
             try:
+                logger.debug(
+                    f"Downloading file {file.name} for run {wandb_run.name} to {download_path}"
+                )
                 file.download(root=download_folder, replace=True, exist_ok=True)
                 if file.name == "output.log":
+                    logger.debug(f"Copying console output for {wandb_run.name}")
                     copy_console_output(neptune_run, download_path)
 
                 elif file.name.startswith("code/"):
+                    logger.debug(f"Copying source code file {file.name} for {wandb_run.name}")
                     copy_source_code(neptune_run, download_path, file.name)
 
                 elif file.name == "requirements.txt":
+                    logger.debug(f"Copying requirements.txt for {wandb_run.name}")
                     copy_requirements(neptune_run, download_path)
 
                 elif "ckpt" in file.name or "checkpoint" in file.name:
+                    logger.debug(f"Copying checkpoint file {file.name} for {wandb_run.name}")
                     copy_other_files(neptune_run, download_path, file.name, namespace="checkpoints")
 
                 else:
+                    logger.debug(f"Copying other file {file.name} for {wandb_run.name}")
                     copy_other_files(neptune_run, download_path, file.name, namespace="files")
             except Exception as e:
                 logger.error(
@@ -314,8 +314,9 @@ def copy_files(neptune_run: Run, wandb_run) -> None:  # type: ignore
 
 
 def copy_project(wandb_project) -> None:  # type: ignore
-    # sourcery skip: identity-comprehension
     wandb_project_name = wandb_project.name.replace("_", "-")
+
+    logger.debug(f"Starting copy of project {wandb_project.name}")
 
     # Create a new Neptune project for each W&B project
     create_project(
@@ -323,7 +324,9 @@ def copy_project(wandb_project) -> None:  # type: ignore
         description=f"Exported from {wandb_project.url}",
     )
 
-    wandb_runs = [run for run in client.runs(f"{wandb_entity}/{wandb_project.name}")]
+    wandb_runs = [
+        run for run in client.runs(f"{wandb_entity}/{wandb_project.name}")
+    ]  # sourcery skip: identity-comprehension
 
     FAILED_RUNS = []
 
@@ -351,8 +354,10 @@ def copy_project(wandb_project) -> None:  # type: ignore
                 FAILED_RUNS.append((wandb_run.project, wandb_run.name, str(e)))
 
     if FAILED_RUNS:
-        logger.error(f"Some runs failed to copy: {FAILED_RUNS}")
-        print(f"Some runs failed to copy: {FAILED_RUNS}")
+        logger.error(f"Some runs failed to copy in project {wandb_project.name}: {FAILED_RUNS}")
+        print(f"Some runs failed to copy in project {wandb_project.name}: {FAILED_RUNS}")
+
+    logger.debug(f"Finished copy of project {wandb_project.name}")
 
 
 if __name__ == "__main__":
@@ -395,6 +400,11 @@ if __name__ == "__main__":
     neptune_workspace = args.neptune_workspace
     num_workers = args.num_workers
     timeout = args.timeout
+
+    if not neptune_workspace:
+        raise ValueError(
+            "Neptune workspace not found. Either set the `NEPTUNE_PROJECT` environment variable or provide it via the `--neptune-workspace` CLI argument."
+        )
 
     logger, log_filename = setup_logging(args.log_level)
     logger.info(f"Running version {__version__}")
@@ -452,6 +462,7 @@ if __name__ == "__main__":
         if FAILED_PROJECTS:
             logger.error(f"Some projects failed to copy: {FAILED_PROJECTS}")
             print(f"Some projects failed to copy: {FAILED_PROJECTS}")
+            sys.exit(1)
 
         logger.info("Copy complete!")
         print("\nDone!")
