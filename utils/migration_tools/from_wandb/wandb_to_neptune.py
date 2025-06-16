@@ -159,9 +159,7 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
             except Exception as e:
                 logger.error(f"Failed to copy {wandb_run.name} due to exception:\n{e}")
             else:
-                logger.info(
-                    f"Copied {wandb_run.url} to https://scale.neptune.ai/{neptune_run._project}/runs/table?viewId=standard-view&query=(%60sys%2Fname%60%3Astring%20MATCHES%20%22{wandb_run.name}%22)&experimentsOnly=false&runsLineage=FULL&lbViewUnpacked=true"
-                )
+                logger.info(f"Copied {wandb_run.url} to {neptune_run.get_run_url()}")
 
     finally:
         logger.debug(
