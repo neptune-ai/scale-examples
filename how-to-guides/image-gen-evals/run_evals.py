@@ -4,7 +4,6 @@ import tempfile
 import torch
 import argparse
 import statistics
-from collections import defaultdict
 from checkpoint_utils import load_checkpoint_by_run_and_step
 from net import get_device
 from google import genai
