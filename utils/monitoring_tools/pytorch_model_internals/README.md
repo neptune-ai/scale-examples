@@ -48,7 +48,7 @@ pip install neptune_scale
 
 ### Quickstart
 
-See `torch_watcher_example.py` for a complete example demonstrating:
+See `scripts/torch_watcher_example.py` for a complete example demonstrating:
 - Model definition
 - Data generation
 - Training loop with different tracking configurations
