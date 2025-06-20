@@ -1,0 +1,101 @@
+# PyTorch outputs and model files
+*.pth
+*.pt
+*.ckpt
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+*.onnx
+*.tflite
+*.pb
+*.savedmodel
+*.tflite
+*.lite
+
+# PyTorch profiler outputs
+*.prof
+*.json
+*.trace
+*.trace.json
+
+# Jupyter notebook outputs
+.ipynb_checkpoints/
+*.ipynb_checkpoints/
+
+# Benchmarking results and outputs
+benchmark_torchwatcher.py
+profile_torchwatcher.py
+benchmark_results/
+profiling_results/
+*.csv
+*.json
+*.log
+*.txt
+
+# Data files
+*.csv
+*.json
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.npz
+*.npy
+
+# Logs and temporary files
+logs/
+*.log
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.env/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Neptune specific
+.neptune/
+neptune_cache/ 
