@@ -311,12 +311,14 @@ class TorchWatcher:
 
     def track_parameters(self, namespace: Optional[str] = None):
         """Track model parameters with enhanced statistics."""
-        parameters = {
-            name: param.grad
-            for name, param in self.model.named_parameters()
-            if param is not None and param.grad is not None
-        }
-        self._track_metric("parameters", parameters, namespace)
+        #TODO: Speed up for extracting parameters
+        with torch.no_grad():
+            parameters = {
+                name: param.grad
+                for name, param in self.model.named_parameters()
+                if param is not None and param.grad is not None
+            }
+            self._track_metric("parameters", parameters, namespace)
 
     def watch(
         self,
