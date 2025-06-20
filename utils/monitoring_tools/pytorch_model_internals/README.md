@@ -231,7 +231,7 @@ TorchWatcher is designed to be lightweight and efficient. Our benchmarks show mi
     - Larger models have less total overhead between model training time in batch vs. time taken to extract values and is minimal if logging activations and gradients. 
 - Benchmarking also showed that the average running time per batch remained constant, indicating that there is no leakage or slowdown between training batches.
 
-![Training time overhead](path/to/training_time_overhead.png)
+![Benchmark analysis](benchmark_analysis.png)
 *Figure 1: Training time overhead comparison between baseline training and training with TorchWatcher enabled. Results shown for different model sizes and tracking configurations.*
 
 ### Future benchmarking
