@@ -3,6 +3,7 @@ from random import randint
 import numpy as np
 import requests
 from neptune_scale import Run
+from neptune_scale.types import Histogram
 
 NUM_STEPS = 2000  # Determines how long the training will run for
 NUM_LAYERS = 10  # Determines the theoretical number of layers to simulate
@@ -59,6 +60,13 @@ def test_step(step: int) -> tuple[float, float]:
     accuracy = 0.45 + 1 / (1 + np.exp(_generate_metric(step, 30)))
     loss = _generate_metric(step, 30)
     return accuracy, loss
+
+
+def download_file(url: str, filename: str) -> None:
+    response = requests.get(url)
+    response.raise_for_status()
+    with open(filename, "wb") as f:
+        f.write(response.content)
 
 
 def main():
@@ -126,21 +134,15 @@ def main():
         step=10,
     )
 
-    # Download sample files
-    response = requests.get(
-        "https://neptune.ai/wp-content/uploads/2024/05/blog_feature_image_046799_8_3_7_3-4.jpg"
+    download_file(
+        "https://neptune.ai/wp-content/uploads/2024/05/blog_feature_image_046799_8_3_7_3-4.jpg",
+        "sample.png",
     )
-    response.raise_for_status()
-    with open("sample.png", "wb") as f:
-        f.write(response.content)
-    response = requests.get("https://neptune.ai/wp-content/uploads/2025/05/sac-rl.mp4")
-    response.raise_for_status()
-    with open("sac-rl.mp4", "wb") as f:
-        f.write(response.content)
-    response = requests.get("https://neptune.ai/wp-content/uploads/2025/05/t-rex.mp3")
-    response.raise_for_status()
-    with open("t-rex.mp3", "wb") as f:
-        f.write(response.content)
+    download_file(
+        "https://neptune.ai/wp-content/uploads/2025/05/sac-rl.mp4",
+        "sac-rl.mp4",
+    )
+    download_file("https://neptune.ai/wp-content/uploads/2025/05/t-rex.mp3", "t-rex.mp3")
 
     # Upload single file to Neptune
     run.assign_files(
@@ -152,7 +154,6 @@ def main():
     )
 
     # Download sample MNIST dataset
-
     for image_num in range(1, 10):
         try:
             response = requests.get(
@@ -182,8 +183,6 @@ def main():
         )
 
     # Log series of histograms
-    from neptune_scale.types import Histogram
-
     for step in range(1, NUM_STEPS):
         hist_dict = {}  # Log every distribution at each step in a single call
         for layer in range(NUM_LAYERS):
