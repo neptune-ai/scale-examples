@@ -36,7 +36,6 @@ from typing import Optional
 import neptune.metadata_containers
 from neptune import management
 from neptune.exceptions import MetadataInconsistency, MissingFieldException
-from neptune.types import File
 from neptune_scale import Run
 from neptune_scale.exceptions import (
     NeptuneAttributePathNonWritable,
@@ -44,6 +43,7 @@ from neptune_scale.exceptions import (
     NeptuneSeriesTimestampDecreasing,
 )
 from neptune_scale.projects import create_project
+from neptune_scale.types import File
 from tqdm.auto import tqdm
 
 for logger in [
@@ -133,7 +133,7 @@ def setup_logging(project: str) -> tuple[logging.Logger, str]:
     logging.basicConfig(
         filename=log_filename,
         filemode="a",
-        format="%(asctime)s %(funcName)-20s %(levelname)-8s %(message)s",
+        format="%(asctime)s %(levelname)-8s %(funcName)20s:%(lineno)-4d %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
         level=logging.INFO,
         force=True,
@@ -265,8 +265,6 @@ def copy_fileset(source_run, namespace, run, localpath, id):
 
 @log_error
 def copy_fileseries(source_run, namespace, run, localpath, id):
-    # TODO: Not implemented in the new Neptune API
-    return
     _download_path = os.path.join(localpath, namespace)
     source_run[namespace].download(_download_path, progress_bar=False)
     for step, file in enumerate(glob(f"{_download_path}{os.sep}*")):
@@ -325,7 +323,7 @@ def copy_metadata(
         else:
             copy_atom(source_run, namespace, target_run, object_id)
 
-    target_run.wait_for_processing(verbose=False)
+    target_run.close()
 
 
 def init_target_run(
@@ -444,7 +442,7 @@ def main():
         visibility=legacy_project_details["visibility"],
     )
     if args.query:
-        logger.info(f"Filter query: {args.query}")
+        logger.info(f"Filter query: '{args.query}'")
     logger.info(f"Source project URL: {legacy_project_details['url']}runs")
     scale_instance_url = json.loads(base64.urlsafe_b64decode(args.new_token))["api_url"]
     logger.info(
