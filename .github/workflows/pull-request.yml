@@ -24,6 +24,8 @@ jobs:
           json: true
           files: |
             **/*.ipynb
+          files_ignore: |
+            **/community-code/**
       - name: Set output
         id: output
         if: steps.changed-files.outputs.any_changed == 'true'
@@ -81,6 +83,8 @@ jobs:
           files: |
             **/scripts/**
             **/code/**
+          files_ignore: |
+            **/community-code/**
       - name: Set output
         id: output
         if: steps.changed-dirs.outputs.any_changed == 'true'
