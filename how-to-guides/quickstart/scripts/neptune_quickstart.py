@@ -1,6 +1,7 @@
 from random import randint
 
 import numpy as np
+import requests
 from neptune_scale import Run
 
 NUM_STEPS = 2000  # Determines how long the training will run for
@@ -63,8 +64,6 @@ def test_step(step: int) -> tuple[float, float]:
 def main():
     run = Run(experiment_name="quickstart-experiment")
 
-    print(f"Neptune run created 🎉\nAccess at {run.get_run_url()}")
-
     run.add_tags(["quickstart", "script"])
     run.add_tags(["short"], group_tags=True)
 
@@ -126,6 +125,23 @@ def main():
         },
         step=10,
     )
+
+    # Download sample files
+    response = requests.get(
+        "https://neptune.ai/wp-content/uploads/2024/05/blog_feature_image_046799_8_3_7_3-4.jpg"
+    )
+    response.raise_for_status()
+    with open("sample.png", "wb") as f:
+        f.write(response.content)
+    response = requests.get("https://neptune.ai/wp-content/uploads/2025/05/sac-rl.mp4")
+    response.raise_for_status()
+    with open("sac-rl.mp4", "wb") as f:
+        f.write(response.content)
+    response = requests.get("https://neptune.ai/wp-content/uploads/2025/05/t-rex.mp3")
+    response.raise_for_status()
+    with open("t-rex.mp3", "wb") as f:
+        f.write(response.content)
+
     # Upload single file to Neptune
     run.assign_files(
         {
@@ -136,7 +152,6 @@ def main():
     )
 
     # Download sample MNIST dataset
-    import requests
 
     for image_num in range(1, 10):
         try:
@@ -146,21 +161,18 @@ def main():
             response.raise_for_status()
             with open(f"mnist_sample_{image_num}.png", "wb") as f:
                 f.write(response.content)
-            print(f"Downloaded mnist_sample_{image_num}.png")
         except Exception as e:
             print(f"Failed to download mnist_sample_{image_num}.png: {e}")
 
     # Upload a series of files to Neptune
     for step in range(1, 10):
-
         run.log_files(
-            files={f"files/series/mnist_sample": f"mnist_sample_{step}.png"},
+            files={"files/series/mnist_sample": f"mnist_sample_{step}.png"},
             step=step,
         )
 
     # Log custom string series
     for step in range(1, 10):
-
         run.log_string_series(
             data={
                 "custom_messages/errors": f"Job failed - step {step}",
@@ -173,7 +185,6 @@ def main():
     from neptune_scale.types import Histogram
 
     for step in range(1, NUM_STEPS):
-
         hist_dict = {}  # Log every distribution at each step in a single call
         for layer in range(NUM_LAYERS):
             counts, bin_edges = get_activation_distribution(layer, step)
