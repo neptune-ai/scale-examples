@@ -63,7 +63,7 @@ def test_step(step: int) -> tuple[float, float]:
 
 
 def download_file(url: str, filename: str) -> None:
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
     response.raise_for_status()
     with open(filename, "wb") as f:
         f.write(response.content)
