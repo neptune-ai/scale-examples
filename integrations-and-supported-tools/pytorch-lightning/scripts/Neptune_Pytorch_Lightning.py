@@ -4,14 +4,13 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
+from lightning.pytorch.loggers.neptune import NeptuneScaleLogger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from sklearn.metrics import accuracy_score
 from torch.optim.lr_scheduler import LambdaLR
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 from torchvision.datasets import MNIST
-
-from lightning.pytorch.loggers.neptune import NeptuneScaleLogger
 
 # define hyper-parameters
 params = {
@@ -183,6 +182,7 @@ class MNISTDataModule(pl.LightningDataModule):
     def test_dataloader(self):
         return DataLoader(self.mnist_test, batch_size=self.batch_size, num_workers=0)
 
+
 def main():
 
     # (neptune) create NeptuneLogger
@@ -190,6 +190,7 @@ def main():
         # api_key = "YOUR_API_KEY",
         # project = "YOUR_WORKSPACE_NAME/YOUR_PROJECT_NAME"
         experiment_name="lightning-experiment",
+        log_model_checkpoints=True,  # Logs model checkpoint paths to Neptune
     )
 
     # (neptune) initialize a trainer and pass neptune_logger
@@ -220,6 +221,7 @@ def main():
     # train and test the model, log metadata to the Neptune run
     trainer.fit(model, datamodule=dm)
     trainer.test(model, datamodule=dm)
+
 
 if __name__ == "__main__":
     main()
