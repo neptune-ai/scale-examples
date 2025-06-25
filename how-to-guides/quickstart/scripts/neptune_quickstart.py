@@ -6,7 +6,7 @@ from neptune_scale import Run
 from neptune_scale.types import Histogram
 
 NUM_STEPS = 2000  # Determines how long the training will run for
-NUM_LAYERS = 10  # Determines the theoretical number of layers to simulate
+NUM_LAYERS = 10  # The theoretical number of layers to simulate
 
 
 def get_gradient_norm(layer: int, step: int) -> float:
