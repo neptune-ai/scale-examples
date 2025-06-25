@@ -22,6 +22,7 @@ jobs:
         scripts: # Add in alphabetical order
           - how-to-guides/hpo/scripts
           - how-to-guides/quickstart/scripts
+          - integrations-and-supported-tools/pytorch-lightning/scripts
         os: ["${{ inputs.os }}"]
     steps:
       - uses: actions/checkout@main
