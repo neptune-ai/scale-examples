@@ -1,4 +1,5 @@
 from random import randint
+from tqdm.auto import trange
 
 import numpy as np
 import requests
@@ -183,7 +184,7 @@ def main():
         )
 
     # Log series of histograms
-    for step in range(1, NUM_STEPS):
+    for step in trange(NUM_STEPS):
         hist_dict = {}  # Log every distribution at each step in a single call
         for layer in range(NUM_LAYERS):
             counts, bin_edges = get_activation_distribution(layer, step)
