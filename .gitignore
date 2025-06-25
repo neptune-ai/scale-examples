@@ -4,6 +4,9 @@
 
 # Data files
 **ubyte**
+*.png
+*.mp4
+*.mp3
 
 # Logs
 *.log
