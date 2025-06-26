@@ -235,7 +235,7 @@ TorchWatcher is designed to be lightweight and efficient. Our benchmarks show mi
 *Figure 1: Training time overhead comparison between baseline training and training with TorchWatcher enabled. Results shown for different model sizes and tracking configurations.*
 
 ### Future benchmarking
-- Analyse memory overhead
+- Analyze memory overhead
 - Train on multiple GPU's
 - Test on different datasets and model techniques
 

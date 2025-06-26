@@ -103,8 +103,9 @@ class HookManager:
 
         # Validate that all specified layers are valid PyTorch layers if track_layers is provided
         if track_layers is not None:
-            invalid_layers = [layer for layer in track_layers if layer not in PYTORCH_LAYERS]
-            if invalid_layers:
+            if invalid_layers := [
+                layer for layer in track_layers if layer not in PYTORCH_LAYERS
+            ]:
                 raise ValueError(
                     f"Invalid layer types specified: {invalid_layers}. "
                     f"Please use valid PyTorch layer types from torch.nn."
@@ -246,10 +247,9 @@ class TorchWatcher:
         if tensor_stats is None:
             tensor_stats = ["mean"]
 
-        # Validate that all requested statistics exist
-        # TODO: Add ability to set custom statistics
-        invalid_stats = [stat for stat in tensor_stats if stat not in TENSOR_STATS]
-        if invalid_stats:
+        if invalid_stats := [
+            stat for stat in tensor_stats if stat not in TENSOR_STATS
+        ]:
             raise ValueError(
                 f"Invalid statistics requested: {invalid_stats}. "
                 f"Available statistics are: {list(TENSOR_STATS.keys())}"
