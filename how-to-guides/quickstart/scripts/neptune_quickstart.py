@@ -1,10 +1,14 @@
 from random import randint
-from typing import Literal
+from tqdm.auto import trange
 
 import numpy as np
+import requests
 from neptune_scale import Run
+from neptune_scale.types import Histogram
 
 NUM_STEPS = 2000  # Determines how long the training will run for
+NUM_LAYERS = 10  # The theoretical number of layers to simulate
+
 
 def get_gradient_norm(layer: int, step: int) -> float:
     time_decay = 1.0 / (1.0 + step / 1000)
@@ -12,6 +16,13 @@ def get_gradient_norm(layer: int, step: int) -> float:
     noise = np.random.uniform(-0.1, 0.1) * (1 - step / NUM_STEPS)
 
     return (0.5 + layer_factor) * time_decay + noise
+
+
+def get_activation_distribution(layer: int, step: int) -> tuple[np.ndarray, np.ndarray]:
+    base_activation = np.random.normal(0, 1, 1000)
+    counts, bin_edges = np.histogram(base_activation, bins=50, range=(-3, 3))
+
+    return counts, bin_edges
 
 
 def get_gpu_utilization(step: int) -> float:
@@ -52,10 +63,15 @@ def test_step(step: int) -> tuple[float, float]:
     return accuracy, loss
 
 
+def download_file(url: str, filename: str) -> None:
+    response = requests.get(url, timeout=10)
+    response.raise_for_status()
+    with open(filename, "wb") as f:
+        f.write(response.content)
+
+
 def main():
     run = Run(experiment_name="quickstart-experiment")
-
-    print(f"Neptune run created 🎉\nAccess at {run.get_run_url()}")
 
     run.add_tags(["quickstart", "script"])
     run.add_tags(["short"], group_tags=True)
@@ -93,7 +109,7 @@ def main():
             "metrics/test/loss": test_loss,
         }
 
-        for layer in range(10):
+        for layer in range(NUM_LAYERS):
             metrics_to_log[f"debug/gradient_norm/layer_{layer}"] = get_gradient_norm(layer, step)
             metrics_to_log[f"system/gpu_{layer}/utilization"] = get_gpu_utilization(step)
 
@@ -118,6 +134,17 @@ def main():
         },
         step=10,
     )
+
+    download_file(
+        "https://neptune.ai/wp-content/uploads/2024/05/blog_feature_image_046799_8_3_7_3-4.jpg",
+        "sample.png",
+    )
+    download_file(
+        "https://neptune.ai/wp-content/uploads/2025/05/sac-rl.mp4",
+        "sac-rl.mp4",
+    )
+    download_file("https://neptune.ai/wp-content/uploads/2025/05/t-rex.mp3", "t-rex.mp3")
+
     # Upload single file to Neptune
     run.assign_files(
         {
@@ -128,8 +155,6 @@ def main():
     )
 
     # Download sample MNIST dataset
-    import requests
-
     for image_num in range(1, 10):
         try:
             response = requests.get(
@@ -138,21 +163,18 @@ def main():
             response.raise_for_status()
             with open(f"mnist_sample_{image_num}.png", "wb") as f:
                 f.write(response.content)
-            print(f"Downloaded mnist_sample_{image_num}.png")
         except Exception as e:
             print(f"Failed to download mnist_sample_{image_num}.png: {e}")
 
     # Upload a series of files to Neptune
     for step in range(1, 10):
-
         run.log_files(
-            files={f"files/series/mnist_sample": f"mnist_sample_{step}.png"},
+            files={"files/series/mnist_sample": f"mnist_sample_{step}.png"},
             step=step,
         )
 
     # Log custom string series
     for step in range(1, 10):
-
         run.log_string_series(
             data={
                 "custom_messages/errors": f"Job failed - step {step}",
@@ -160,6 +182,16 @@ def main():
             },
             step=step,
         )
+
+    # Log series of histograms
+    for step in trange(NUM_STEPS):
+        hist_dict = {}  # Log every distribution at each step in a single call
+        for layer in range(NUM_LAYERS):
+            counts, bin_edges = get_activation_distribution(layer, step)
+            activations_hist = Histogram(bin_edges=bin_edges, counts=counts)
+            hist_dict[f"debug/activations/layer_{layer}"] = activations_hist
+
+        run.log_histograms(histograms=hist_dict, step=step)
 
     run.close()
 
