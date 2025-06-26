@@ -10,7 +10,6 @@
 *.tflite
 *.pb
 *.savedmodel
-*.tflite
 *.lite
 
 # PyTorch profiler outputs
