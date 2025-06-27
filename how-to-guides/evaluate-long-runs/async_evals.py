@@ -1,4 +1,5 @@
 import torch
+import torch.nn as nn
 from torchvision import datasets, transforms, models
 import os
 import time
@@ -8,7 +9,6 @@ from neptune_scale import Run
 
 def main():
     CHECKPOINT_DIR = "checkpoints"
-    EVAL_LOG = "eval_log.csv"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Data
@@ -22,14 +22,26 @@ def main():
     def evaluate(model, dataloader):
         model.eval()
         correct, total = 0, 0
+        total_loss = 0.0
+        criterion = nn.CrossEntropyLoss()
+        
         with torch.no_grad():
             for imgs, labels in dataloader:
                 imgs, labels = imgs.to(device), labels.to(device)
                 outputs = model(imgs)
+                
+                # Calculate loss
+                loss = criterion(outputs, labels)
+                total_loss += loss.item()
+                
+                # Calculate accuracy
                 _, preds = outputs.max(1)
                 correct += (preds == labels).sum().item()
                 total += labels.size(0)
-        return correct / total
+        
+        avg_loss = total_loss / len(dataloader)
+        accuracy = correct / total
+        return accuracy, avg_loss
 
     # Track processed checkpoints
     processed = set()
@@ -45,8 +57,8 @@ def main():
             model.load_state_dict(checkpoint['model_state_dict'])
             model.to(device)
 
-            acc = evaluate(model, val_loader)
-            print(f"Evaluated {path}: Accuracy = {acc:.4f}")
+            acc, loss = evaluate(model, val_loader)
+            print(f"Evaluated {path}: Accuracy = {acc:.4f}, Loss = {loss:.4f}")
 
             run = Run(
                 # experiment_name="evaluate-long-runs", 
@@ -57,6 +69,7 @@ def main():
             run.log_metrics(
                 data={
                     "eval/accuracy": acc,
+                    "eval/loss": loss,
                 },
                 step=checkpoint['global_step'],
             )

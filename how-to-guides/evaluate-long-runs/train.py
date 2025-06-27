@@ -12,7 +12,7 @@ def main():
     )
 
     # Config
-    EPOCHS = 10
+    EPOCHS = 5
     CHECKPOINT_DIR = "checkpoints"
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)
 
