@@ -1,8 +1,8 @@
 import torch
 import torch.nn as nn
 from neptune_scale import Run
-from TorchWatcher import TorchWatcher
-
+from torchwatcher import TorchWatcher
+import math
 
 # Define a simple neural network
 class SimpleNet(nn.Module):
