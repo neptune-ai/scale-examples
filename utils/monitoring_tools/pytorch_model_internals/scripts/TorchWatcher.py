@@ -1,10 +1,12 @@
-from neptune_scale.util.logger import get_logger
 
-logger = get_logger()
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Literal, Optional, Type, Union
 
 import torch
 import torch.nn as nn
+from neptune_scale.util.logger import get_logger
+
+logger = get_logger()
+
 
 # Predefined tensor statistics
 TENSOR_STATS = {
@@ -16,64 +18,6 @@ TENSOR_STATS = {
     "var": lambda x: x.var().item(),
     "abs_mean": lambda x: x.abs().mean().item(),
 }
-
-# Common PyTorch layer types for validation
-PYTORCH_LAYERS = {
-    # Linear layers
-    nn.Linear,
-    # Convolutional layers
-    nn.Conv1d,
-    nn.Conv2d,
-    nn.Conv3d,
-    nn.ConvTranspose1d,
-    nn.ConvTranspose2d,
-    nn.ConvTranspose3d,
-    # Recurrent layers
-    nn.LSTM,
-    nn.GRU,
-    nn.RNN,
-    # Normalization layers
-    nn.BatchNorm1d,
-    nn.BatchNorm2d,
-    nn.BatchNorm3d,
-    nn.LayerNorm,
-    nn.InstanceNorm1d,
-    nn.InstanceNorm2d,
-    nn.InstanceNorm3d,
-    # Activation layers
-    nn.ReLU,
-    nn.LeakyReLU,
-    nn.ELU,
-    nn.SELU,
-    nn.GELU,
-    # Pooling layers
-    nn.MaxPool1d,
-    nn.MaxPool2d,
-    nn.MaxPool3d,
-    nn.AvgPool1d,
-    nn.AvgPool2d,
-    nn.AvgPool3d,
-    # Dropout layers
-    nn.Dropout,
-    nn.Dropout2d,
-    nn.Dropout3d,
-    # Embedding layers
-    nn.Embedding,
-    nn.EmbeddingBag,
-    # Transformer layers
-    nn.TransformerEncoderLayer,
-    nn.TransformerDecoderLayer,
-    # Attention layers
-    nn.MultiheadAttention,
-    # Flatten layers
-    nn.Flatten,
-    nn.Unflatten,
-    # Other common layers
-    nn.Sequential,
-    nn.ModuleList,
-    nn.ModuleDict,
-}
-
 
 class HookManager:
     """
@@ -101,16 +45,6 @@ class HookManager:
             ValueError: If track_layers contains invalid layer types
         """
 
-        # Validate that all specified layers are valid PyTorch layers if track_layers is provided
-        if track_layers is not None:
-            if invalid_layers := [
-                layer for layer in track_layers if layer not in PYTORCH_LAYERS
-            ]:
-                raise ValueError(
-                    f"Invalid layer types specified: {invalid_layers}. "
-                    f"Please use valid PyTorch layer types from torch.nn."
-                )
-
         self.model = model
         self.hooks: List[torch.utils.hooks.RemovableHandle] = []
         self.activations: Dict[str, torch.Tensor] = {}
@@ -126,7 +60,7 @@ class HookManager:
                 activation = output[0] if isinstance(output, tuple) else output
                 self.activations[name] = activation.detach()
             except Exception as e:
-                warnings.warn(f"Could not save activations for {name}: {e}")
+                logger.warning(f"Could not save activations for {name}: {e}")
 
         return hook
 
@@ -138,7 +72,7 @@ class HookManager:
                 # Save the first gradient output
                 self.gradients[name] = grad_output[0].detach()
             except Exception as e:
-                warnings.warn(f"Could not save gradients for {name}: {e}")
+                logger.warning(f"Could not save gradients for {name}: {e}")
 
         return hook
 
@@ -214,7 +148,7 @@ class TorchWatcher:
         run: Any,  # Made more flexible to support different logging mechanisms
         track_layers: Optional[List[Type[nn.Module]]] = None,
         tensor_stats: Optional[List[Literal["mean", "std", "norm", "min", "max", "var", "abs_mean"]]] = None,
-        base_namespace: str = "debug",  # Default namespace for all metrics
+        base_namespace: str = "model_internals",  # Default namespace for all metrics
     ) -> None:
         """
         Initialize TorchWatcher with configuration options.
@@ -228,7 +162,7 @@ class TorchWatcher:
             tensor_stats (Optional[List[str]]): List of statistics to compute.
                                               Available options: mean, std, norm, min, max, var, abs_mean.
                                               Defaults to ['mean'] if not specified.
-            base_namespace (str): Base namespace for all logged metrics. Defaults to "debug".
+            base_namespace (str): Base namespace for all logged metrics. Defaults to "model_internals".
 
         Raises:
             TypeError: If model is not a PyTorch model
@@ -275,7 +209,7 @@ class TorchWatcher:
             try:
                 stats[stat_name] = stat_func(tensor)
             except Exception as e:
-                warnings.warn(f"Could not compute {stat_name} statistic: {e}")
+                logger.warning(f"Could not compute {stat_name} statistic: {e}")
         return stats
 
     def _track_metric(
@@ -294,8 +228,8 @@ class TorchWatcher:
         for layer, tensor in data.items():
             if tensor is not None:
                 stats = self._safe_tensor_stats(tensor)
-                for stat_name, stat_value in stats.items():
-                    self.debug_metrics[f"{full_namespace}/{metric_type}/{layer}_{stat_name}"] = (
+                for stat_name, stat_value in stats.items(): 
+                    self.debug_metrics[f"{full_namespace}/{metric_type}/{layer}/{stat_name}"] = (
                         stat_value
                     )
 
@@ -324,7 +258,7 @@ class TorchWatcher:
         self,
         step: Union[int, float],
         track_gradients: bool = True,
-        track_parameters: bool = True,
+        track_parameters: bool = False,
         track_activations: bool = True,
         prefix: Optional[str] = None,
     ):
@@ -336,25 +270,25 @@ class TorchWatcher:
             track_gradients (bool): Whether to track gradients. Defaults to True.
             track_parameters (bool): Whether to track parameters. Defaults to True.
             track_activations (bool): Whether to track activations. Defaults to True.
-            namespace (Optional[str]): Optional namespace to prefix the base namespace.
-                                     If provided, metrics will be logged under {namespace}/{base_namespace}/...
+            prefix (Optional[str]): Optional prefix to add to the base namespace.
+                                     If provided, metrics will be logged under {prefix}/{base_namespace}/...
         """
         # Reset metrics
         self.debug_metrics.clear()
 
         # Track metrics based on boolean flags
         if track_gradients:
-            self.track_gradients(namespace)
+            self.track_gradients(prefix)
         if track_parameters:
-            self.track_parameters(namespace)
+            self.track_parameters(prefix)
         if track_activations:
-            self.track_activations(namespace)
+            self.track_activations(prefix)
 
         # Log metrics
         try:
             self.run.log_metrics(data=self.debug_metrics, step=step)
         except Exception as e:
-            warnings.warn(f"Logging failed: {e}")
+            logger.warning(f"Logging failed: {e}")
 
         # Clear hooks
         self.hm.clear()

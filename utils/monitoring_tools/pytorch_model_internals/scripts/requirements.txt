@@ -1,5 +1,5 @@
 neptune-scale
-numpy<2.0
 torch
 torchvision
 tqdm
+numpy<2.0

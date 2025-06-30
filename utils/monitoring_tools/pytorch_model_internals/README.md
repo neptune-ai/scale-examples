@@ -7,26 +7,17 @@ A lightweight PyTorch model monitoring tool that automatically tracks layer acti
 Training deep learning models often involves monitoring internal layer behavior to understand model performance, debug issues, and optimize training. However, manually implementing hooks and logging for each layer can be time-consuming and error-prone. TorchWatcher solves this by providing:
 
 - **Zero-configuration monitoring**: Automatically detects and tracks all layers in your PyTorch model
-- **Comprehensive insights**: Monitor activations, gradients, and parameters with built-in statistical analysis
+- **Comprehensive insights**: Monitor activations, gradients, and parameters with built-in statistical analysis (mean, std, norm, min, max, variance, abs_mean)
 - **Seamless Neptune integration**: Direct logging to Neptune with organized namespacing for easy experiment tracking
-- **Minimal performance impact**: Optimized for production use with configurable tracking options
-- **Memory efficient**: Automatically cleans up tensors to prevent memory leaks during long training runs
+- **Flexible configuration**: Track all layers or specify which layer types to monitor, with configurable tracking options
+- **Production-ready**: Optimized for minimal performance impact with automatic tensor cleanup to prevent memory leaks
+- **Robust error handling**: Informative warnings and graceful error recovery
 
 Whether you're debugging gradient flow issues, monitoring activation patterns, or tracking parameter changes during training, TorchWatcher provides the insights you need without the overhead of manual implementation.
 
-## Features
-
-- **Automatic Layer Tracking**: Monitors activations, gradients, and parameters of specified PyTorch layers
-- **Flexible Layer Selection**: Track all layers or specify which layer types to monitor
-- **Comprehensive Statistics**: Predefined tensor statistics including mean, standard deviation, norm, min, max, variance, and absolute mean
-- **Configurable Tracking**: Enable/disable tracking of activations, gradients, and parameters as needed
-- **Organized Logging**: Structured metric namespacing for better organization in Neptune
-- **Memory Efficient**: Clears stored tensors after each logging step
-- **Error Handling**: Robust error handling with informative warnings
-
 ## Changelog
 
-### [v0.1.0] - 2024-03-19
+### [v0.1.0] - 2024-06-30
 
 #### Added
 - Initial release of TorchWatcher
@@ -51,9 +42,11 @@ See `scripts/torch_watcher_example.py` for a complete example demonstrating:
 
 ### Basic Usage
 
+Place `torchwatcher.py` in the CWD and import as another package to your main training script. 
+
 ```python
 from neptune_scale import Run
-from TorchWatcher import TorchWatcher
+from torchwatcher import TorchWatcher
 
 # Initialize Neptune run
 run = Run(experiment_name="my-experiment")
@@ -187,7 +180,7 @@ Predefined tensor statistics include:
 ### Benchmarking Methodology
 
 All benchmarks were performed using:
-- PyTorch 2.0+
+- PyTorch 2.6.0
 - A single RTX5000 GPU
 - Various model architecture sizes with Linear and Relu layers only
 - Multiple tracking configurations for TorchWatcher
