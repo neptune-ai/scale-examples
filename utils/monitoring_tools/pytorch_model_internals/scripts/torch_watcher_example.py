@@ -1,8 +1,13 @@
 import torch
 import torch.nn as nn
+import sys
+import os
 from neptune_scale import Run
-from torchwatcher import TorchWatcher
 import math
+
+# Add the current directory to Python path to import torchwatcher
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from torchwatcher import TorchWatcher
 
 # Define a simple neural network
 class SimpleNet(nn.Module):
