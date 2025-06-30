@@ -64,14 +64,14 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
 
             # Track metrics during training
             if epoch < 5:  # First 5 epochs: track everything
-                watcher.watch(step=epoch * n_batches + i, namespace="train")
+                watcher.watch(step=epoch * n_batches + i, prefix="train")
             else:  # Later epochs: track only gradients for efficiency
                 watcher.watch(
                     step=epoch * n_batches + i,
                     track_activations=False,
                     track_parameters=False,
                     track_gradients=True,
-                    namespace="train",
+                    prefix="train",
                 )
 
             train_loss += loss.item()
@@ -91,7 +91,7 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
                 track_activations=True,
                 track_gradients=False,
                 track_parameters=False,
-                namespace="validation",
+                prefix="validation",
             )
 
         # Log metrics
