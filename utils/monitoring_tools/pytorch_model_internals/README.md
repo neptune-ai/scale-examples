@@ -24,6 +24,7 @@ Whether you're debugging gradient flow issues, monitoring activation patterns, o
 
 ## Prerequisites
 
+- `neptune-scale`
 - Python 3.8 or higher
 - PyTorch 2.0 or higher
 - CUDA 11.7 or higher (for GPU support)
