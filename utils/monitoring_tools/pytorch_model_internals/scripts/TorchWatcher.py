@@ -1,7 +1,7 @@
 from neptune_scale.util.logger import get_logger
 
 logger = get_logger()
-from typing import Any, Dict, List, Literal, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Type, Union
 
 import torch
 import torch.nn as nn
