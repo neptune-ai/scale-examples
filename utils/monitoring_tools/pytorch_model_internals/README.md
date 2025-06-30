@@ -43,11 +43,11 @@ See `scripts/torch_watcher_example.py` for a complete example demonstrating:
 
 ### Basic Usage
 
-Place `torchwatcher.py` in the CWD and import as another package to your main training script. 
+Place `neptune_torchwatcher.py` in the CWD and import as another package to your main training script. 
 
 ```python
 from neptune_scale import Run
-from torchwatcher import TorchWatcher
+from neptune_torchwatcher import TorchWatcher
 
 # Initialize Neptune run
 run = Run(experiment_name="my-experiment")
