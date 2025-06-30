@@ -1,4 +1,4 @@
-# TorchWatcher
+# Neptune TorchWatcher
 
 A lightweight PyTorch model monitoring tool that automatically tracks layer activations, gradients, and parameters during training. Built for seamless integration with neptune.ai.
 
@@ -38,12 +38,6 @@ Whether you're debugging gradient flow issues, monitoring activation patterns, o
 - CUDA 11.7 or higher (for GPU support)
 - Neptune account and API token
 
-## Installation
-
-```bash
-pip install neptune_scale
-```
-
 ## Usage
 
 ### Quickstart
@@ -72,7 +66,7 @@ watcher = TorchWatcher(
     model,
     run,
     track_layers=[nn.Linear, nn.ReLU],  # Specify which layer types to track (default is all layers)
-    tensor_stats=['mean', 'norm'],       # Choose which statistics to compute (default = "mean" only)
+    tensor_stats=['mean', 'norm'],       # Choose which statistics to compute (default = ["mean"])
     base_namespace="model_metrics"       # Set base namespace for all metrics (default = "debug")
 )
 
@@ -136,12 +130,12 @@ watcher.watch(step=step, namespace="validation")  # Metrics under "validation/mo
 
 3. **Metric Structure**: Metrics are organized as:
 ```
-{namespace}/{base_namespace}/{metric_type}/{layer_name}_{statistic}
+{prefix}/{base_namespace}/{metric_type}/{layer_name}_{statistic}
 ```
 
 Example metric names:
-- `train/model_metrics/activation/fc1_mean`
-- `validation/model_metrics/gradient/fc2_norm`
+- `train/model_metrics/activations/fc1_mean`
+- `validation/model_metrics/gradients/fc2_norm`
 - `train/model_metrics/parameters/fc1_weight_mean`
 
 ### Example Use Cases
@@ -176,20 +170,6 @@ watcher.watch(
 )
 ```
 
-## Supported Layer Types
-
-TorchWatcher supports tracking of all common PyTorch layer types, including:
-- Linear layers
-- Convolutional layers
-- Recurrent layers
-- Normalization layers
-- Activation layers
-- Pooling layers
-- Dropout layers
-- Embedding layers
-- Transformer layers
-- Attention layers
-- And more...
 
 ## Available Statistics
 
@@ -208,8 +188,8 @@ Predefined tensor statistics include:
 
 All benchmarks were performed using:
 - PyTorch 2.0+
-- A single RTX5000 GPU in an isolated cluster
-- Various model architecture size with Linear and Relu layers only
+- A single RTX5000 GPU
+- Various model architecture sizes with Linear and Relu layers only
 - Multiple tracking configurations for TorchWatcher
 - Generic numeric dataset
 - Training parameters:
@@ -224,8 +204,6 @@ A reproduction script can be found called - `benchmark_torchwatcher.py`.
 TorchWatcher is designed to be lightweight and efficient. Our benchmarks show minimal impact on training batch time while providing comprehensive monitoring capabilities across varying model sizes. The largest contributor to performance degradation is the extraction of the model's named parameters (weights and biases). These are extracted using `model.named_parameters()` and creates increased overhead compared to the hooks that PyTorch models support natively for activations and gradients. Additional profiling showed that the `track_parameters` method created the most overhead and can be explored further for future package optimization.
 
 #### Analysis summary
-- Larger models (increase in parameters) have a linearly increasing cumulative time per epoch. 
-- Larger models spend more time in training loop per batch, as expected.
 - Larger models also require more time to extract model internals such as gradients, activations and parameters.
     - As model size increases, extracting model parameters causes increased time in training loop compared to gradients and activations which are extracted with PyTorch hooks.
     - Larger models have less total overhead between model training time in batch vs. time taken to extract values and is minimal if logging activations and gradients. 
@@ -236,7 +214,7 @@ TorchWatcher is designed to be lightweight and efficient. Our benchmarks show mi
 
 ### Future benchmarking
 - Analyze memory overhead
-- Train on multiple GPU's
+- Train on multiple GPUs
 - Test on different datasets and model techniques
 
 ## License

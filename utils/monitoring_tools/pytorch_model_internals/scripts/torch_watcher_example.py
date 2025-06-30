@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 import torch.nn as nn
 from neptune_scale import Run
@@ -37,7 +36,7 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
     """Training function demonstrating different ways to use TorchWatcher."""
     optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     criterion = nn.MSELoss()
-    n_batches = len(X_train) // batch_size
+    n_batches = math.ceil(len(X_train) / batch_size)
 
     for epoch in range(n_epochs):
         model.train()
@@ -122,9 +121,8 @@ def main():
     watcher = TorchWatcher(
         model,
         run,
-        track_layers=[nn.Linear, nn.ReLU],  # Track only Linear and ReLU layers
         tensor_stats=["mean", "norm"],  # Track mean and norm statistics
-        base_namespace="model_metrics",  # Default namespace for all metrics
+        base_namespace="model_internals",  # Default namespace for all metrics
     )
 
     # Train the model
@@ -137,7 +135,7 @@ def main():
     print("- Activation-only tracking during validation with 'validation/model_metrics' namespace")
 
     train_model(model, X_train, y_train, X_val, y_val, watcher)
-    watcher.run.close()
+    run.close()
 
 
 if __name__ == "__main__":

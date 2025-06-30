@@ -1,4 +1,6 @@
-import warnings
+from neptune_scale.util.logger import get_logger
+
+logger = get_logger()
 from typing import Any, Dict, List, Literal, Optional, Type, Union
 
 import torch
@@ -98,8 +100,6 @@ class HookManager:
             TypeError: If model is not a PyTorch model
             ValueError: If track_layers contains invalid layer types
         """
-        if not isinstance(model, nn.Module):
-            raise TypeError("The model must be a PyTorch model")
 
         # Validate that all specified layers are valid PyTorch layers if track_layers is provided
         if track_layers is not None:
@@ -126,7 +126,7 @@ class HookManager:
                 activation = output[0] if isinstance(output, tuple) else output
                 self.activations[name] = activation.detach()
             except Exception as e:
-                warnings.warn(f"Could not save activation for {name}: {e}")
+                warnings.warn(f"Could not save activations for {name}: {e}")
 
         return hook
 
@@ -138,7 +138,7 @@ class HookManager:
                 # Save the first gradient output
                 self.gradients[name] = grad_output[0].detach()
             except Exception as e:
-                warnings.warn(f"Could not save gradient for {name}: {e}")
+                warnings.warn(f"Could not save gradients for {name}: {e}")
 
         return hook
 
@@ -213,7 +213,7 @@ class TorchWatcher:
         model: nn.Module,
         run: Any,  # Made more flexible to support different logging mechanisms
         track_layers: Optional[List[Type[nn.Module]]] = None,
-        tensor_stats: Optional[List[str]] = None,
+        tensor_stats: Optional[List[Literal["mean", "std", "norm", "min", "max", "var", "abs_mean"]]] = None,
         base_namespace: str = "debug",  # Default namespace for all metrics
     ) -> None:
         """
@@ -284,7 +284,7 @@ class TorchWatcher:
         """Track metrics with enhanced statistics for a given metric type.
 
         Args:
-            metric_type (str): Type of metric being tracked (activation/gradient/parameters)
+            metric_type (str): Type of metric being tracked (activations/gradients/parameters)
             data (Dict[str, torch.Tensor]): Dictionary mapping layer names to tensors
             namespace (Optional[str]): Optional namespace to prefix the base namespace
         """
@@ -302,12 +302,12 @@ class TorchWatcher:
     def track_activations(self, namespace: Optional[str] = None):
         """Track layer activations with enhanced statistics."""
         activations = self.hm.get_activations()
-        self._track_metric("activation", activations, namespace)
+        self._track_metric("activations", activations, namespace)
 
     def track_gradients(self, namespace: Optional[str] = None):
         """Track layer gradients with enhanced statistics."""
         gradients = self.hm.get_gradients()
-        self._track_metric("gradient", gradients, namespace)
+        self._track_metric("gradients", gradients, namespace)
 
     def track_parameters(self, namespace: Optional[str] = None):
         """Track model parameters with enhanced statistics."""
@@ -326,7 +326,7 @@ class TorchWatcher:
         track_gradients: bool = True,
         track_parameters: bool = True,
         track_activations: bool = True,
-        namespace: Optional[str] = None,
+        prefix: Optional[str] = None,
     ):
         """
         Log debug metrics with flexible configuration.
