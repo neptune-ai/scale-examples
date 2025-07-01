@@ -191,8 +191,6 @@ All benchmarks were performed using:
     - Batch size: 512
     - Epochs: 20
 
-A reproduction script can be found called - `benchmark_torchwatcher.py`.
-
 ### Performance Impact
 
 TorchWatcher is designed to be lightweight and efficient. Our benchmarks show minimal impact on training batch time while providing comprehensive monitoring capabilities across varying model sizes. The largest contributor to performance degradation is the extraction of the model's named parameters (weights and biases). These are extracted using `model.named_parameters()` and creates increased overhead compared to the hooks that PyTorch models support natively for activations and gradients. Additional profiling showed that the `track_parameters` method created the most overhead and can be explored further for future package optimization.

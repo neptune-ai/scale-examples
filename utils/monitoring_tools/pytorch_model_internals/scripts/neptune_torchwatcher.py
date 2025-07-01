@@ -19,7 +19,7 @@ TENSOR_STATS = {
     "abs_mean": lambda x: x.abs().mean().item(),
 }
 
-class HookManager:
+class _HookManager:
     """
     A robust hook management class for PyTorch models to track activations, gradients, and parameters.
 
@@ -173,7 +173,7 @@ class TorchWatcher:
 
         self.model = model
         self.run = run
-        self.hm = HookManager(model, track_layers)
+        self.hm = _HookManager(model, track_layers)
         self.debug_metrics: Dict[str, float] = {}
         self.base_namespace = base_namespace
 
