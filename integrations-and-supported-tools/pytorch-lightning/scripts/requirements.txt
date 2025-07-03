@@ -1,4 +1,4 @@
-git+https://github.com/SiddhantSadangi/pytorch-lightning.git
+git+https://github.com/neptune-ai/pytorch-lightning.git
 neptune-scale
 pydantic
 scikit-learn
