@@ -1,9 +1,16 @@
+# Python
+__pycache__/
+*.pyc
+
 # Temporary files
 .neptune
 .tmp*
 
 # Data files
 **ubyte**
+*.png
+*.mp4
+*.mp3
 
 # Logs
 *.log
