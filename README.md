@@ -73,7 +73,7 @@ This repo contains tutorials and examples of how to use Neptune.
 [resume-run]: https://docs.neptune.ai/resume_run
 [runs-table]: https://docs.neptune.ai/runs_table
 [runs-table-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/table?viewId=9e746462-f045-4ff2-9ac4-e41fa349b04d&detailsTab=dashboard&dash=table&type=run&compare=auto-5
-[lightning]: TODO: Docs URL
+[lightning]: https://docs.neptune.ai/integrations/pytorch_lightning
 [lightning-example]: https://scale.neptune.ai/o/examples/org/pytorch-lightning/runs/table?viewId=9ea6121c-42a7-4ece-83b2-c591044837e7
 
 <!-- Clickable icons -->
