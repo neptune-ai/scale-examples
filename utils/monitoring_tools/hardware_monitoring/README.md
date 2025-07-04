@@ -9,6 +9,9 @@ An extensible Python module for logging system and process hardware metrics (CPU
 
 ## Changelog
 
+**v0.2.1** (2025-07-03)
+- Fixed hardware monitoring for forked runs.
+
 **v0.2.0** (2025-06-06)
 - Added `namespace` and `sampling_rate` arguments to `SystemMetricsMonitor` to allow for custom metric namespaces and sampling rates.
 - Made `pynvml` and `torch` optional dependencies.
@@ -57,9 +60,9 @@ An extensible Python module for logging system and process hardware metrics (CPU
        ```python
        from neptune_scale import Run
        from neptune_hardware_monitoring import SystemMetricsMonitor
-   
+
        run = Run(experiment_name=...)
-   
+
        with SystemMetricsMonitor(run=run):
            # Your training or workload code here
            ...
@@ -68,11 +71,11 @@ An extensible Python module for logging system and process hardware metrics (CPU
        ```python
        from neptune_scale import Run
        from neptune_hardware_monitoring import SystemMetricsMonitor
-   
+
        run = Run(experiment_name=...)
-   
+
        monitor = SystemMetricsMonitor(run=run)
-   
+
        monitor.start()
        # Your training or workload code here
        monitor.stop()
@@ -100,6 +103,7 @@ class SystemMetricsMonitor(
 - **GPU monitoring requires `pynvml` and a compatible NVIDIA GPU.** If not available, GPU metrics are skipped and a warning is shown.
 - **Each process logs its own metrics.** In multi-process scenarios when logging to the same Neptune run, ensure that each process uses a different `namespace`.
 - Windows will log `num_handles` to the file descriptor (`process/num_fds`) attribute.
+- When logging to a forked run, monitoring will start from `fork_step + 1`.
 
 ---
 
