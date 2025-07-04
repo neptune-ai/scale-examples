@@ -60,7 +60,7 @@ class SystemMetricsMonitor:
         self.sampling_rate = sampling_rate
         self._stop_event = threading.Event()
         self._monitoring_thread: Optional[threading.Thread] = None
-        self._monitoring_step = 0
+        self._monitoring_step = self.run._fork_step + 1 if self.run._fork_step is not None else 0
         self._proc = psutil.Process(os.getpid())
 
         self.hostname = socket.gethostname()
