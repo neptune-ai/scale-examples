@@ -22,6 +22,11 @@ This repo contains tutorials and examples of how to use Neptune.
 | Resume run or other object | [![docs-icon]][resume-run] | | | |
 | Use Neptune in HPO jobs | [![docs-icon]][hpo] | [![neptune-icon]][hpo-example] | [![github-icon]][hpo-notebook] | [![colab-icon]][hpo-colab] |
 
+### Integrations
+| | Docs | Neptune | GitHub | Colab |
+| -- | :--: | :--: | :--: | :--: |
+|  PyTorch Lightning  | [![docs-icon]][lightning] | [![neptune-icon]][lightning-example] | [![github-icon]][lightning-notebook] | [![colab-icon]][lightning-colab] |
+
 ### Migration tools
 
 | | Docs | GitHub |
@@ -48,6 +53,8 @@ This repo contains tutorials and examples of how to use Neptune.
 [hpo-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [qs-notebook]: how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 [qs-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
+[lightning-notebook]: TODO: final notebook URL in GH
+[lightning-colab]: TODO: final colab URL
 
 <!-- External -->
 [blog]: https://neptune.ai/blog
@@ -66,6 +73,8 @@ This repo contains tutorials and examples of how to use Neptune.
 [resume-run]: https://docs.neptune.ai/resume_run
 [runs-table]: https://docs.neptune.ai/runs_table
 [runs-table-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/table?viewId=9e746462-f045-4ff2-9ac4-e41fa349b04d&detailsTab=dashboard&dash=table&type=run&compare=auto-5
+[lightning]: TODO: Docs URL
+[lightning-example]: https://scale.neptune.ai/o/examples/org/pytorch-lightning/runs/table?viewId=9ea6121c-42a7-4ece-83b2-c591044837e7
 
 <!-- Clickable icons -->
 [docs-icon]: https://neptune.ai/wp-content/uploads/2023/06/file_icon.svg "Read the documentation"
