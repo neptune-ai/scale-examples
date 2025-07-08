@@ -1,10 +1,10 @@
 from random import randint
-from tqdm.auto import trange
 
 import numpy as np
 import requests
 from neptune_scale import Run
 from neptune_scale.types import Histogram
+from tqdm.auto import trange
 
 NUM_STEPS = 2000  # Determines how long the training will run for
 NUM_LAYERS = 10  # The theoretical number of layers to simulate
@@ -30,9 +30,11 @@ def get_gpu_utilization(step: int) -> float:
     data_loading_drop = 0.1 if step % 100 == 0 else 0.0
     update_spike = 0.05 if step % 50 == 0 else 0.0
     noise = np.random.uniform(-0.01, 0.01)
-    
-    utilization = 0 if step % (NUM_STEPS//2) == 0 else base_util - data_loading_drop + update_spike + noise
-    
+
+    utilization = (
+        0 if step % (NUM_STEPS // 2) == 0 else base_util - data_loading_drop + update_spike + noise
+    )
+
     return utilization
 
 
@@ -177,15 +179,15 @@ def main():
 
     # Log custom string series
     run.log_string_series(
-    data={
-        "status/hardware": "Starting training",
-    },
-    step=0,
+        data={
+            "status/hardware": "Starting training",
+        },
+        step=0,
     )
 
     for step in trange(1, NUM_STEPS):
-        
-        if step % (NUM_STEPS//2) == 0:
+
+        if step % (NUM_STEPS // 2) == 0:
             run.log_string_series(
                 data={
                     "status/hardware": f"Downtime detected across all GPUs",
