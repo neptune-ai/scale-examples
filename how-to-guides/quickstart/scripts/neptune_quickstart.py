@@ -27,11 +27,13 @@ def get_activation_distribution(layer: int, step: int) -> tuple[np.ndarray, np.n
 
 def get_gpu_utilization(step: int) -> float:
     base_util = 0.85
-    data_loading_drop = 0.2 if step % 10 == 0 else 0.0
-    update_spike = 0.1 if step % 5 == 0 else 0.0
-    noise = np.random.uniform(-0.05, 0.05)
-
-    return base_util - data_loading_drop + update_spike + noise
+    data_loading_drop = 0.1 if step % 100 == 0 else 0.0
+    update_spike = 0.05 if step % 50 == 0 else 0.0
+    noise = np.random.uniform(-0.01, 0.01)
+    
+    utilization = 0 if step % (NUM_STEPS//2) == 0 else base_util - data_loading_drop + update_spike + noise
+    
+    return utilization
 
 
 def _generate_metric(
@@ -174,14 +176,36 @@ def main():
         )
 
     # Log custom string series
-    for step in range(1, 10):
-        run.log_string_series(
-            data={
-                "custom_messages/errors": f"Job failed - step {step}",
-                "custom_messages/info": f"Training completed - step {step}",
-            },
-            step=step,
-        )
+    run.log_string_series(
+    data={
+        "status/hardware": "Starting training",
+    },
+    step=0,
+    )
+
+    for step in trange(1, NUM_STEPS):
+        
+        if step % (NUM_STEPS//2) == 0:
+            run.log_string_series(
+                data={
+                    "status/hardware": f"Downtime detected across all GPUs",
+                },
+                step=step,
+            )
+        elif step % 1000 == 0:
+            run.log_string_series(
+                data={
+                    "status/hardware": f"No downtime detected",
+                },
+                step=step,
+            )
+
+    run.log_string_series(
+        data={
+            "status/hardware": "Training complete!",
+        },
+        step=step,
+    )
 
     # Log series of histograms
     for step in trange(NUM_STEPS):
