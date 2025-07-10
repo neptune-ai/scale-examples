@@ -1,0 +1,5 @@
+neptune-scale
+torch
+torchvision
+tqdm
+numpy<2.0
