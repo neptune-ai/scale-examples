@@ -1,3 +1,7 @@
+# Python
+__pycache__/
+*.pyc
+
 # Temporary files
 .neptune
 .tmp*
