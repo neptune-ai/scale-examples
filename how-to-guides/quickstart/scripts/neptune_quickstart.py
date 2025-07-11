@@ -178,7 +178,7 @@ def main():
     # Log custom string series
     run.log_string_series(
         data={
-            "status/hardware": "Starting training",
+            "status": "Starting training",
         },
         step=0,
     )
@@ -188,21 +188,21 @@ def main():
         if step % (NUM_STEPS // 2) == 0:  # Add simulated error
             run.log_string_series(
                 data={
-                    "status/hardware": f"NaN/Inf logged at step = {step}",
+                    "status": f"Step = {step}, Loss = NaN",
                 },
                 step=step,
             )
         elif step % 1000 == 0:
             run.log_string_series(
                 data={
-                    "status/hardware": f"Metrics logged at step = {step}",
+                    "status": f"Step = {step}, All metrics logged",
                 },
                 step=step,
             )
 
     run.log_string_series(
         data={
-            "status/hardware": "Training complete!",
+            "status": "Training complete!",
         },
         step=step,
     )
