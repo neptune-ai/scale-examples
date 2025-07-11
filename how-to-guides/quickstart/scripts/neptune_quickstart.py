@@ -8,7 +8,6 @@ from tqdm.auto import trange
 
 NUM_STEPS = 2000  # Determines how long the training will run for
 NUM_LAYERS = 10  # The theoretical number of layers to simulate
-ERROR_STEP = NUM_STEPS // 2  # The step at which the error will spike in hardware
 
 
 def get_gradient_norm(layer: int, step: int) -> float:
@@ -32,7 +31,9 @@ def get_gpu_utilization(step: int) -> float:
     update_spike = 0.05 if step % 50 == 0 else 0.0
     noise = np.random.uniform(-0.01, 0.01)
 
-    return 0 if step % ERROR_STEP == 0 else base_util - data_loading_drop + update_spike + noise
+    return (
+        0 if step % (NUM_STEPS // 2) == 0 else base_util - data_loading_drop + update_spike + noise
+    )
 
 
 def _generate_metric(
@@ -184,7 +185,7 @@ def main():
 
     for step in trange(1, NUM_STEPS):
 
-        if step % ERROR_STEP == 0:
+        if step % (NUM_STEPS // 2) == 0:  # Add simulated error
             run.log_string_series(
                 data={
                     "status/hardware": f"NaN/Inf logged at step = {step}",
