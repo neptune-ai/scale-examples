@@ -1,11 +1,10 @@
-import torch
-import torch.nn as nn
-import sys
-import os
-from neptune_scale import Run
 import math
 
+import torch
+import torch.nn as nn
+from neptune_scale import Run
 from neptune_torchwatcher import TorchWatcher
+
 
 # Define a simple neural network
 class SimpleNet(nn.Module):
@@ -64,7 +63,7 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
 
             # Track metrics during training
             if epoch < 5:  # First 5 epochs: track everything
-                watcher.watch(step=epoch * n_batches + i, prefix="train")
+                watcher.watch(step=epoch * n_batches + i, track_parameters=True, prefix="train")
             else:  # Later epochs: track only gradients for efficiency
                 watcher.watch(
                     step=epoch * n_batches + i,
@@ -96,12 +95,12 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
 
         # Log metrics
         watcher.run.log_metrics(
-            data={"train/loss": train_loss, "val/loss": val_loss.item()}, step=epoch
+            data={"train/loss": train_loss, "validation/loss": val_loss.item()}, step=epoch
         )
 
         if (epoch + 1) % 10 == 0:
             print(
-                f"Epoch [{epoch+1}/{n_epochs}], "
+                f"Epoch [{epoch + 1}/{n_epochs}], "
                 f"Train Loss: {train_loss:.4f}, "
                 f"Val Loss: {val_loss.item():.4f}"
             )
@@ -109,9 +108,7 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
 
 def main():
     # Initialize Neptune run
-    run = Run(
-        experiment_name="torch-watcher-example",
-    )
+    run = Run(experiment_name="torch-watcher-example")
 
     # Generate data
     X_train, y_train = generate_data(n_samples=1000)
@@ -130,14 +127,17 @@ def main():
 
     # Train the model
     print("\nTraining with TorchWatcher:")
-    print("- Tracking Linear and ReLU layers")
+    print("- Tracking all layers")
     print("- Computing mean and norm statistics")
-    print("- Using 'model_metrics' as base namespace")
-    print("- Full tracking during first 5 epochs with 'train/model_metrics' namespace")
-    print("- Gradient-only tracking during later epochs with 'train/model_metrics' namespace")
-    print("- Activation-only tracking during validation with 'validation/model_metrics' namespace")
+    print("- Using 'model_internals' as base namespace")
+    print("- Full tracking during first 5 epochs in the 'train/model_internals' namespace")
+    print("- Gradient-only tracking during later epochs in the 'train/model_internals' namespace")
+    print(
+        "- Activation-only tracking during validation in the 'validation/model_internals' namespace"
+    )
 
     train_model(model, X_train, y_train, X_val, y_val, watcher)
+
     run.close()
 
 

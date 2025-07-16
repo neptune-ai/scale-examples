@@ -1,4 +1,3 @@
-
 from typing import Any, Dict, List, Literal, Optional, Type, Union
 
 import torch
@@ -18,6 +17,7 @@ TENSOR_STATS = {
     "var": lambda x: x.var().item(),
     "abs_mean": lambda x: x.abs().mean().item(),
 }
+
 
 class _HookManager:
     """
@@ -132,8 +132,8 @@ class _HookManager:
         """Get stored gradients."""
         return self.gradients
 
-    def __del__(self):
-        """Ensure hooks are removed when the object is deleted."""
+    def close(self):
+        """Explicitly remove hooks and perform cleanup."""
         self.remove_hooks()
 
 
@@ -147,7 +147,9 @@ class TorchWatcher:
         model: nn.Module,
         run: Any,  # Made more flexible to support different logging mechanisms
         track_layers: Optional[List[Type[nn.Module]]] = None,
-        tensor_stats: Optional[List[Literal["mean", "std", "norm", "min", "max", "var", "abs_mean"]]] = None,
+        tensor_stats: Optional[
+            List[Literal["mean", "std", "norm", "min", "max", "var", "abs_mean"]]
+        ] = None,
         base_namespace: str = "model_internals",  # Default namespace for all metrics
     ) -> None:
         """
@@ -181,9 +183,7 @@ class TorchWatcher:
         if tensor_stats is None:
             tensor_stats = ["mean"]
 
-        if invalid_stats := [
-            stat for stat in tensor_stats if stat not in TENSOR_STATS
-        ]:
+        if invalid_stats := [stat for stat in tensor_stats if stat not in TENSOR_STATS]:
             raise ValueError(
                 f"Invalid statistics requested: {invalid_stats}. "
                 f"Available statistics are: {list(TENSOR_STATS.keys())}"
@@ -213,22 +213,23 @@ class TorchWatcher:
         return stats
 
     def _track_metric(
-        self, metric_type: str, data: Dict[str, torch.Tensor], namespace: Optional[str] = None
+        self, metric_type: str, data: Dict[str, torch.Tensor], prefix: Optional[str] = None
     ):
         """Track metrics with enhanced statistics for a given metric type.
 
         Args:
             metric_type (str): Type of metric being tracked (activations/gradients/parameters)
             data (Dict[str, torch.Tensor]): Dictionary mapping layer names to tensors
-            namespace (Optional[str]): Optional namespace to prefix the base namespace
+            prefix (Optional[str]): Optional namespace to prefix the base namespace
         """
         # Construct the full namespace
-        full_namespace = f"{namespace}/{self.base_namespace}" if namespace else self.base_namespace
+        full_namespace = f"{prefix}/{self.base_namespace}" if prefix else self.base_namespace
 
         for layer, tensor in data.items():
             if tensor is not None:
-                stats = self._safe_tensor_stats(tensor)
-                for stat_name, stat_value in stats.items(): 
+                safe_tensor = tensor.detach().cpu() if tensor.is_cuda else tensor.detach()
+                stats = self._safe_tensor_stats(safe_tensor)
+                for stat_name, stat_value in stats.items():
                     self.debug_metrics[f"{full_namespace}/{metric_type}/{layer}/{stat_name}"] = (
                         stat_value
                     )
@@ -245,12 +246,12 @@ class TorchWatcher:
 
     def track_parameters(self, namespace: Optional[str] = None):
         """Track model parameters with enhanced statistics."""
-        #TODO: Speed up for extracting parameters
+        # TODO: Speed up for extracting parameters
         with torch.no_grad():
             parameters = {
-                name: param.grad
+                name.replace(".", "/"): param.data
                 for name, param in self.model.named_parameters()
-                if param is not None and param.grad is not None
+                if param is not None
             }
             self._track_metric("parameters", parameters, namespace)
 
@@ -268,7 +269,7 @@ class TorchWatcher:
         Args:
             step (int|float): Logging step
             track_gradients (bool): Whether to track gradients. Defaults to True.
-            track_parameters (bool): Whether to track parameters. Defaults to True.
+            track_parameters (bool): Whether to track parameters. Defaults to False.
             track_activations (bool): Whether to track activations. Defaults to True.
             prefix (Optional[str]): Optional prefix to add to the base namespace.
                                      If provided, metrics will be logged under {prefix}/{base_namespace}/...

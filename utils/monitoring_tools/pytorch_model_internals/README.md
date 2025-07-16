@@ -1,5 +1,7 @@
 # Neptune TorchWatcher
 
+[![Explore in Neptune][Explore in Neptune badge]][Neptune dashboard]
+
 A lightweight PyTorch model monitoring tool that automatically tracks layer activations, gradients, and parameters during training. Built for seamless integration with neptune.ai.
 
 ## Why TorchWatcher?
@@ -17,7 +19,7 @@ Whether you're debugging gradient flow issues, monitoring activation patterns, o
 
 ## Changelog
 
-### [v0.1.0] - 2024-06-30
+### [v0.1.0] - 2025-07-16
 
 #### Added
 - Initial release of TorchWatcher
@@ -40,7 +42,7 @@ See `scripts/torch_watcher_example.py` for a complete example demonstrating:
 
 ### Basic Usage
 
-Place `neptune_torchwatcher.py` in the CWD and import as another package to your main training script. 
+Place `neptune_torchwatcher.py` in the CWD and import as another package to your main training script.
 
 ```python
 from neptune_scale import Run
@@ -90,10 +92,10 @@ watcher.watch(
     track_parameters=True
 )
 
-# Use a namespace to organize metrics
+# Use a prefix to organize metrics
 watcher.watch(
     step=current_step,
-    namespace="train"  # Metrics will be under "train/model_metrics/..."
+    prefix="train"  # Metrics will be under "train/model_internals/..."
 )
 ```
 
@@ -106,17 +108,17 @@ TorchWatcher provides a hierarchical namespace structure for organizing metrics:
 watcher = TorchWatcher(
     model,
     run,
-    base_namespace="model_metrics"  # All metrics will be under "model_metrics/"
+    base_namespace="model_internals"  # All metrics will be under "model_internals/"
 )
 ```
 
 2. **Per-Call Namespace**: Prefix for specific tracking calls
 ```python
 # During training
-watcher.watch(step=step, namespace="train")  # Metrics under "train/model_metrics/"
+watcher.watch(step=step, prefix="train")  # Metrics under "train/model_internals/"
 
 # During validation
-watcher.watch(step=step, namespace="validation")  # Metrics under "validation/model_metrics/"
+watcher.watch(step=step, prefix="validation")  # Metrics under "validation/model_internals/"
 ```
 
 3. **Metric Structure**: Metrics are organized as:
@@ -125,9 +127,9 @@ watcher.watch(step=step, namespace="validation")  # Metrics under "validation/mo
 ```
 
 Example metric names:
-- `train/model_metrics/activations/fc1_mean`
-- `validation/model_metrics/gradients/fc2_norm`
-- `train/model_metrics/parameters/fc1_weight_mean`
+- `train/model_internals/activations/fc1/mean`
+- `validation/model_internals/gradients/fc2/norm`
+- `train/model_internals/parameters/fc1/weight/mean`
 
 ### Example Use Cases
 
@@ -145,7 +147,7 @@ watcher.watch(
     track_activations=True,
     track_gradients=False,
     track_parameters=False,
-    namespace="validation"
+    prefix="validation"
 )
 ```
 
@@ -157,7 +159,7 @@ watcher.watch(
     track_activations=False,
     track_parameters=False,
     track_gradients=True,
-    namespace="train"
+    prefix="train"
 )
 ```
 
@@ -173,7 +175,9 @@ Predefined tensor statistics include:
 - `var`: Variance
 - `abs_mean`: Mean of absolute values
 
-## Benchmarking and Results
+These can be extended by adding to the `TENSOR_STATS` dictionary.
+
+<details><summary><h2>Performance Benchmarks</h2></summary>
 
 ### Benchmarking Methodology
 
@@ -195,7 +199,7 @@ TorchWatcher is designed to be lightweight and efficient. Our benchmarks show mi
 #### Analysis summary
 - Larger models also require more time to extract model internals such as gradients, activations and parameters.
     - As model size increases, extracting model parameters causes increased time in training loop compared to gradients and activations which are extracted with PyTorch hooks.
-    - Larger models have less total overhead between model training time in batch vs. time taken to extract values and is minimal if logging activations and gradients. 
+    - Larger models have less total overhead between model training time in batch vs. time taken to extract values and is minimal if logging activations and gradients.
 - Benchmarking also showed that the average running time per batch remained constant, indicating that there is no leakage or slowdown between training batches.
 
 ![benchmark_analysis](https://github.com/user-attachments/assets/7981d186-3cf9-4a81-bc5c-d8ee4fb8c689)
@@ -205,6 +209,13 @@ TorchWatcher is designed to be lightweight and efficient. Our benchmarks show mi
 - Analyze memory overhead
 - Train on multiple GPUs
 - Test on different datasets and model techniques
+</details>
+
+## Support and feedback
+
+We welcome your feedback and contributions!
+- For issues or feature requests related to this script, please open a [GitHub Issue][Github issues].
+- For general Neptune support, visit the [Neptune support center][Support center].
 
 ## License
 
@@ -217,3 +228,9 @@ You may obtain a copy of the License at http://www.apache.org/licenses/LICENSE-2
 Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and limitations under the License.
+
+
+[Explore in Neptune badge]: https://neptune.ai/wp-content/uploads/2024/01/neptune-badge.svg
+[Github issues]: https://github.com/neptune-ai/scale-examples/issues/new
+[Neptune dashboard]: https://scale.neptune.ai/examples/showcase/runs/details?viewId=standard-view&detailsTab=dashboard&dashboardId=9f67bd03-4080-4d47-83b2-36836b03351c&runIdentificationKey=torch-watcher-example&type=experiment&experimentsOnly=true&runsLineage=FULL&lbViewUnpacked=true&sortBy=%5B%22sys%2Fcreation_time%22%5D&sortFieldType=%5B%22datetime%22%5D&sortFieldAggregationMode=%5B%22auto%22%5D&sortDirection=%5B%22descending%22%5D&experimentOnly=true
+[Support center]: https://support.neptune.ai/
