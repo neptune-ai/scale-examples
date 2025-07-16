@@ -132,8 +132,8 @@ class _HookManager:
         """Get stored gradients."""
         return self.gradients
 
-    def close(self):
-        """Explicitly remove hooks and perform cleanup."""
+    def __del__(self):
+        """Ensure hooks are removed when the object is deleted."""
         self.remove_hooks()
 
 
