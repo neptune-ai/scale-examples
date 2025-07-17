@@ -204,7 +204,7 @@ TorchWatcher is designed to be lightweight and efficient. Our benchmarks show mi
 
 ---
 
-## Support and feedback:
+## Support and feedback
 
 We welcome your feedback and contributions!
 - For issues or feature requests related to this script, please open a [GitHub Issue][Github issues].
