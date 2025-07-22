@@ -33,6 +33,7 @@ This repo contains tutorials and examples of how to use Neptune.
 | | Docs | Neptune | GitHub |
 | -- | :--: | :--: | :--: |
 | Hardware monitoring | [![docs-icon]][hardware-monitoring] | [![neptune-icon]][hardware-monitoring-example] | [![github-icon]][hardware-monitoring-code] |
+| PyTorch model internals | | [![neptune-icon]][pytorch-model-internals-example] | [![github-icon]][pytorch-model-internals-code] |
 
 ## Can't find what you're looking for?
 
@@ -46,6 +47,7 @@ This repo contains tutorials and examples of how to use Neptune.
 [from-legacy-code]: utils/migration_tools/from_legacy_neptune/
 [hpo-notebook]: how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [hpo-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
+[pytorch-model-internals-code]: utils/monitoring_tools/pytorch_model_internals/
 [qs-notebook]: how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 [qs-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 
@@ -61,6 +63,7 @@ This repo contains tutorials and examples of how to use Neptune.
 [hpo-example]: https://scale.neptune.ai/o/examples/org/hpo/runs/table?viewId=9d44261f-32a1-42e7-96ff-9b35edc4be66
 [log-metadata]: https://docs.neptune.ai/log_metadata
 [log-metadata-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/details?viewId=9e6a41f4-69a5-4d9f-951c-b1304f2acf12&detailsTab=dashboard&dashboardId=9e6a5c4c-0c39-491f-9811-87eeb39a2603&runIdentificationKey=LLM-29&type=run&compare=uMlyIDUTmecveIHVma0eEB95Ei5xu8F_9qHOh0nynbtM
+[pytorch-model-internals-example]: https://scale.neptune.ai/examples/showcase/runs/details?viewId=standard-view&detailsTab=dashboard&dashboardId=9f67bd03-4080-4d47-83b2-36836b03351c&runIdentificationKey=torch-watcher-example&type=experiment&experimentsOnly=true&runsLineage=FULL&lbViewUnpacked=true&sortBy=%5B%22sys%2Fcreation_time%22%5D&sortFieldType=%5B%22datetime%22%5D&sortFieldAggregationMode=%5B%22auto%22%5D&sortDirection=%5B%22descending%22%5D&experimentOnly=true
 [quickstart]: https://docs.neptune.ai/quickstart
 [quickstart-example]: https://scale.neptune.ai/examples/quickstart/reports/9ea26258-2aed-4441-9b58-bab619215f6f
 [resume-run]: https://docs.neptune.ai/resume_run
