@@ -3,6 +3,10 @@
 This script allows you to copy run metadata from W&B to Neptune.
 
 ## Changelog
+
+- **v0.3.0** (2025-07-24)
+  - Updated script to use new `flatten` and `cast_unsupported` parameters in `log_configs`. Collections like lists, sets, and tuples are now cast to strings rather than being expanded into multiple keys.
+
 - **v0.2.0** (2025-06-16)
   - Added console logs and file support.
   - Updated namespace of hardware metrics to `runtime` from `system`.
@@ -15,7 +19,7 @@ This script allows you to copy run metadata from W&B to Neptune.
 
 ## Prerequisites
 - A Weights and Biases account, `wandb` library installed, and environment variables set.
-- A Neptune account, `neptune-scale` Python library installed, and environment variables set. For details, see the [docs][docs-setup].
+- A Neptune account, the latest `neptune-scale` Python library installed, and environment variables set. For details, see the [docs][docs-setup].
 
 > [!NOTE]
 > The script has been tested with `wandb==0.20.1` and `neptune-scale==0.14.0`.
