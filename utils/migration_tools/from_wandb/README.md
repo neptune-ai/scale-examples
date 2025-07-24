@@ -22,7 +22,7 @@ This script allows you to copy run metadata from W&B to Neptune.
 - A Neptune account, the latest `neptune-scale` Python library installed, and environment variables set. For details, see the [docs][docs-setup].
 
 > [!NOTE]
-> The script has been tested with `wandb==0.20.1` and `neptune-scale==0.14.0`.
+> The script has been tested with `wandb==0.20.1` and `neptune-scale==0.18.0`.
 
 ## Usage
 
