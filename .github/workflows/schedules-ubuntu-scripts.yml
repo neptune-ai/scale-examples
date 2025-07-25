@@ -1,4 +1,7 @@
 name: Scheduled scripts tests (ubuntu)
+permissions:
+  contents: read
+
 on:
   schedule:
     - cron: "0 0 * * 3" # Run every Wednesday at 12:00 AM UTC
