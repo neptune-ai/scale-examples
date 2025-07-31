@@ -39,7 +39,7 @@ This repo contains tutorials and examples of how to use Neptune.
 
 - [Visit the documentation &rarr;][docs]
 - [Check out the blog &rarr;][blog]
-- Reach out to us at [support@neptune.ai](mailto:support@neptune.ai)
+- Visit our [Support Center](https://support.neptune.ai/) to get help or contact the Support team.
 
 
 <!-- Internal -->
