@@ -1,4 +1,7 @@
 name: Scheduled notebook tests (macos)
+
+permissions:
+  contents: read
 on:
   schedule:
     - cron: "0 0 * * 0" # Run every Sunday at 12:00 AM UTC
