@@ -162,12 +162,3 @@ trainer = Trainer(
 )
 
 trainer.train()
-
-# Add eval pipeline for eval metrics
-# Add upscaling versions to investigate
-# Add metrics logging for training curves
-# Add Neptune logging for progress tracking
-# Add a way to save the model
-# Add a way to load the model
-# Add system metrics logging
-# Create custom training loop
