@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 # === Experiment Configuration ===
 MODEL_NAME = "gpt2"  # Choose: 'gpt2', 'gpt2-medium', etc.
 MODE = "stability"      # Choose: 'scaling' or 'stability'
-DEVICE = "cpu"
+DEVICE = "cpu" # "auto" or "cpu"
 
 # Stability Ablation Flags (used when MODE == 'stability')
 ABLATE_LAYER_NORM = True
