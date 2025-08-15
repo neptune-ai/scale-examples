@@ -180,7 +180,7 @@ def main(run: Run):
 if __name__ == "__main__":
     
     run = Run(
-        experiment_name="pretraining-train",
+        experiment_name="pretraining-gpt2",
         project="leo/pytorch-tutorial"
     )
     run.add_tags(["pretraining", "train", "e2e"])

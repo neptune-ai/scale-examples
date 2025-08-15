@@ -1,0 +1,6 @@
+transformers
+nvidia-ml-py<13.0.0
+psutil
+neptune-scale
+datasets
+accelerate
