@@ -1,12 +1,8 @@
 import torch
 import torchvision
-from tempfile import NamedTemporaryFile
 from torch import nn
-from torch.nn import functional as F
-from torch.utils.data import DataLoader
 from diffusers import DDPMScheduler, UNet2DModel
-from matplotlib import pyplot as plt
-from tqdm.auto import tqdm, trange
+from tqdm.auto import tqdm
 from diffusers import DiffusionPipeline
 import os
 import json
@@ -17,7 +13,6 @@ from PIL import Image
 
 def get_device() -> str:
     device = 'mps' if torch.backends.mps.is_available() else 'cuda' if torch.cuda.is_available() else 'cpu'
-    print(f'Using device: {device}')
     return device
 
 

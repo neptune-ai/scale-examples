@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Literal, Optional, Type, Union
+from typing import Dict, List, Optional, Type, Union
 from neptune_scale import Run
 from neptune_scale.types import Histogram
 

@@ -2,47 +2,18 @@ import os
 import time
 import tempfile
 import torch
-import argparse
 import statistics
-from checkpoint_utils import load_checkpoint_by_run_and_step
-from net import get_device
+from typing import Annotated
+from image_gen_evals.lib.checkpoints import load_checkpoint_by_run_and_step
+from image_gen_evals.lib.net import get_device
 from google import genai
 from google.genai.types import File
 from neptune_scale import Run
+import typer
+from image_gen_evals.lib.script_utils import print_run_urls, log_environment
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--neptune-project", type=str, default="neptune/class-conditioned-difussion"
-)
-parser.add_argument("--neptune-experiment", type=str, default="debug-001")
-parser.add_argument(
-    "--neptune-run-id",
-    type=str,
-    required=True,
-    help="Neptune run ID for the checkpoint to evaluate",
-)
-parser.add_argument(
-    "--global-step",
-    type=int,
-    required=True,
-    help="Global step of the checkpoint to evaluate",
-)
-parser.add_argument(
-    "--n-samples", type=int, default=10, help="Number of samples to generate per digit"
-)
-parser.add_argument(
-    "--gemini-model",
-    type=str,
-    default="gemma-3-27b-it",
-    help="Gemini model to use for evaluation",
-)
-parser.add_argument(
-    "--gemini-api-rpm",
-    type=int,
-    default=20,
-    help="Gemini API requests per minute limit",
-)
+app = typer.Typer(no_args_is_help=True, add_completion=True)
 
 
 class GeminiEvaluator:
@@ -88,16 +59,20 @@ class GeminiEvaluator:
             time.sleep(self.sleep_time - (now - self.last_request_time))
 
 
-def main():
-    args = parser.parse_args()
+@app.command("run", help="Evaluate a checkpoint with Gemini and log results to Neptune")
+def evaluate(
+    project: Annotated[str, typer.Option("--project", "-p", help="Neptune project name")],
+    run_id: Annotated[str, typer.Option("--run-id", "--neptune-run-id", "-r", help="Neptune Run ID for the checkpoint to evaluate")],
+    step: Annotated[int, typer.Option("--step", "--global-step", "-s", help="Global step of the checkpoint to evaluate")],
+    n_samples: int = typer.Option(10, "--n-samples", "-n", help="Number of samples to generate per digit"),
+    gemini_model: str = typer.Option("gemma-3-27b-it", "--gemini-model", "-m", help="Gemini model to use for evaluation"),
+    gemini_api_rpm: int = typer.Option(20, "--gemini-api-rpm", "-R", help="Gemini API requests per minute limit"),
+):
     device = get_device()
 
-    # Load checkpoint
-    print(f"Loading checkpoint from run {args.neptune_run_id}, step {args.global_step}")
+    print(f"Loading checkpoint from run {run_id}, step {step}")
     try:
-        pipeline, training_info = load_checkpoint_by_run_and_step(
-            args.neptune_run_id, args.global_step, device=device
-        )
+        pipeline, training_info = load_checkpoint_by_run_and_step(run_id, step, device=device)
         pipeline.unet.eval()
         print(
             f"✓ Loaded checkpoint: epoch={training_info.get('epoch', 'unknown')}, step={training_info.get('step', 'unknown')}"
@@ -106,20 +81,19 @@ def main():
         print(f"❌ Failed to load checkpoint: {e}")
         return
 
-    evaluator = GeminiEvaluator(args.gemini_model, args.gemini_api_rpm)
+    evaluator = GeminiEvaluator(gemini_model, gemini_api_rpm)
 
-    # Connect to Neptune run for logging
-    print(f"Connecting to Neptune run: {args.neptune_run_id}")
-    run = Run(run_id=args.neptune_run_id, resume=True, project=args.neptune_project)
-
-    # Log evaluation configuration
+    print(f"Connecting to Neptune run: {run_id}")
+    run = Run(run_id=run_id, resume=True, project=project, runtime_namespace="eval/runtime")
+    print_run_urls(run)
+    log_environment(run, prefix="eval")
     run.log_configs(
         {
-            "evals/config/device": device,
-            "evals/config/n_samples": args.n_samples,
-            "evals/config/gemini_model": args.gemini_model,
-            "evals/config/gemini_api_rpm": args.gemini_api_rpm,
-            "evals/config/global_step": args.global_step,
+            "eval/config/device": device,
+            "eval/config/n_samples": n_samples,
+            "eval/config/gemini_model": gemini_model,
+            "eval/config/gemini_api_rpm": gemini_api_rpm,
+            "eval/config/global_step": step,
         }
     )
 
@@ -133,7 +107,7 @@ def main():
 
         run.log_metrics(
             data=data,
-            step=args.global_step,
+            step=step,
             preview=preview,
             preview_completion=preview_completion,
         )
@@ -145,9 +119,7 @@ def main():
                 you're evaluating output of a large language model, return single word 'true' or 'false'
                 with no other information, no quotes, all letters lowercase
                 """.replace(r"\s+", " "),
-            "parse_score": lambda output, _: 1
-            if output.lower().strip() == "true"
-            else 0,
+            "parse_score": lambda output, _: 1 if output.lower().strip() == "true" else 0,
         },
         "correct_digit": {
             "prompt": "what digit is it?",
@@ -155,9 +127,7 @@ def main():
                 you're evaluating output of a large language model, return single digit between 0 and 9
                 with no quotes and no other text
                 """.replace(r"\s+", " "),
-            "parse_score": lambda output, digit: 1
-            if int(output.strip()) == digit
-            else 0,
+            "parse_score": lambda output, digit: 1 if int(output.strip()) == digit else 0,
         },
         "hand_writing": {
             "prompt": "on scale 1 (false) to 5 (true), how likely do you think this digit was written by a human?",
@@ -176,11 +146,11 @@ def main():
             digit_results = {eval_name: [] for eval_name in evaluations.keys()}
 
             # Generate all samples for this digit in parallel (one batch)
-            print(f"Generating {args.n_samples} samples for digit {digit}")
+            print(f"Generating {n_samples} samples for digit {digit}")
             with torch.no_grad():
                 result = pipeline(
-                    class_labels=[digit] * args.n_samples,
-                    batch_size=args.n_samples,
+                    class_labels=[digit] * n_samples,
+                    batch_size=n_samples,
                     num_inference_steps=50,
                     return_pil=True,
                     show_progress=False,
@@ -193,27 +163,21 @@ def main():
                 print(f"Generated: {img_file_name}")
 
                 run.log_files(
-                    files={
-                        f"evals/samples/digit={digit}/sample={sample_idx:03d}.png": img_path
-                    },
-                    step=args.global_step,
+                    files={f"eval/samples/digit={digit}/sample={sample_idx:03d}.png": img_path},
+                    step=step,
                 )
                 file = evaluator.upload_image_once(img_path)
 
                 for eval_name, eval_config in evaluations.items():
                     run.log_string_series(
                         data={
-                            f"evals/{eval_name}/prompt": eval_config["prompt"],
-                            f"evals/{eval_name}/system_prompt": eval_config[
-                                "system_prompt"
-                            ],
+                            f"eval/{eval_name}/prompt": eval_config["prompt"],
+                            f"eval/{eval_name}/system_prompt": eval_config["system_prompt"],
                         },
-                        step=args.global_step,
+                        step=step,
                     )
 
-                    eval_output = evaluator.evaluate(
-                        file, eval_config["prompt"], eval_config["system_prompt"]
-                    )
+                    eval_output = evaluator.evaluate(file, eval_config["prompt"], eval_config["system_prompt"])
                     score = eval_config["parse_score"](eval_output, digit)
                     print(f"  {eval_name}: {eval_output} -> {score}")
 
@@ -221,39 +185,24 @@ def main():
                     all_results[eval_name].append(score)
 
                     run.log_metrics(
-                        data={
-                            f"evals/{eval_name}/scores/digit={digit}/sample={sample_idx:03d}": score
-                        },
-                        step=args.global_step,
+                        data={f"eval/{eval_name}/scores/digit={digit}/sample={sample_idx:03d}": score},
+                        step=step,
                     )
                     log_preview_scores(
                         data={
-                            f"evals/{eval_name}/scores/digit={digit}/avg": statistics.mean(
-                                digit_results[eval_name]
-                            ),
-                            f"evals/{eval_name}/scores/digit={digit}/max": max(
-                                digit_results[eval_name]
-                            ),
-                            f"evals/{eval_name}/scores/digit={digit}/min": min(
-                                digit_results[eval_name]
-                            ),
+                            f"eval/{eval_name}/scores/digit={digit}/avg": statistics.mean(digit_results[eval_name]),
+                            f"eval/{eval_name}/scores/digit={digit}/max": max(digit_results[eval_name]),
+                            f"eval/{eval_name}/scores/digit={digit}/min": min(digit_results[eval_name]),
                         },
-                        progress=(sample_idx + 1) / args.n_samples,
+                        progress=(sample_idx + 1) / n_samples,
                     )
                     log_preview_scores(
                         data={
-                            f"evals/{eval_name}/scores/avg": statistics.mean(
-                                all_results[eval_name]
-                            ),
-                            f"evals/{eval_name}/scores/max": max(
-                                all_results[eval_name]
-                            ),
-                            f"evals/{eval_name}/scores/min": min(
-                                all_results[eval_name]
-                            ),
+                            f"eval/{eval_name}/scores/avg": statistics.mean(all_results[eval_name]),
+                            f"eval/{eval_name}/scores/max": max(all_results[eval_name]),
+                            f"eval/{eval_name}/scores/min": min(all_results[eval_name]),
                         },
-                        progress=len(all_results[eval_name])
-                        / (args.n_samples * 10),
+                        progress=len(all_results[eval_name]) / (n_samples * 10),
                     )
 
     # Wait for Neptune processing and close
@@ -265,4 +214,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    app()

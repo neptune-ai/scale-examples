@@ -8,12 +8,12 @@ import torch
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, Union
 from diffusers import DDPMScheduler
-from net import ClassConditionedUnet, ClassConditionedPipeline
+from image_gen_evals.lib.net import ClassConditionedUnet, ClassConditionedPipeline
 
 
 def create_checkpoint_path(run_id: str, global_step: int) -> str:
     """Create checkpoint path based on run ID and global step."""
-    return f"checkpoints/{run_id}/step_{global_step:06d}"
+    return f".checkpoints/{run_id}/step_{global_step:06d}"
 
 
 def load_checkpoint_by_run_and_step(run_id: str, global_step: int, device=None):
@@ -223,47 +223,3 @@ def resume_training(
         print("! No optimizer state found, using fresh optimizer")
     
     return pipeline, optimizer, training_info or {}
-
-
-def test_checkpoint_loading():
-    """Test function to verify checkpoint loading works."""
-    print("Testing checkpoint loading...")
-    
-    # Test current checkpoint structure
-    checkpoint_dirs = [
-        "checkpoints/epoch=0_step=0",
-        "checkpoints/epoch=0_step=100"
-    ]
-    
-    for checkpoint_dir in checkpoint_dirs:
-        if os.path.exists(checkpoint_dir):
-            print(f"\nTesting {checkpoint_dir}:")
-            
-            # Test PyTorch checkpoint loading
-            pt_file = os.path.join(checkpoint_dir, "checkpoint.pt")
-            if os.path.exists(pt_file):
-                try:
-                    pipeline, info = load_from_pytorch_checkpoint(pt_file)
-                    print(f"  ✓ PyTorch loading: epoch={info['epoch']}, step={info['step']}")
-                except Exception as e:
-                    print(f"  ✗ PyTorch loading failed: {e}")
-            
-            # Test HF checkpoint loading
-            hf_dir = os.path.join(checkpoint_dir, "pipeline")
-            if os.path.exists(hf_dir):
-                try:
-                    pipeline = load_from_hf_checkpoint(hf_dir)
-                    print("  ✓ HuggingFace loading successful")
-                except Exception as e:
-                    print(f"  ✗ HuggingFace loading failed: {e}")
-            
-            # Test auto loading
-            try:
-                pipeline, info = load_checkpoint_auto(checkpoint_dir)
-                print("  ✓ Auto loading successful")
-            except Exception as e:
-                print(f"  ✗ Auto loading failed: {e}")
-
-
-if __name__ == "__main__":
-    test_checkpoint_loading()

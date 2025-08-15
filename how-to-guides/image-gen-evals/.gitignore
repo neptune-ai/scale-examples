@@ -1,4 +1,5 @@
-checkpoints
 __pycache__
-mnist
+*.egg-info
+.checkpoints
+.mnist
 .neptune
