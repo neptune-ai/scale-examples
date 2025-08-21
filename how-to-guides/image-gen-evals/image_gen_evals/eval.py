@@ -64,19 +64,30 @@ def evaluate(
     project: Annotated[str, typer.Option("--project", "-p", help="Neptune project name")],
     run_id: Annotated[str, typer.Option("--run-id", "--neptune-run-id", "-r", help="Neptune Run ID for the checkpoint to evaluate")],
     step: Annotated[int, typer.Option("--step", "--global-step", "-s", help="Global step of the checkpoint to evaluate")],
+    experiment: Annotated[str, typer.Option("--experiment", "-x", help="Experiment name for organization")],
+    parent_run_id: str = typer.Option(None, "--parent-run-id", "-P", help="If run_id is forked, provide the parent run id"),
+    fork_step: int = typer.Option(None, "--fork-step", "-S", help="If run_id is forked, provide the global step where the fork was made"),
     n_samples: int = typer.Option(10, "--n-samples", "-n", help="Number of samples to generate per digit"),
     gemini_model: str = typer.Option("gemma-3-27b-it", "--gemini-model", "-m", help="Gemini model to use for evaluation"),
-    gemini_api_rpm: int = typer.Option(20, "--gemini-api-rpm", "-R", help="Gemini API requests per minute limit"),
+    gemini_api_rpm: int = typer.Option(25, "--gemini-api-rpm", "-R", help="Gemini API requests per minute limit"),
 ):
     device = get_device()
 
-    print(f"Loading checkpoint from run {run_id}, step {step}")
     try:
-        pipeline, training_info = load_checkpoint_by_run_and_step(run_id, step, device=device)
-        pipeline.unet.eval()
-        print(
-            f"✓ Loaded checkpoint: epoch={training_info.get('epoch', 'unknown')}, step={training_info.get('step', 'unknown')}"
-        )
+        try:
+            print(f"Loading checkpoint from {run_id=} {step=}")
+            pipeline, training_info = load_checkpoint_by_run_and_step(run_id, step, device=device)
+            pipeline.unet.eval()
+            print(
+                f"✓ Loaded checkpoint: epoch={training_info.get('epoch', 'unknown')}, step={training_info.get('step', 'unknown')}"
+            )
+        except Exception:
+            print(f"⚠️ Loading checkpoint from {parent_run_id=} {step=}")
+            pipeline, training_info = load_checkpoint_by_run_and_step(parent_run_id, step, device=device)
+            pipeline.unet.eval()
+            print(
+                f"✓ Loaded checkpoint: epoch={training_info.get('epoch', 'unknown')}, step={training_info.get('step', 'unknown')}"
+            )
     except Exception as e:
         print(f"❌ Failed to load checkpoint: {e}")
         return
@@ -84,7 +95,15 @@ def evaluate(
     evaluator = GeminiEvaluator(gemini_model, gemini_api_rpm)
 
     print(f"Connecting to Neptune run: {run_id}")
-    run = Run(run_id=run_id, resume=True, project=project, runtime_namespace="eval/runtime")
+    run = Run(
+        run_id=run_id,
+        resume=True,
+        project=project,
+        experiment_name=experiment,
+        fork_run_id=parent_run_id,
+        fork_step=fork_step,
+        runtime_namespace="eval/runtime",
+    )
     print_run_urls(run)
     log_environment(run, prefix="eval")
     run.log_configs(
