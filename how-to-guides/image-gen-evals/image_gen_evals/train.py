@@ -18,6 +18,7 @@ from image_gen_evals.lib.checkpoints import (
 )
 from image_gen_evals.lib.torchwatcher import TorchWatcher
 from image_gen_evals.lib.script_utils import print_run_urls, log_environment
+from image_gen_evals.lib.neptune_hardware_monitoring import SystemMetricsMonitor
 
 
 
@@ -55,6 +56,7 @@ def training_loop(
     )
     train_dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     watcher = TorchWatcher(model=net, run=run, tensor_stats=tensor_stats, base_namespace="train/debug")
+    monitor = SystemMetricsMonitor(run=run, namespace="train/runtime")
     loss_fn = torch.nn.MSELoss()
 
     config = {
@@ -91,6 +93,7 @@ def training_loop(
 
     current_global_step = start_global_step
     for epoch in range(start_epoch, n_epochs):
+        monitor.start()
         for step, (x, y) in enumerate(tqdm(train_dataloader)):
             if epoch == start_epoch and step < start_step:
                 current_global_step += 1
@@ -152,6 +155,7 @@ def training_loop(
 
             current_global_step += 1
 
+        monitor.stop()
         if save_checkpoints:
             final_checkpoint_dir = create_checkpoint_path(run_id, current_global_step)
             save_unified_checkpoint(
