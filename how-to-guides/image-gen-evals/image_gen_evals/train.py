@@ -5,6 +5,7 @@ from time import perf_counter
 import torch
 from torch.utils.data import DataLoader
 import torchvision
+from torchvision.transforms import v2
 from diffusers import DDPMScheduler
 from tqdm.auto import tqdm
 from neptune_scale import Run
@@ -48,9 +49,10 @@ def training_loop(
 ) -> None:
     device = get_device()
     noise_scheduler = pipeline.scheduler
-    transform = torchvision.transforms.Compose([
-        torchvision.transforms.ToTensor(),
-        torchvision.transforms.v2.GaussianNoise(mean=0.0, sigma=0.1)
+    transform = v2.Compose([
+        v2.ToImage(),
+        v2.ToDtype(torch.float32, scale=True),
+        v2.GaussianNoise(mean=0.0, sigma=0.1)
     ])
     dataset = torchvision.datasets.MNIST(
         root=".mnist/",
