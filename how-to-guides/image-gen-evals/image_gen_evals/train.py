@@ -48,11 +48,15 @@ def training_loop(
 ) -> None:
     device = get_device()
     noise_scheduler = pipeline.scheduler
+    transform = torchvision.transforms.Compose([
+        torchvision.transforms.ToTensor(),
+        torchvision.transforms.v2.GaussianNoise(mean=0.0, sigma=0.1)
+    ])
     dataset = torchvision.datasets.MNIST(
         root=".mnist/",
         train=True,
         download=True,
-        transform=torchvision.transforms.ToTensor(),
+        transform=transform,
     )
     train_dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
     watcher = TorchWatcher(model=net, run=run, tensor_stats=tensor_stats, base_namespace="train/debug")
