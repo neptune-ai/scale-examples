@@ -93,13 +93,15 @@ def training_loop(
 
     current_global_step = start_global_step
     for epoch in range(start_epoch, n_epochs):
+        if epoch < start_epoch:
+            continue
+
         monitor.start()
         for step, (x, y) in enumerate(tqdm(train_dataloader)):
-            if epoch == start_epoch and step < start_step:
-                current_global_step += 1
+            if step < start_step:
                 continue
-            step_start = perf_counter()
 
+            step_start = perf_counter()
             watcher.watch(
                 step=current_global_step,
                 track_activations=True,
