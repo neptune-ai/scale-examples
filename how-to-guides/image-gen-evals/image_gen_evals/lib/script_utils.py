@@ -30,7 +30,7 @@ def log_environment(run: Run, prefix: Literal["train", "eval"] = "train"):
         }
     )
 
-    project_root = Path(__file__).parent
+    project_root = Path(__file__).parent.parent
     source_files = {
         f"{prefix}/env/source_files/{path.relative_to(project_root)}": path
         for path in project_root.rglob("*")

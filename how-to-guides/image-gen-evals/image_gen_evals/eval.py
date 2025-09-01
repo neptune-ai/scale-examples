@@ -81,7 +81,10 @@ def evaluate(
             print(
                 f"✓ Loaded checkpoint: epoch={training_info.get('epoch', 'unknown')}, step={training_info.get('step', 'unknown')}"
             )
-        except Exception:
+        except Exception as e:
+            if parent_run_id is None:
+                raise e from e
+
             print(f"⚠️ Loading checkpoint from {parent_run_id=} {step=}")
             pipeline, training_info = load_checkpoint_by_run_and_step(parent_run_id, step, device=device)
             pipeline.unet.eval()
