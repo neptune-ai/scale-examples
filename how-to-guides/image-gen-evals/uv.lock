@@ -455,6 +455,30 @@ wheels = [
 ]
 
 [[package]]
+name = "gitdb"
+version = "4.0.12"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "smmap" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/72/94/63b0fc47eb32792c7ba1fe1b694daec9a63620db1e313033d18140c2320a/gitdb-4.0.12.tar.gz", hash = "sha256:5ef71f855d191a3326fcfbc0d5da835f26b13fbcba60c32c21091c349ffdb571", size = 394684, upload-time = "2025-01-02T07:20:46.413Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a0/61/5c78b91c3143ed5c14207f463aecfc8f9dbb5092fb2869baf37c273b2705/gitdb-4.0.12-py3-none-any.whl", hash = "sha256:67073e15955400952c6565cc3e707c554a4eea2e428946f7a4c162fab9bd9bcf", size = 62794, upload-time = "2025-01-02T07:20:43.624Z" },
+]
+
+[[package]]
+name = "gitpython"
+version = "3.1.45"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "gitdb" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9a/c8/dd58967d119baab745caec2f9d853297cec1989ec1d63f677d3880632b88/gitpython-3.1.45.tar.gz", hash = "sha256:85b0ee964ceddf211c41b9f27a49086010a190fd8132a24e21f362a4b36a791c", size = 215076, upload-time = "2025-07-24T03:45:54.871Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/01/61/d4b89fec821f72385526e1b9d9a3a0385dda4a72b206d28049e2c7cd39b8/gitpython-3.1.45-py3-none-any.whl", hash = "sha256:8908cb2e02fb3b93b7eb0f2827125cb699869470432cc885f019b8fd0fccff77", size = 208168, upload-time = "2025-07-24T03:45:52.517Z" },
+]
+
+[[package]]
 name = "google-auth"
 version = "2.40.3"
 source = { registry = "https://pypi.org/simple" }
@@ -612,7 +636,7 @@ dependencies = [
     { name = "google-genai" },
     { name = "ipykernel" },
     { name = "matplotlib" },
-    { name = "neptune-fetcher" },
+    { name = "neptune-query" },
     { name = "neptune-scale" },
     { name = "numpy" },
     { name = "pynvml" },
@@ -628,8 +652,8 @@ requires-dist = [
     { name = "google-genai", specifier = ">=1.30.0" },
     { name = "ipykernel", specifier = ">=6.30.1" },
     { name = "matplotlib", specifier = ">=3.10" },
-    { name = "neptune-fetcher", specifier = ">=0.18" },
-    { name = "neptune-scale", specifier = ">=0.18" },
+    { name = "neptune-query", specifier = ">=1.2" },
+    { name = "neptune-scale", specifier = ">=0.22" },
     { name = "numpy", specifier = ">=2.3.0" },
     { name = "pynvml", specifier = ">=12.0.0" },
     { name = "torch", specifier = ">=2.7" },
@@ -987,7 +1011,7 @@ wheels = [
 
 [[package]]
 name = "neptune-api"
-version = "0.19.0"
+version = "0.21.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
@@ -996,14 +1020,14 @@ dependencies = [
     { name = "pyjwt" },
     { name = "python-dateutil" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/70/ce/7442f7ed6249787ddf81b004fe583ba8346b8a1437f827416e67d09d9eaa/neptune_api-0.19.0.tar.gz", hash = "sha256:38cb557fc3af43551dc044d81fb83df051a0002821ccba7396adf09a381f78dc", size = 86164, upload-time = "2025-07-22T11:36:53.283Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/fb/9e/a0542b1251d2a25dc3467988b0434f19fd047d298cf09092c3ed4bfb4037/neptune_api-0.21.0.tar.gz", hash = "sha256:42837033c0c2eb4e720034b1f68335a54ce3c20d34df7be0bd5314000bce56b2", size = 89650, upload-time = "2025-08-27T13:08:48.309Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/5f/c37e1a3a20ccc23ec0d9e96d0b3e5d05d95b60f42c0f27859547754891a8/neptune_api-0.19.0-py3-none-any.whl", hash = "sha256:f326ab782d68e737edbf0d059ff6c4253514ff0e15af9e7fe5e097e04235ae8d", size = 187477, upload-time = "2025-07-22T11:36:52.174Z" },
+    { url = "https://files.pythonhosted.org/packages/fe/35/8fa317bb8fe8a40f9499927803319f6530dc53942691301544af0ce26f6f/neptune_api-0.21.0-py3-none-any.whl", hash = "sha256:50e68c29619b93c66be36dea045a903141ee95c6ef42acb07719b6e954f76f32", size = 194882, upload-time = "2025-08-27T13:08:46.917Z" },
 ]
 
 [[package]]
-name = "neptune-fetcher"
-version = "0.20.0"
+name = "neptune-query"
+version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "azure-storage-blob" },
@@ -1011,14 +1035,14 @@ dependencies = [
     { name = "pandas" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/fe/ae/2f886be1cc01f931c2e320c3ae4f0130065fa394080f4a0edf76a8cf0155/neptune_fetcher-0.20.0.tar.gz", hash = "sha256:e512e65b1cbf874eef4dcf39cf58fb09be2f3013d24e3af12eaafb69b3624371", size = 69160, upload-time = "2025-07-24T08:10:10.482Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/9a/15/ce1864c296a7da7db4c7b72adb168a572a92c0a8da866ef6169d036097ac/neptune_query-1.2.2.tar.gz", hash = "sha256:2b402d6cc38ea10533251576adc63ff5aeb4ea4b7c04d1151f3c5d926eaf6956", size = 54751, upload-time = "2025-08-27T13:17:52.211Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/26/53/709cfe93972e3c6478f960ec1cc90191d744a990900002b09db6decab7f3/neptune_fetcher-0.20.0-py3-none-any.whl", hash = "sha256:c6aed24279bb01eedbb66eb17d90e7d05a164173529ee5b66f2abd34cfd0bc8f", size = 108818, upload-time = "2025-07-24T08:10:09.205Z" },
+    { url = "https://files.pythonhosted.org/packages/77/f1/7f8fddd8f0ab73c1e84fa28692a5ca0cf816a03acf7975ac60ecfe827c02/neptune_query-1.2.2-py3-none-any.whl", hash = "sha256:a608e34f1c03fc694258cf18e9a12ba66a8b2fda75f27e9dde69ad5302f6e208", size = 87270, upload-time = "2025-08-27T13:17:50.77Z" },
 ]
 
 [[package]]
 name = "neptune-scale"
-version = "0.21.0"
+version = "0.22.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "aiofiles" },
@@ -1026,15 +1050,16 @@ dependencies = [
     { name = "backoff" },
     { name = "click" },
     { name = "filetype" },
+    { name = "gitpython" },
     { name = "more-itertools" },
     { name = "neptune-api" },
     { name = "psutil" },
     { name = "requests" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/85/c0/c5e7f117eeb7c2ac37d12e24b25d6b7830324956869ba05a84fa8f58fb15/neptune_scale-0.21.0.tar.gz", hash = "sha256:8410a08a89346fa8473fdcea115343d737a78f091411b294f3ceff682f09dfca", size = 64827, upload-time = "2025-08-06T09:25:32.594Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d5/25/62f1c6a15625a4f6fc660318896bce4afe960df7ca6bedcce29846a9a356/neptune_scale-0.22.0.tar.gz", hash = "sha256:2a473a454f3af7a17f95a96586a05973d7343790320274b22fa2783e9fab7271", size = 69816, upload-time = "2025-08-28T11:59:33.523Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/e2/6d/77ac663254f03188d042c35cba772e80566066a333036f7392f293efc9a5/neptune_scale-0.21.0-py3-none-any.whl", hash = "sha256:ea84776fe37403ae91b9b4e617ece661fc13d1b8ac5de8298f441a3b33e4a3ac", size = 76769, upload-time = "2025-08-06T09:25:31.357Z" },
+    { url = "https://files.pythonhosted.org/packages/57/02/508bec70885050af40445fe206a521716f0175cc1aded2920a94dcf6b08a/neptune_scale-0.22.0-py3-none-any.whl", hash = "sha256:e967b20a2f56667f0483f9e90cca0044a3515ba20f0f5aff99381883de290fb1", size = 84198, upload-time = "2025-08-28T11:59:32.29Z" },
 ]
 
 [[package]]
@@ -1820,6 +1845,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/94/e7/b2c673351809dca68a0e064b6af791aa332cf192da575fd474ed7d6f16a2/six-1.17.0.tar.gz", hash = "sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81", size = 34031, upload-time = "2024-12-04T17:35:28.174Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b7/ce/149a00dd41f10bc29e5921b496af8b574d8413afcd5e30dfa0ed46c2cc5e/six-1.17.0-py2.py3-none-any.whl", hash = "sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274", size = 11050, upload-time = "2024-12-04T17:35:26.475Z" },
+]
+
+[[package]]
+name = "smmap"
+version = "5.0.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/44/cd/a040c4b3119bbe532e5b0732286f805445375489fceaec1f48306068ee3b/smmap-5.0.2.tar.gz", hash = "sha256:26ea65a03958fa0c8a1c7e8c7a58fdc77221b8910f6be2131affade476898ad5", size = 22329, upload-time = "2025-01-02T07:14:40.909Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/be/d09147ad1ec7934636ad912901c5fd7667e1c858e19d355237db0d0cd5e4/smmap-5.0.2-py3-none-any.whl", hash = "sha256:b30115f0def7d7531d22a0fb6502488d879e75b260a9db4d0819cfb25403af5e", size = 24303, upload-time = "2025-01-02T07:14:38.724Z" },
 ]
 
 [[package]]

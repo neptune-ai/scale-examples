@@ -9,6 +9,7 @@ from torchvision.transforms import v2
 from diffusers import DDPMScheduler
 from tqdm.auto import tqdm
 from neptune_scale import Run
+from neptune_scale.api.run import SourceTrackingConfig
 import typer
 
 from image_gen_evals.lib.net import ClassConditionedPipeline, get_device, ClassConditionedUnet
@@ -46,13 +47,15 @@ def training_loop(
     n_epochs: int,
     checkpoint_interval: int,
     ask_before_epoch: bool,
+    noise_mean: float = 0.0,
+    noise_sigma: float = 0.1,
 ) -> None:
     device = get_device()
     noise_scheduler = pipeline.scheduler
     transform = v2.Compose([
         v2.ToImage(),
         v2.ToDtype(torch.float32, scale=True),
-        v2.GaussianNoise(mean=0.0, sigma=0.1)
+        v2.GaussianNoise(mean=noise_mean, sigma=noise_sigma)
     ])
     dataset = torchvision.datasets.MNIST(
         root=".mnist/",
@@ -73,6 +76,15 @@ def training_loop(
             "n_epochs": n_epochs,
             "checkpoint_interval": checkpoint_interval,
             "ask_before_epoch": ask_before_epoch,
+        },
+        "data": {
+            "dataset": "MNIST",
+            "transform": {
+                "repr": str(transform),
+                "dtype": "float32",
+                "mean": noise_mean,
+                "sigma": noise_sigma,
+            },
         },
         "net": {
             "repr": str(net),
@@ -214,6 +226,13 @@ def new(
         experiment_name=experiment,
         project=project,
         runtime_namespace="train/runtime",
+        source_tracking_config=SourceTrackingConfig(
+            namespace="train/env",
+            upload_run_command=True,
+            upload_entry_point=True,
+            upload_diff_head=True,
+            upload_diff_upstream=True,
+        ),
     )
     print_run_urls(run)
     log_environment(run, prefix="train")
@@ -261,7 +280,6 @@ def resume(
     print(f"Resuming Neptune {run_id=} at step {step=}")
     run = Run(run_id=run_id, resume=True, project=project, runtime_namespace="train/runtime")
     print_run_urls(run)
-    log_environment(run)
     device = get_device()
     print(f"Loading checkpoint from run {run_id}, step {step}")
     try:
@@ -331,6 +349,13 @@ def fork(
         fork_run_id=parent_run_id,
         fork_step=fork_step,
         runtime_namespace="train/runtime",
+        source_tracking_config=SourceTrackingConfig(
+            namespace="train/env",
+            upload_run_command=True,
+            upload_entry_point=True,
+            upload_diff_head=True,
+            upload_diff_upstream=True,
+        ),
     )
     print_run_urls(run)
     log_environment(run, prefix="train")
