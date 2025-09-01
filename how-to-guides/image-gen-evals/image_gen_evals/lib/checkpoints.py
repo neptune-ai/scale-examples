@@ -4,22 +4,109 @@ Utilities for loading and saving model checkpoints in different formats.
 """
 
 import os
+import pandas as pd
 import torch
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, Union
 from diffusers import DDPMScheduler
+import neptune_query.runs as nq_runs
 from image_gen_evals.lib.net import ClassConditionedUnet, ClassConditionedPipeline
 
 
-def create_checkpoint_path(run_id: str, global_step: int) -> str:
-    """Create checkpoint path based on run ID and global step."""
+def get_checkpoint_path(run_id: str, global_step: int) -> str:
+    """Get checkpoint path based on run ID and global step."""
     return f".checkpoints/{run_id}/step_{global_step:06d}"
 
 
 def load_checkpoint_by_run_and_step(run_id: str, global_step: int, device=None):
     """Load checkpoint by run ID and global step."""
-    checkpoint_path = create_checkpoint_path(run_id, global_step)
+    checkpoint_path = get_checkpoint_path(run_id, global_step)
     return load_checkpoint_auto(checkpoint_path, device=device)
+
+
+def get_run_lineage_metadata(project: str, run_id: str) -> Tuple[str, Optional[str], Optional[int]]:
+    """
+    Recursively get run metadata including experiment name, fork_run_id, and fork_step.
+    
+    Args:
+        project: Neptune project name
+        run_id: Neptune run ID to query
+        
+    Returns:
+        Tuple of (experiment_name, fork_run_id, fork_step)
+    """
+    df = nq_runs.fetch_runs_table(
+        project=project,
+        runs=run_id,
+        attributes=["sys/name", "sys/forking/parent", "sys/forking/step"]
+    )
+    
+    assert len(df) == 1, f"Expected 1 run, got {len(df)=}"
+    
+    row = df.iloc[0]
+    experiment_name = row["sys/name"]
+    
+    fork_run_id = row.get("sys/forking/parent")
+    if pd.isna(fork_run_id):
+        fork_run_id = None
+    
+    fork_step = row.get("sys/forking/step")
+    if pd.isna(fork_step):
+        fork_step = None
+    else:
+        fork_step = int(fork_step)
+        
+    print(f"Run {run_id}: experiment='{experiment_name}', fork_run_id={fork_run_id}, fork_step={fork_step}")
+    return experiment_name, fork_run_id, fork_step
+
+
+def get_run_lineage_chain(project: str, run_id: str) -> list[Tuple[str, Optional[str], Optional[int]]]:
+    """
+    Get the complete lineage chain of runs from current run back to root.
+    
+    Args:
+        project: Neptune project name
+        run_id: Starting run ID
+        
+    Returns:
+        List of (run_id, fork_run_id, fork_step) tuples ordered from current to root
+    """
+    lineage = []
+    current_run_id = run_id
+    
+    while current_run_id:
+        experiment_name, fork_run_id, fork_step = get_run_lineage_metadata(project, current_run_id)
+        lineage.append((current_run_id, fork_run_id, fork_step))
+        current_run_id = fork_run_id
+    
+    print(f"Found lineage chain with {len(lineage)} runs")
+    return lineage
+
+
+def load_checkpoint_recursive(project: str, run_id: str, step: int, device) -> Tuple[ClassConditionedPipeline, Dict[str, Any]]:
+    """
+    Recursively load checkpoint by traversing the run lineage until a checkpoint is found.
+    
+    Args:
+        project: Neptune project name
+        run_id: Starting run ID
+        step: Global step to load
+        device: Device to load on
+        
+    Returns:
+        Tuple of (pipeline, training_info)
+    """
+    lineage = get_run_lineage_chain(project, run_id)
+
+    for current_run_id, fork_run_id, fork_step in lineage:
+        try:
+            pipeline, training_info =load_checkpoint_by_run_and_step(current_run_id, step, device=device)
+            return pipeline, training_info
+        except Exception:
+            print(f"⚠️ Checkpoint not found in run {current_run_id}, trying parent...")
+            continue
+    
+    raise FileNotFoundError(f"Could not find checkpoint for {run_id=} {step=} in any of the parents")
 
 
 def load_from_pytorch_checkpoint(

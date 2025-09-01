@@ -15,7 +15,7 @@ import typer
 from image_gen_evals.lib.net import ClassConditionedPipeline, get_device, ClassConditionedUnet
 from image_gen_evals.lib.checkpoints import (
     save_unified_checkpoint,
-    create_checkpoint_path,
+    get_checkpoint_path,
     load_checkpoint_by_run_and_step,
 )
 from image_gen_evals.lib.torchwatcher import TorchWatcher
@@ -116,7 +116,7 @@ def training_loop(
 
         monitor.start()
         for step, (x, y) in enumerate(tqdm(train_dataloader)):
-            if step < start_step:
+            if step <= start_step:
                 continue
 
             step_start = perf_counter()
@@ -154,7 +154,7 @@ def training_loop(
 
             if save_checkpoints and current_global_step % checkpoint_interval == 0:
                 save_start = perf_counter()
-                checkpoint_dir = create_checkpoint_path(run_id, current_global_step)
+                checkpoint_dir = get_checkpoint_path(run_id, current_global_step)
                 save_unified_checkpoint(
                     pipeline=pipeline,
                     save_directory=checkpoint_dir,
@@ -177,7 +177,7 @@ def training_loop(
 
         monitor.stop()
         if save_checkpoints:
-            final_checkpoint_dir = create_checkpoint_path(run_id, current_global_step)
+            final_checkpoint_dir = get_checkpoint_path(run_id, current_global_step)
             save_unified_checkpoint(
                 pipeline=pipeline,
                 save_directory=final_checkpoint_dir,
