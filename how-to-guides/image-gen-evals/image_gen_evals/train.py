@@ -42,7 +42,7 @@ def training_loop(
     start_step: int,
     start_global_step: int,
     save_checkpoints: bool,
-    tensor_stats: list[str],
+    debug: bool,
     batch_size: int,
     n_epochs: int,
     checkpoint_interval: int,
@@ -64,13 +64,19 @@ def training_loop(
         transform=transform,
     )
     train_dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
-    watcher = TorchWatcher(model=net, run=run, tensor_stats=tensor_stats, base_namespace="train/debug")
+
+    # Set tensor stats based on debug flag
+    tensor_stats = ["hist", "mean", "norm", "min", "max"] if debug else []
+
+    # Only instantiate TorchWatcher if debug is enabled
+    watcher = TorchWatcher(model=net, run=run, tensor_stats=tensor_stats, base_namespace="train/debug") if debug else None
     monitor = SystemMetricsMonitor(run=run, namespace="train/runtime")
     loss_fn = torch.nn.MSELoss()
 
     config = {
         "training_loop": {
             "save_checkpoints": save_checkpoints,
+            "debug": debug,
             "tensor_stats": tensor_stats,
             "batch_size": batch_size,
             "n_epochs": n_epochs,
@@ -120,12 +126,13 @@ def training_loop(
                 continue
 
             step_start = perf_counter()
-            watcher.watch(
-                step=current_global_step,
-                track_activations=True,
-                track_gradients=True,
-                track_parameters=False,
-            )
+            if debug:
+                watcher.watch(
+                    step=current_global_step,
+                    track_activations=True,
+                    track_gradients=True,
+                    track_parameters=False,
+                )
 
             x = x.to(device) * 2 - 1
             y = y.to(device)
@@ -208,14 +215,11 @@ def new(
     project: Annotated[str, typer.Option("--project", "-p", help="Neptune project name")],
     experiment: Annotated[str, typer.Option("--experiment", "-x", help="Experiment name for organization")],
     save_checkpoints: bool = typer.Option(True, help="Save checkpoints to a local .checkpoints directory"),
-    tensor_stats: str = typer.Option(
-        "hist,mean,norm",
-        help="Comma-separated list of tensor debug stats to track in Neptune. Valid stats are: hist, mean, norm, min, max, var, abs_mean",
-    ),
+    debug: bool = typer.Option(True, help="Enable debug tensor stats tracking in Neptune"),
+    checkpoint_interval: int = typer.Option(100, "--checkpoint-interval", "-ci", help="Save checkpoint every N steps"),
     batch_size: int = typer.Option(128, "--batch-size", "-bs", help="Training batch size"),
     learning_rate: float = typer.Option(1e-3, "--learning-rate", "-lr", help="Learning rate"),
     n_epochs: int = typer.Option(10, "--epochs", "-e", help="Number of training epochs"),
-    checkpoint_interval: int = typer.Option(100, "--checkpoint-interval", "-ci", help="Save checkpoint every N steps"),
     ask_before_epoch: bool = typer.Option(False, help="Ask for human input before continuing to next epoch"),
 ):
     run_id = _generate_run_id()
@@ -242,7 +246,6 @@ def new(
     noise_scheduler = DDPMScheduler(num_train_timesteps=1000, beta_schedule="squaredcos_cap_v2")
     pipeline = ClassConditionedPipeline(unet=net, scheduler=noise_scheduler)
     opt = torch.optim.Adam(net.parameters(), lr=learning_rate)
-    tensor_stats_list = [s.strip() for s in tensor_stats.split(",") if s.strip()]
     training_loop(
         run=run,
         run_id=run_id,
@@ -253,7 +256,7 @@ def new(
         start_step=0,
         start_global_step=0,
         save_checkpoints=save_checkpoints,
-        tensor_stats=tensor_stats_list,
+        debug=debug,
         batch_size=batch_size,
         n_epochs=n_epochs,
         checkpoint_interval=checkpoint_interval,
@@ -267,10 +270,7 @@ def resume(
     run_id: Annotated[str, typer.Option("--run-id", "-r", help="Neptune Run ID to resume from")],
     step: Annotated[int, typer.Option("--step", "-s", help="Global step to resume from")],
     save_checkpoints: bool = typer.Option(True, help="Save checkpoints to a local .checkpoints directory"),
-    tensor_stats: str = typer.Option(
-        "hist,mean,norm",
-        help="Comma-separated list of tensor debug stats to track in Neptune. Valid stats are: hist, mean, norm, min, max, var, abs_mean",
-    ),
+    debug: bool = typer.Option(True, help="Enable debug tensor stats tracking in Neptune"),
     batch_size: int = typer.Option(128, "--batch-size", "-bs", help="Training batch size"),
     learning_rate: float = typer.Option(1e-3, "--learning-rate", "-lr", help="Learning rate"),
     n_epochs: int = typer.Option(10, "--epochs", "-e", help="Number of training epochs"),
@@ -301,7 +301,6 @@ def resume(
     start_global_step = training_info.get("global_step", step)
     print(f"Resumed from epoch {start_epoch}, step {start_step}, global_step {start_global_step}")
 
-    tensor_stats_list = [s.strip() for s in tensor_stats.split(",") if s.strip()]
     training_loop(
         run=run,
         run_id=run_id,
@@ -312,7 +311,7 @@ def resume(
         start_step=start_step,
         start_global_step=start_global_step,
         save_checkpoints=save_checkpoints,
-        tensor_stats=tensor_stats_list,
+        debug=debug,
         batch_size=batch_size,
         n_epochs=n_epochs,
         checkpoint_interval=checkpoint_interval,
@@ -330,10 +329,7 @@ def fork(
     parent_run_id: Annotated[str, typer.Option("--parent-run-id", "-r", help="Parent Neptune Run ID to fork from")],
     fork_step: Annotated[int, typer.Option("--fork-step", "-s", help="Global step of the parent run to fork from")],
     save_checkpoints: bool = typer.Option(True, help="Whether to save model checkpoints"),
-    tensor_stats: str = typer.Option(
-        "hist,mean,norm",
-        help="Comma-separated list of tensor debug stats to track in Neptune. Valid stats are: hist, mean, norm, min, max, var, abs_mean",
-    ),
+    debug: bool = typer.Option(True, help="Enable debug tensor stats tracking in Neptune"),
     batch_size: int = typer.Option(128, "--batch-size", "-bs", help="Training batch size"),
     learning_rate: float = typer.Option(1e-3, "--learning-rate", "-lr", help="Learning rate"),
     n_epochs: int = typer.Option(10, "--epochs", "-e", help="Number of training epochs"),
@@ -380,7 +376,6 @@ def fork(
     start_global_step = training_info.get("global_step", fork_step)
     print(f"Resumed from epoch {start_epoch}, step {start_step}, global_step {start_global_step}")
 
-    tensor_stats_list = [s.strip() for s in tensor_stats.split(",") if s.strip()]
     training_loop(
         run=run,
         run_id=run_id,
@@ -391,7 +386,7 @@ def fork(
         start_step=start_step,
         start_global_step=start_global_step,
         save_checkpoints=save_checkpoints,
-        tensor_stats=tensor_stats_list,
+        debug=debug,
         batch_size=batch_size,
         n_epochs=n_epochs,
         checkpoint_interval=checkpoint_interval,
