@@ -1,7 +1,7 @@
 # Unified script for Scaling Laws and Stability Ablation Studies
 # Fine-tune GPT-2 variants on WikiText-2 and analyze training behavior
 
-from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments, DataCollatorForLanguageModeling, TrainerCallback
+from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments, DataCollatorForLanguageModeling, TrainerCallback, GPT2Config, GPT2LMHeadModel
 from datasets import load_dataset
 import torch
 import torch.nn as nn
@@ -24,6 +24,7 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 MODEL_NAME = "gpt2"  # Choose: 'gpt2', 'gpt2-medium', etc.
 MODE = "stability"      # Choose: 'scaling' or 'stability'
 DEVICE = "cpu" # "auto" or "cpu"
+RANDOM_WEIGHTS = False  # Set to True to initialize with random weights instead of pretrained weights
 
 # Stability Ablation Flags (used when MODE == 'stability')
 ABLATE_LAYER_NORM = True
@@ -32,7 +33,19 @@ DISABLE_GRAD_CLIP = True
 
 def main():
     # === Model and Tokenizer ===
-    model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, device_map=DEVICE, torch_dtype=torch.bfloat16)
+    if RANDOM_WEIGHTS:
+        # Create a model with random weights from config
+        config = GPT2Config.from_pretrained(MODEL_NAME)
+        model = GPT2LMHeadModel(config)  # This creates a model with random weights
+        model = model.to(device=DEVICE if DEVICE != "auto" else "cuda" if torch.cuda.is_available() else "cpu")
+        if torch.cuda.is_available() and DEVICE == "auto":
+            model = model.to(torch.bfloat16)
+        print(f"Initialized {MODEL_NAME} with random weights")
+    else:
+        # Load pre-trained model
+        model = AutoModelForCausalLM.from_pretrained(MODEL_NAME, device_map=DEVICE, torch_dtype=torch.bfloat16)
+        print(f"Loaded pre-trained {MODEL_NAME}")
+    
     tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
     tokenizer.pad_token = tokenizer.eos_token
 
@@ -103,7 +116,7 @@ def main():
             block.register_full_backward_hook(capture_backward(i))
 
     # === Dataset Prep ===
-    dataset = load_dataset("wikitext", "wikitext-2-raw-v1")
+    dataset = load_dataset("roneneldan/TinyStories")
     # dataset = dataset.select(range(1000))
 
     def tokenize_function(examples):
@@ -224,6 +237,7 @@ def main():
         {
             "model": MODEL_NAME,
             "mode": MODE,
+            "random_weights": RANDOM_WEIGHTS,
             "ablate_layer_norm": ABLATE_LAYER_NORM,
             "ablate_dropout": ABLATE_DROPOUT,
             "disable_grad_clip": DISABLE_GRAD_CLIP,
