@@ -123,7 +123,7 @@ def main():
         return tokenizer(examples["text"])
 
     tokenized_datasets = dataset.map(tokenize_function, batched=True, remove_columns=["text"])
-    block_size = 128
+    block_size = 512
 
     def group_texts(examples):
         concatenated = {k: sum(examples[k], []) for k in examples.keys()}
@@ -241,6 +241,7 @@ def main():
             "ablate_layer_norm": ABLATE_LAYER_NORM,
             "ablate_dropout": ABLATE_DROPOUT,
             "disable_grad_clip": DISABLE_GRAD_CLIP,
+            "sequence_length": block_size,
         }
     )
 
