@@ -11,7 +11,6 @@ A lightweight PyTorch model monitoring tool that automatically tracks layer acti
 ### [v0.2.0] - 2025-09-08
 - Added support for logging distribution histograms
 - Added context manager support
-- Improved parameter extraction performance
 
 ### [v0.1.0] - 2025-07-17
 - Initial public release
@@ -167,7 +166,7 @@ if epoch >= 50:
         track_parameters=False,
         track_gradients=True,
         prefix="train"
-    )****
+    )
 else:
     watcher.watch(
         step=step,
@@ -202,6 +201,12 @@ Predefined tensor statistics include:
 - `hist`: Histogram distribution
 
 These can be extended by adding to the `TENSOR_STATS` dictionary.
+
+### Performance Notes
+
+- **Parameter tracking**: Parameters are always extracted fresh to ensure accuracy during training, as they change with each optimizer step
+- **Activation/Gradient tracking**: Uses efficient PyTorch hooks with minimal overhead
+- **Histogram computation**: More expensive than basic statistics, use selectively
 
 ---
 

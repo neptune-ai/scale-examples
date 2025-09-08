@@ -1,5 +1,6 @@
 from typing import Any, Dict, List, Literal, Optional, Type, Union
 
+import numpy as np
 import torch
 import torch.nn as nn
 from neptune_scale.types import Histogram
@@ -261,15 +262,14 @@ class TorchWatcher:
 
     def track_parameters(self, namespace: Optional[str] = None):
         """Track model parameters with enhanced statistics."""
+        # TODO: Speed up for extracting parameters
         with torch.no_grad():
-            # Cache parameters to avoid repeated extraction
-            if not hasattr(self, "_cached_parameters") or self._cached_parameters is None:
-                self._cached_parameters = {
-                    name.replace(".", "/"): param.data
-                    for name, param in self.model.named_parameters()
-                    if param is not None
-                }
-            self._track_metric("parameters", self._cached_parameters, namespace)
+            parameters = {
+                name.replace(".", "/"): param.data
+                for name, param in self.model.named_parameters()
+                if param is not None
+            }
+            self._track_metric("parameters", parameters, namespace)
 
     def watch(
         self,
@@ -311,16 +311,16 @@ class TorchWatcher:
                     bin_edges_tensor = torch_hist.bin_edges
 
                     # Convert to numpy arrays
-                    counts_np = counts_tensor.numpy(force=True)
-                    bin_edges_np = bin_edges_tensor.numpy(force=True)
+                    counts_np = counts_tensor.cpu().numpy(force=True)
+                    bin_edges_np = bin_edges_tensor.cpu().numpy(force=True)
 
-                    # Check for invalid values
-                    if torch.isnan(counts_tensor).any() or torch.isinf(counts_tensor).any():
+                    # Check for invalid values using numpy arrays
+                    if np.isnan(counts_np).any() or np.isinf(counts_np).any():
                         logger.warning(
                             f"Skipping histogram {attribute_name} due to NaN or Inf values in counts"
                         )
                         continue
-                    if torch.isnan(bin_edges_tensor).any() or torch.isinf(bin_edges_tensor).any():
+                    if np.isnan(bin_edges_np).any() or np.isinf(bin_edges_np).any():
                         logger.warning(
                             f"Skipping histogram {attribute_name} due to NaN or Inf values in bin_edges"
                         )
@@ -352,9 +352,6 @@ class TorchWatcher:
 
         # Clear hooks and cached data
         self.hm.clear()
-        # Clear parameter cache to ensure fresh data on next call
-        if hasattr(self, "_cached_parameters"):
-            self._cached_parameters = None
 
     def __enter__(self):
         """Context manager entry."""
@@ -363,5 +360,3 @@ class TorchWatcher:
     def __exit__(self, exc_type, exc_val, exc_tb):
         """Context manager exit - cleanup hooks."""
         self.hm.remove_hooks()
-        if hasattr(self, "_cached_parameters"):
-            self._cached_parameters = None
