@@ -8,14 +8,17 @@ A lightweight PyTorch model monitoring tool that automatically tracks layer acti
 
 ## Changelog
 
-### [v0.1.0] - 2025-07-17
+### [v0.2.0] - 2025-09-08
+- Added support for logging distribution histograms
+- Added context manager support
+- Improved parameter extraction performance
 
-#### Added
+### [v0.1.0] - 2025-07-17
 - Initial public release
 
 ## Prerequisites
 - Neptune account and API token
-- `neptune-scale` Python library installed (`pip install neptune-scale`)
+- `neptune-scale>=0.14.0` Python library
 - `torch` (PyTorch) 2.6+
 
 ## Usage
@@ -34,6 +37,8 @@ See `scripts/torch_watcher_example.py` for a complete example demonstrating:
 Place `neptune_torchwatcher.py` in the CWD and import as another package to your main training script.
 
 ```python
+import torch
+import torch.nn as nn
 from neptune_scale import Run
 from neptune_torchwatcher import TorchWatcher
 
@@ -48,8 +53,8 @@ watcher = TorchWatcher(
     model,
     run,
     track_layers=[nn.Linear, nn.ReLU],  # Specify which layer types to track (default is all layers)
-    tensor_stats=['mean', 'norm'],       # Choose which statistics to compute (default = ["mean"])
-    base_namespace="model_metrics"       # Set base namespace for all metrics (default = "debug")
+    tensor_stats=['mean', 'norm', 'hist'],       # Choose which statistics to compute (default = ["mean"])
+    base_namespace="model_internals"     # Set base namespace for all metrics (default = "model_internals")
 )
 
 # Training loop
@@ -61,7 +66,7 @@ for epoch in range(n_epochs):
         # Backward pass
         loss.backward()
 
-        # Track metrics with default namespace
+        # Track metrics with default configuration
         watcher.watch(step=current_step)
 ```
 
@@ -120,12 +125,24 @@ Example metric names:
 - `validation/model_internals/gradients/fc2/norm`
 - `train/model_internals/parameters/fc1/weight/mean`
 
-### Example use cases
+### Context Manager Support
+
+TorchWatcher supports context manager usage for automatic cleanup:
+
+```python
+with TorchWatcher(model, run) as watcher:
+    for epoch in range(n_epochs):
+        # Your training code here
+        watcher.watch(step=epoch)
+# Hooks are automatically removed when exiting the context
+```
+
+## Example use cases
 
 1. **Training with full tracking**:
 ```python
 # Track everything during initial training
-watcher.watch(step=step, namespace="train")
+watcher.watch(step=step, prefix="train")
 ```
 
 2. **Validation with limited tracking**:
@@ -143,15 +160,34 @@ watcher.watch(
 3. **Efficient training**:
 ```python
 # Track only gradients during later training phases
-watcher.watch(
-    step=step,
-    track_activations=False,
-    track_parameters=False,
-    track_gradients=True,
-    prefix="train"
-)
+if epoch >= 50:
+    watcher.watch(
+        step=step,
+        track_activations=False,
+        track_parameters=False,
+        track_gradients=True,
+        prefix="train"
+    )****
+else:
+    watcher.watch(
+        step=step,
+        track_activations=True,
+        track_parameters=True,
+        track_gradients=True,
+        prefix="train"
+    )
 ```
 
+4. **Debugging specific layers**:
+```python
+# Track only specific layer types
+watcher = TorchWatcher(
+    model,
+    run,
+    track_layers=[nn.Linear, nn.Conv2d],  # Only track Linear and Conv2d layers
+    tensor_stats=['mean', 'std', 'hist']
+)
+```
 
 ## Available statistics
 
@@ -163,44 +199,9 @@ Predefined tensor statistics include:
 - `max`: Maximum value
 - `var`: Variance
 - `abs_mean`: Mean of absolute values
+- `hist`: Histogram distribution
 
 These can be extended by adding to the `TENSOR_STATS` dictionary.
-
----
-
-<details><summary><h2>Performance benchmarks</h2></summary>
-
-### Benchmarking methodology
-
-All benchmarks were performed using:
-- PyTorch 2.6.0
-- A single RTX5000 GPU
-- Various model architecture sizes with Linear and Relu layers only
-- Multiple tracking configurations for TorchWatcher
-- Generic numeric dataset
-- Training parameters:
-    - Samples: 4096
-    - Batch size: 512
-    - Epochs: 20
-
-### Performance impact
-
-TorchWatcher is designed to be lightweight and efficient. Our benchmarks show minimal impact on training batch time while providing comprehensive monitoring capabilities across varying model sizes. The largest contributor to performance degradation is the extraction of the model's named parameters (weights and biases). These are extracted using `model.named_parameters()` and creates increased overhead compared to the hooks that PyTorch models support natively for activations and gradients. Additional profiling showed that the `track_parameters` method created the most overhead and can be explored further for future package optimization.
-
-#### Analysis summary:
-- Larger models also require more time to extract model internals such as gradients, activations and parameters.
-    - As model size increases, extracting model parameters causes increased time in training loop compared to gradients and activations which are extracted with PyTorch hooks.
-    - Larger models have less total overhead between model training time in batch vs. time taken to extract values and is minimal if logging activations and gradients.
-- Benchmarking also showed that the average running time per batch remained constant, indicating that there is no leakage or slowdown between training batches.
-
-![benchmark_analysis](https://github.com/user-attachments/assets/7981d186-3cf9-4a81-bc5c-d8ee4fb8c689)
-*Figure 1: Training time overhead comparison between baseline training and training with TorchWatcher enabled. Results shown for different model sizes and tracking configurations.*
-
-### Future benchmarking:
-- Analyze memory overhead
-- Train on multiple GPUs
-- Test on different datasets and model techniques
-</details>
 
 ---
 
@@ -225,5 +226,5 @@ See the License for the specific language governing permissions and limitations 
 
 [Explore in Neptune badge]: https://neptune.ai/wp-content/uploads/2024/01/neptune-badge.svg
 [Github issues]: https://github.com/neptune-ai/scale-examples/issues/new
-[Neptune dashboard]: https://scale.neptune.ai/examples/showcase/runs/details?viewId=standard-view&detailsTab=dashboard&dashboardId=9f67bd03-4080-4d47-83b2-36836b03351c&runIdentificationKey=torch-watcher-example&type=experiment&experimentsOnly=true&runsLineage=FULL&lbViewUnpacked=true&sortBy=%5B%22sys%2Fcreation_time%22%5D&sortFieldType=%5B%22datetime%22%5D&sortFieldAggregationMode=%5B%22auto%22%5D&sortDirection=%5B%22descending%22%5D&experimentOnly=true
+[Neptune dashboard]: https://scale.neptune.ai/o/examples/org/showcase/runs/details?viewId=standard-view&detailsTab=dashboard&dashboardId=9f67bd03-4080-4d47-83b2-36836b03351c&runIdentificationKey=torch-watcher-example&type=experiment&experimentsOnly=true&runsLineage=FULL&lbViewUnpacked=true&sortBy=%5B%22sys%2Fcreation_time%22%5D&sortFieldType=%5B%22datetime%22%5D&sortFieldAggregationMode=%5B%22auto%22%5D&sortDirection=%5B%22descending%22%5D&experimentOnly=true
 [Support center]: https://support.neptune.ai/

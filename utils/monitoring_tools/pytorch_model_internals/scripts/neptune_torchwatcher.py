@@ -2,7 +2,10 @@ from typing import Any, Dict, List, Literal, Optional, Type, Union
 
 import torch
 import torch.nn as nn
+from neptune_scale.types import Histogram
 from neptune_scale.util.logger import get_logger
+
+__version__ = "0.2.0"
 
 logger = get_logger()
 
@@ -16,6 +19,7 @@ TENSOR_STATS = {
     "max": lambda x: x.max().item(),
     "var": lambda x: x.var().item(),
     "abs_mean": lambda x: x.abs().mean().item(),
+    "hist": lambda x: torch.histogram(x),
 }
 
 
@@ -37,13 +41,21 @@ class _HookManager:
         Args:
             model (nn.Module): The PyTorch model to track
             track_layers (Optional[List[Type[nn.Module]]]): List of PyTorch layer types to track.
-                                                          If None, tracks all layers in the model.
-                                                          If specified, must contain valid PyTorch layer types.
+                If None, tracks all layers in the model.
 
         Raises:
             TypeError: If model is not a PyTorch model
             ValueError: If track_layers contains invalid layer types
         """
+        if not isinstance(model, nn.Module):
+            raise TypeError("The model must be a PyTorch model")
+
+        if track_layers is not None:
+            for layer_type in track_layers:
+                if not isinstance(layer_type, type) or not issubclass(layer_type, nn.Module):
+                    raise ValueError(
+                        f"Invalid layer type: {layer_type}. Must be a subclass of nn.Module"
+                    )
 
         self.model = model
         self.hooks: List[torch.utils.hooks.RemovableHandle] = []
@@ -139,7 +151,7 @@ class _HookManager:
 
 class TorchWatcher:
     """
-    A comprehensive tracking mechanism for PyTorch models with enhanced logging.
+    Tracking mechanism for PyTorch model internals.
     """
 
     def __init__(
@@ -148,7 +160,7 @@ class TorchWatcher:
         run: Any,  # Made more flexible to support different logging mechanisms
         track_layers: Optional[List[Type[nn.Module]]] = None,
         tensor_stats: Optional[
-            List[Literal["mean", "std", "norm", "min", "max", "var", "abs_mean"]]
+            List[Literal["mean", "std", "norm", "min", "max", "var", "abs_mean", "hist"]]
         ] = None,
         base_namespace: str = "model_internals",  # Default namespace for all metrics
     ) -> None:
@@ -159,11 +171,11 @@ class TorchWatcher:
             model (nn.Module): The PyTorch model to watch
             run: Logging mechanism from Neptune
             track_layers (Optional[List[Type[nn.Module]]]): List of PyTorch layer types to track.
-                                                          If None, tracks all layers in the model.
-                                                          If specified, must contain valid PyTorch layer types.
+                If None, tracks all layers in the model.
+                If specified, must contain valid PyTorch layer types.
             tensor_stats (Optional[List[str]]): List of statistics to compute.
-                                              Available options: mean, std, norm, min, max, var, abs_mean.
-                                              Defaults to ['mean'] if not specified.
+                Available options: mean, std, norm, min, max, var, abs_mean, hist.
+                Defaults to ['mean'] if not specified.
             base_namespace (str): Base namespace for all logged metrics. Defaults to "model_internals".
 
         Raises:
@@ -194,7 +206,9 @@ class TorchWatcher:
         # Default hook registration
         self.hm.register_hooks()
 
-    def _safe_tensor_stats(self, tensor: torch.Tensor) -> Dict[str, float]:
+    def _safe_tensor_stats(
+        self, tensor: torch.Tensor
+    ) -> Dict[str, Union[float, torch.return_types.histogram]]:
         """
         Safely compute tensor statistics with error handling.
 
@@ -202,7 +216,8 @@ class TorchWatcher:
             tensor (torch.Tensor): Input tensor
 
         Returns:
-            Dict of statistical metrics
+            Dict of statistical metrics. Values can be floats for most stats or
+            torch.return_types.histogram for histogram statistics.
         """
         stats = {}
         for stat_name, stat_func in self.tensor_stats.items():
@@ -246,14 +261,15 @@ class TorchWatcher:
 
     def track_parameters(self, namespace: Optional[str] = None):
         """Track model parameters with enhanced statistics."""
-        # TODO: Speed up for extracting parameters
         with torch.no_grad():
-            parameters = {
-                name.replace(".", "/"): param.data
-                for name, param in self.model.named_parameters()
-                if param is not None
-            }
-            self._track_metric("parameters", parameters, namespace)
+            # Cache parameters to avoid repeated extraction
+            if not hasattr(self, "_cached_parameters") or self._cached_parameters is None:
+                self._cached_parameters = {
+                    name.replace(".", "/"): param.data
+                    for name, param in self.model.named_parameters()
+                    if param is not None
+                }
+            self._track_metric("parameters", self._cached_parameters, namespace)
 
     def watch(
         self,
@@ -272,7 +288,7 @@ class TorchWatcher:
             track_parameters (bool): Whether to track parameters. Defaults to False.
             track_activations (bool): Whether to track activations. Defaults to True.
             prefix (Optional[str]): Optional prefix to add to the base namespace.
-                                     If provided, metrics will be logged under {prefix}/{base_namespace}/...
+                If provided, metrics will be logged under {prefix}/{base_namespace}/...
         """
         # Reset metrics
         self.debug_metrics.clear()
@@ -285,11 +301,67 @@ class TorchWatcher:
         if track_activations:
             self.track_activations(prefix)
 
-        # Log metrics
-        try:
-            self.run.log_metrics(data=self.debug_metrics, step=step)
-        except Exception as e:
-            logger.warning(f"Logging failed: {e}")
+        # Process histograms with proper data type conversion
+        histogram_stats = {}
+        for attribute_name, torch_hist in self.debug_metrics.items():
+            if attribute_name.endswith("/hist"):
+                try:
+                    # torch_hist is a torch.return_types.histogram object
+                    counts_tensor = torch_hist.hist
+                    bin_edges_tensor = torch_hist.bin_edges
 
-        # Clear hooks
+                    # Convert to numpy arrays
+                    counts_np = counts_tensor.numpy(force=True)
+                    bin_edges_np = bin_edges_tensor.numpy(force=True)
+
+                    # Check for invalid values
+                    if torch.isnan(counts_tensor).any() or torch.isinf(counts_tensor).any():
+                        logger.warning(
+                            f"Skipping histogram {attribute_name} due to NaN or Inf values in counts"
+                        )
+                        continue
+                    if torch.isnan(bin_edges_tensor).any() or torch.isinf(bin_edges_tensor).any():
+                        logger.warning(
+                            f"Skipping histogram {attribute_name} due to NaN or Inf values in bin_edges"
+                        )
+                        continue
+
+                    # Ensure counts are integers and bin_edges are floats
+                    counts_int = counts_np.astype(int)
+                    bin_edges_float = bin_edges_np.astype(float)
+
+                    # Convert to Python lists as Neptune expects
+                    histogram_stats[attribute_name] = Histogram(
+                        bin_edges=bin_edges_float.tolist(),
+                        counts=counts_int.tolist(),
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not process histogram {attribute_name}: {e}")
+                    continue
+
+        metric_stats = {
+            attribute_name: attribute_value
+            for attribute_name, attribute_value in self.debug_metrics.items()
+            if not attribute_name.endswith("/hist")
+        }
+
+        # Log metrics
+        self.run.log_metrics(data=metric_stats, step=step)
+        if histogram_stats:  # Only log histograms if there are valid ones
+            self.run.log_histograms(histograms=histogram_stats, step=step)
+
+        # Clear hooks and cached data
         self.hm.clear()
+        # Clear parameter cache to ensure fresh data on next call
+        if hasattr(self, "_cached_parameters"):
+            self._cached_parameters = None
+
+    def __enter__(self):
+        """Context manager entry."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """Context manager exit - cleanup hooks."""
+        self.hm.remove_hooks()
+        if hasattr(self, "_cached_parameters"):
+            self._cached_parameters = None

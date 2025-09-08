@@ -108,37 +108,27 @@ def train_model(model, X_train, y_train, X_val, y_val, watcher, n_epochs=50, bat
 
 def main():
     # Initialize Neptune run
-    run = Run(experiment_name="torch-watcher-example")
+    with Run(
+        project="examples/showcase",
+        experiment_name="torch-watcher-example",
+    ) as run:
+        # Generate data
+        X_train, y_train = generate_data(n_samples=1000)
+        X_val, y_val = generate_data(n_samples=200)
 
-    # Generate data
-    X_train, y_train = generate_data(n_samples=1000)
-    X_val, y_val = generate_data(n_samples=200)
+        # Create model and watcher
+        model = SimpleNet()
 
-    # Create model and watcher
-    model = SimpleNet()
+        # Initialize watcher with specific layer types to track
+        watcher = TorchWatcher(
+            model,
+            run,
+            tensor_stats=["mean", "norm", "hist"],  # Track mean, norm and histogram statistics
+            base_namespace="model_internals",  # Default namespace for all metrics
+        )
 
-    # Initialize watcher with specific layer types to track
-    watcher = TorchWatcher(
-        model,
-        run,
-        tensor_stats=["mean", "norm"],  # Track mean and norm statistics
-        base_namespace="model_internals",  # Default namespace for all metrics
-    )
-
-    # Train the model
-    print("\nTraining with TorchWatcher:")
-    print("- Tracking all layers")
-    print("- Computing mean and norm statistics")
-    print("- Using 'model_internals' as base namespace")
-    print("- Full tracking during first 5 epochs in the 'train/model_internals' namespace")
-    print("- Gradient-only tracking during later epochs in the 'train/model_internals' namespace")
-    print(
-        "- Activation-only tracking during validation in the 'validation/model_internals' namespace"
-    )
-
-    train_model(model, X_train, y_train, X_val, y_val, watcher)
-
-    run.close()
+        # Train the model
+        train_model(model, X_train, y_train, X_val, y_val, watcher=watcher)
 
 
 if __name__ == "__main__":
