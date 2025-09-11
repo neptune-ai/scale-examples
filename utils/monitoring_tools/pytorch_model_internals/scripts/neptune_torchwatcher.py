@@ -20,7 +20,7 @@ TENSOR_STATS = {
     "max": lambda x: x.max().item(),
     "var": lambda x: x.var().item(),
     "abs_mean": lambda x: x.abs().mean().item(),
-    "hist": lambda x: torch.histogram(x),
+    "hist": lambda x: torch.histogram(x, bins=50),
 }
 
 
@@ -311,8 +311,8 @@ class TorchWatcher:
                     bin_edges_tensor = torch_hist.bin_edges
 
                     # Convert to numpy arrays
-                    counts_np = counts_tensor.cpu().numpy(force=True)
-                    bin_edges_np = bin_edges_tensor.cpu().numpy(force=True)
+                    counts_np = counts_tensor.numpy(force=True)
+                    bin_edges_np = bin_edges_tensor.numpy(force=True)
 
                     # Check for invalid values using numpy arrays
                     if np.isnan(counts_np).any() or np.isinf(counts_np).any():
