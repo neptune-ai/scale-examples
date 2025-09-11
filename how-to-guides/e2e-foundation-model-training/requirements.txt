@@ -1,6 +1,10 @@
-transformers
+transformers[torch]
 nvidia-ml-py<13.0.0
 psutil
 neptune-scale
 datasets
 accelerate
+boto3
+awscli
+trl
+lm-eval

@@ -7,6 +7,7 @@ from neptune_scale import Run
 from utils.neptune_logger import NeptuneCallback
 from utils.neptune_torchwatcher import TorchWatcher
 from utils.neptune_hardware_monitoring import SystemMetricsMonitor
+from utils.s3_upload_async import S3UploadLatestOnSaveAsync
 
 def prefix_dict(dict, prefix):
     return {f"{prefix}/{k}": v for k, v in dict.items()}
@@ -17,9 +18,10 @@ def main(run:Run):
 
     # Load dataset
     dataset = load_dataset("banghua/DL-SFT-Dataset")
+    # dataset = load_dataset("nvidia/Nemotron-Post-Training-Dataset-v1", split=["math"])
 
     # Configure model and tokenizer
-    model_name = "./results/checkpoint-30" # "HuggingFaceTB/SmolLM2-135M"
+    model_name = "gpt2" #esults/checkpoint-30" #-135M"
     model = AutoModelForCausalLM.from_pretrained(model_name).to(device)
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     # 
@@ -28,17 +30,17 @@ def main(run:Run):
 
     # Configure trainer
     training_args = SFTConfig(
-        output_dir=f"./post_training_sft_results/{run._run_id}",
-        max_steps=30,
-        per_device_train_batch_size=4,
-        gradient_accumulation_steps=4,
+        output_dir=f"./sft_results/{run._run_id}",
+        max_steps=100,
+        per_device_train_batch_size=8,
+        gradient_accumulation_steps=16,
         learning_rate=1e-4,
         logging_steps=1,
-        save_steps=10,
+        save_steps=20,
         # eval_strategy="epoch",
         # eval_steps=10,
         fp16=torch.cuda.is_available(),
-        bf16=torch.cuda.is_available(),
+        bf16=False, # Only use for training on Ampere GPUs
         assistant_only_loss=False,
         completion_only_loss=False,
         # chat_template_path="HuggingFaceTB/SmolLM2-135M-Instruct"
@@ -60,15 +62,20 @@ def main(run:Run):
         callbacks=[NeptuneCallback(run)],
     )
 
+    trainer.add_callback(S3UploadLatestOnSaveAsync(
+            bucket="neptune-examples", 
+            base_prefix=f"models/{run._run_id}", # Save with the run id
+        ))
+    
     # Start training
     trainer.train()
 
 if __name__ == "__main__":
     run = Run(
-        experiment_name="post-training-sft",
+        experiment_name="posttraining-gpt2-124M-instruct-sft",
         project="leo/pytorch-tutorial"
     )
-    run.add_tags(["sft", "post-training", "e2e"])
+    run.add_tags(["sft", "post-training", "e2e", "gpt2", "124M", "instruct"])
     
     with SystemMetricsMonitor(run) as monitor:
         main(run)

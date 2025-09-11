@@ -14,6 +14,8 @@ from neptune_scale import Run
 from utils.neptune_logger import NeptuneCallback
 from utils.neptune_torchwatcher import TorchWatcher
 from utils.neptune_hardware_monitoring import SystemMetricsMonitor
+from utils.s3_upload import S3UploadLatestOnSave
+from utils.s3_upload_async import S3UploadLatestOnSaveAsync
 
 import warnings
 warnings.filterwarnings('ignore')
@@ -21,6 +23,7 @@ warnings.filterwarnings('ignore')
 def prefix_dict(dict, prefix):
     return {f"{prefix}/{k}": v for k, v in dict.items()}
 
+# TODO: Create a utility function to upscale the model depth
 def upscale_depth_prefix_suffix(
     ckpt_dir: str,
     add_k: int,
@@ -87,9 +90,14 @@ def upscale_depth_prefix_suffix(
 def calc_num_params(model):
     return sum(p.numel() for p in model.parameters())
 
-def setup_model_and_tokenizer_and_data_collator(model_name="gpt2"):
-    # model = AutoModelForCausalLM.from_pretrained("gpt2")
-    model = GPT2LMHeadModel.from_pretrained(model_name) # 12 layers, n_embd=768, 12 heads
+def setup_model_and_tokenizer_and_data_collator(model_name="gpt2", random_weights=False):
+    if random_weights:
+        # Create a model with random weights from config
+        config = GPT2Config.from_pretrained(model_name)
+        model = GPT2LMHeadModel(config)  # This creates a model with random weights
+    else:
+        # Load pre-trained model
+        model = GPT2LMHeadModel.from_pretrained(model_name) # 12 layers, n_embd=768, 12 heads
 
     # tokenizer = AutoTokenizer.from_pretrained("gpt2")
     tokenizer = GPT2TokenizerFast.from_pretrained(model_name)
@@ -113,9 +121,11 @@ def tokenize_function(examples, tokenizer):
 
 def main(run: Run):
 
-    model, tokenizer, data_collator = setup_model_and_tokenizer_and_data_collator(model_name="gpt2")
-    '''new_model = upscale_depth_prefix_suffix("gpt2", add_k=6, keep_left=5, keep_right=7)
-    print(new_model)'''
+    _, tokenizer, data_collator = setup_model_and_tokenizer_and_data_collator(model_name="gpt2-large", random_weights=True)
+    # print(model)
+    # print(calc_num_params(model))
+    model = upscale_depth_prefix_suffix("gpt2", add_k=12)
+    print(model)
     print(calc_num_params(model))
     
     watcher = TorchWatcher(
@@ -148,9 +158,9 @@ def main(run: Run):
         output_dir=f"./pretraining_results/{run._run_id}",
         eval_strategy="epoch", # Evaluate at the end of each epoch
         eval_steps=1, # Evaluate every 100 steps
-        per_device_train_batch_size=2,
+        per_device_train_batch_size=4,
         per_device_eval_batch_size=2,
-        num_train_epochs=3,
+        num_train_epochs=20,
         weight_decay=0.01,
         optim="adamw_torch",
         save_strategy="epoch",
@@ -174,16 +184,21 @@ def main(run: Run):
         processing_class=tokenizer,
         callbacks=[NeptuneCallback(run, watcher)],
     )
+    trainer.add_callback(S3UploadLatestOnSaveAsync(
+        bucket="neptune-examples", 
+        base_prefix=f"models/{run._run_id}", # Save with the run id
+    ))
 
     trainer.train()
 
 if __name__ == "__main__":
     
     run = Run(
-        experiment_name="pretraining-gpt2",
-        project="leo/pytorch-tutorial"
+        experiment_name="pretraining-gpt2-upscale-test",
+        project="leo/pytorch-tutorial",
+        api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vc2NhbGUubmVwdHVuZS5haSIsImFwaV91cmwiOiJodHRwczovL3NjYWxlLm5lcHR1bmUuYWkiLCJhcGlfa2V5IjoiMGIyNGUwYzMtMDg2Ni00YTZlLWIyYTctZDUxN2I4ZjE5MzA1In0=",
     )
-    run.add_tags(["pretraining", "train", "e2e"])
+    run.add_tags(["pretraining", "e2e", "upscale-test"])
 
     with SystemMetricsMonitor(run) as monitor:
         main(run)

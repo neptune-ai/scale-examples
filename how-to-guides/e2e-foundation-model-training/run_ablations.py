@@ -23,13 +23,13 @@ warnings.filterwarnings('ignore', category=DeprecationWarning)
 # === Experiment Configuration ===
 MODEL_NAME = "gpt2"  # Choose: 'gpt2', 'gpt2-medium', etc.
 MODE = "stability"      # Choose: 'scaling' or 'stability'
-DEVICE = "cpu" # "auto" or "cpu"
-RANDOM_WEIGHTS = False  # Set to True to initialize with random weights instead of pretrained weights
+DEVICE = "auto" # "auto" or "cpu"
+RANDOM_WEIGHTS = True  # Set to True to initialize with random weights instead of pretrained weights
 
 # Stability Ablation Flags (used when MODE == 'stability')
-ABLATE_LAYER_NORM = True
+ABLATE_LAYER_NORM = False
 ABLATE_DROPOUT = False
-DISABLE_GRAD_CLIP = True
+DISABLE_GRAD_CLIP = False
 
 def main():
     # === Model and Tokenizer ===
