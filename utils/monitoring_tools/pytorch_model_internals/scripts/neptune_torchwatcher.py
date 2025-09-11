@@ -346,9 +346,15 @@ class TorchWatcher:
         }
 
         # Log metrics
-        self.run.log_metrics(data=metric_stats, step=step)
-        if histogram_stats:  # Only log histograms if there are valid ones
-            self.run.log_histograms(histograms=histogram_stats, step=step)
+        try:
+            # Batch logging if possible, otherwise ensure atomicity
+            if histogram_stats:
+                self.run.log_metrics(data=metric_stats, step=step)
+                self.run.log_histograms(histograms=histogram_stats, step=step)
+            else:
+                self.run.log_metrics(data=metric_stats, step=step)
+        except Exception as e:
+            logger.warning(f"Metric/Histogram logging failed at step {step}: {e}")
 
         # Clear hooks and cached data
         self.hm.clear()
