@@ -124,7 +124,7 @@ Example metric names:
 - `validation/model_internals/gradients/fc2/norm`
 - `train/model_internals/parameters/fc1/weight/mean`
 
-### Context Manager Support
+### Context manager support
 
 TorchWatcher supports context manager usage for automatic cleanup:
 
@@ -202,11 +202,11 @@ Predefined tensor statistics include:
 
 These can be extended by adding to the `TENSOR_STATS` dictionary.
 
-### Performance Notes
+### Performance notes
 
-- **Parameter tracking**: Parameters are always extracted fresh to ensure accuracy during training, as they change with each optimizer step
-- **Activation/Gradient tracking**: Uses efficient PyTorch hooks with minimal overhead
-- **Histogram computation**: More expensive than basic statistics, use selectively
+- **Parameter tracking**: Tracking parameters is by far the most expensive operation. If really needed, the recommendation is to limit tracking to initial training to be on top of any instabilities that can occur.
+- **Activation/Gradient tracking**: Uses efficient PyTorch hooks with minimal overhead.
+- **Histogram computation**: More expensive than basic statistics. Use selectively.
 
 ---
 
