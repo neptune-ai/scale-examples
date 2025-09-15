@@ -1,4 +1,7 @@
 *.json
 /results
 /data
+/pretraining_results
+
 *.pt
+*.pth
