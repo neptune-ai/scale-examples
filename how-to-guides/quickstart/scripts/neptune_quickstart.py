@@ -3,6 +3,7 @@ from random import randint
 import numpy as np
 import requests
 from neptune_scale import Run
+from neptune_scale.api.run import SourceTrackingConfig
 from neptune_scale.types import Histogram
 from tqdm.auto import trange
 
@@ -73,7 +74,19 @@ def download_file(url: str, filename: str) -> None:
 
 
 def main():
-    run = Run(experiment_name="quickstart-experiment")
+
+    source_config = SourceTrackingConfig(
+        upload_entry_point=True,
+        upload_diff_head=True,
+        upload_diff_upstream=True,
+        upload_run_command=True,
+    )
+
+    run = Run(
+        experiment_name="quickstart-experiment",
+        source_tracking_config=source_config,
+        project="examples/quickstart",
+    )
 
     run.add_tags(["quickstart", "script"])
     run.add_tags(["short"], group_tags=True)
