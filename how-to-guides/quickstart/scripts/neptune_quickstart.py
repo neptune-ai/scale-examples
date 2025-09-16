@@ -3,8 +3,8 @@ from random import randint
 import numpy as np
 import requests
 from neptune_scale import Run
-from neptune_scale.types import Histogram
 from neptune_scale.api.run import SourceTrackingConfig
+from neptune_scale.types import Histogram
 from tqdm.auto import trange
 
 NUM_STEPS = 2000  # Determines how long the training will run for
@@ -81,10 +81,11 @@ def main():
         upload_diff_upstream=True,
         upload_run_command=True,
     )
-    
+
     run = Run(
-        experiment_name="quickstart-script-experiment",
+        experiment_name="quickstart-experiment",
         source_tracking_config=source_config,
+        project="examples/quickstart",
     )
 
     run.add_tags(["quickstart", "script"])
