@@ -2,17 +2,23 @@
 
 [![Explore in Neptune][Explore in Neptune badge]][Neptune dashboard]
 
-
 An extensible Python module for logging system and process hardware metrics (CPU, memory, disk, network, GPU, and more) to Neptune.
 
 ---
 
 ## Changelog
 
+**v0.2.2** (2025-10-01)
+
+- Handled error when using DDP on non-zero ranks.
+- Added `__version__` attribute.
+
 **v0.2.1** (2025-07-03)
+
 - Fixed hardware monitoring for forked runs.
 
 **v0.2.0** (2025-06-06)
+
 - Added `namespace` and `sampling_rate` arguments to `SystemMetricsMonitor` to allow for custom metric namespaces and sampling rates.
 - Made `pynvml` and `torch` optional dependencies.
 - Added process memory, threads, and file descriptors metrics.
@@ -21,6 +27,7 @@ An extensible Python module for logging system and process hardware metrics (CPU
 - Improved console logging.
 
 **v0.1.0** (2025-03-27)
+
 - Initial release
 
 ---
@@ -39,6 +46,7 @@ An extensible Python module for logging system and process hardware metrics (CPU
 ## Instructions
 
 1. **Install dependencies:**
+
    ```bash
    pip install neptune-scale
 
@@ -48,6 +56,7 @@ An extensible Python module for logging system and process hardware metrics (CPU
 
 2. **Set up Neptune:**
    Set your Neptune API token and project as environment variables:
+
    ```bash
    export NEPTUNE_API_TOKEN=your_token
    export NEPTUNE_PROJECT=your_workspace/your_project
@@ -55,31 +64,35 @@ An extensible Python module for logging system and process hardware metrics (CPU
 
 3. Download and place `neptune_hardware_monitoring.py` in your project directory.
 
-4. **Integrate the monitoring class in your script:**  
+4. **Integrate the monitoring class in your script:**
+
    - Using a context manager:
-       ```python
-       from neptune_scale import Run
-       from neptune_hardware_monitoring import SystemMetricsMonitor
 
-       run = Run(experiment_name=...)
+     ```python
+     from neptune_scale import Run
+     from neptune_hardware_monitoring import SystemMetricsMonitor
 
-       with SystemMetricsMonitor(run=run):
-           # Your training or workload code here
-           ...
-       ```
-    - Using `start()` and `stop()` methods:
-       ```python
-       from neptune_scale import Run
-       from neptune_hardware_monitoring import SystemMetricsMonitor
+     run = Run(experiment_name=...)
 
-       run = Run(experiment_name=...)
+     with SystemMetricsMonitor(run=run):
+         # Your training or workload code here
+         ...
+     ```
 
-       monitor = SystemMetricsMonitor(run=run)
+   - Using `start()` and `stop()` methods:
 
-       monitor.start()
-       # Your training or workload code here
-       monitor.stop()
-       ```
+     ```python
+     from neptune_scale import Run
+     from neptune_hardware_monitoring import SystemMetricsMonitor
+
+     run = Run(experiment_name=...)
+
+     monitor = SystemMetricsMonitor(run=run)
+
+     monitor.start()
+     # Your training or workload code here
+     monitor.stop()
+     ```
 
 5. **Metrics will be logged to Neptune automatically** under the specified namespace.
 
@@ -92,6 +105,7 @@ class SystemMetricsMonitor(
     namespace: str = "runtime",
 )
 ```
+
 - **run**: Neptune Run object for logging metrics.
 - **sampling_rate**: How often to sample metrics (in seconds). Default is `5.0`.
 - **namespace**: [Namespace][Docs namespaces and attributes] where the metrics will be logged in the Neptune run. Default is `"runtime"`.
@@ -108,6 +122,7 @@ class SystemMetricsMonitor(
 ---
 
 ## Output
+
 Details and metrics are logged to Neptune in a structured namespace. Example:
 
 ```
@@ -123,6 +138,7 @@ runtime/monitoring/process/rss_memory_MiB
 [Explore the structure in Neptune][Neptune attributes]
 
 ---
+
 To visualize all important hardware metrics, create [custom dashboards][Docs custom dashboards].
 
 [Explore a sample dashboard in Neptune][Neptune dashboard]
@@ -133,7 +149,6 @@ To visualize all important hardware metrics, create [custom dashboards][Docs cus
 
 > [!TIP]
 > Since hardware metrics are logged in a separate thread from the model training, their steps might not be in sync with the model training steps. We recommend using [Relative time as the x-axis][Docs configure the x-axis] for hardware metrics.
-
 
 ---
 
@@ -146,6 +161,7 @@ To add custom metrics, extend the class with new `_collect_*_metrics` methods an
 ## Support and feedback
 
 We welcome your feedback and contributions!
+
 - For issues or feature requests related to this script, please open a [GitHub Issue][Github issues].
 - For general Neptune support, visit the [Neptune support center][Support center].
 
@@ -164,6 +180,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and limitations under the License.
 
 <!-- Ref links -->
+
 [Docs configure the x-axis]: https://docs.neptune.ai/chart_widget/#configure-the-x-axis
 [Docs custom dashboards]: https://docs.neptune.ai/custom_dashboard
 [Docs dynamic metric selection]: https://docs.neptune.ai/chart_widget/#dynamic-metric-selection

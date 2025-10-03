@@ -13,6 +13,8 @@ from neptune_scale.util.logger import get_logger
 
 logger = get_logger()
 
+__version__ = "0.2.2"
+
 try:
     import torch
 
@@ -60,8 +62,13 @@ class SystemMetricsMonitor:
         self.sampling_rate = sampling_rate
         self._stop_event = threading.Event()
         self._monitoring_thread: Optional[threading.Thread] = None
-        self._monitoring_step = self.run._fork_step + 1 if self.run._fork_step is not None else 0
         self._proc = psutil.Process(os.getpid())
+        # Handle _fork_step which a bound method for dummy experiments on non-zero ranks
+        if callable(self.run._fork_step):
+            _fork_step = self.run._fork_step()
+        else:
+            _fork_step = self.run._fork_step
+        self._monitoring_step = _fork_step + 1 if _fork_step is not None else 0
 
         self.hostname = socket.gethostname()
 
