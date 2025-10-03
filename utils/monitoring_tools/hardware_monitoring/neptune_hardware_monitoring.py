@@ -64,14 +64,11 @@ class SystemMetricsMonitor:
         self._monitoring_thread: Optional[threading.Thread] = None
         self._proc = psutil.Process(os.getpid())
         # Handle _fork_step which a bound method for dummy experiments on non-zero ranks
-        if hasattr(self.run._fork_step, "__call__"):
-            self._monitoring_step = (
-                self.run._fork_step() + 1 if self.run._fork_step() is not None else 0
-            )
+        if callable(self.run._fork_step):
+            _fork_step = self.run._fork_step()
         else:
-            self._monitoring_step = (
-                self.run._fork_step + 1 if self.run._fork_step is not None else 0
-            )
+            _fork_step = self.run._fork_step
+        self._monitoring_step = _fork_step + 1 if _fork_step is not None else 0
 
         self.hostname = socket.gethostname()
 
