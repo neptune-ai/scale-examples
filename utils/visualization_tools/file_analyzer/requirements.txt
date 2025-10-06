@@ -1,0 +1,8 @@
+streamlit>=1.28.0
+pandas>=1.5.0
+pillow>=9.0.0
+plotly>=5.0.0
+matplotlib>=3.5.0
+seaborn>=0.11.0
+pathlib2>=2.3.0
+neptune-query>=0.1.0
