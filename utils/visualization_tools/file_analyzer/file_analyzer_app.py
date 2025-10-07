@@ -175,17 +175,12 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
             st.warning(f"No experiments found matching pattern: {experiment_regex}")
             return []
         
-        st.info(f"Found {len(filtered_exps)} experiments: {filtered_exps}")
-        st.info(f"Using attribute regex: {attribute_regex}")
-        
         # Fetch files from experiments using the attribute regex
         files = nq.fetch_series(
             project=project_name,
             experiments=filtered_exps,
             attributes=attribute_regex
         )
-        
-        st.info(f"Fetched {len(files)} files from Neptune")
         
         # Download files
         nq.download_files(files=files, destination=download_dir)
@@ -197,12 +192,8 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
         # Ensure download directory exists
         download_path.mkdir(parents=True, exist_ok=True)
         
-        # Debug: Show what files were downloaded
-        st.info(f"Downloaded to: {download_dir}")
-        
         # Scan the download directory for files
         all_files = list(download_path.rglob("*"))
-        st.info(f"Found {len(all_files)} total files in download directory")
         
         media_count = 0
         for file_path in all_files:
@@ -227,7 +218,16 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
                 except Exception as e:
                     st.warning(f"Error processing file {file_path}: {e}")
         
-        st.info(f"Found {media_count} media files out of {len(downloaded_files)} total files")
+        # Store download info for display in expander
+        st.session_state.download_info = {
+            'experiments': filtered_exps,
+            'attribute_regex': attribute_regex,
+            'files_fetched': len(files),
+            'download_dir': download_dir,
+            'total_files': len(all_files),
+            'media_files': media_count,
+            'total_processed': len(downloaded_files)
+        }
         
         return downloaded_files
         
@@ -280,21 +280,34 @@ def main():
         )
         st.session_state.attribute_regex = attribute_regex
         
-        if st.sidebar.button("☁️ Download & Visualize"):
+        if st.sidebar.button("⬇️ Fetch and Visualize"):
             with st.spinner("Downloading files from Neptune..."):
                 files = download_neptune_files(neptune_project, experiment_regex, attribute_regex, download_directory)
                 st.session_state.files = files
                 st.session_state.directory_scanned = True
                 
-                # Debug information
+                # Show success/warning message
                 if files:
                     st.success(f"Successfully downloaded {len(files)} files")
                 else:
                     st.warning("No files were downloaded. Check your project name and regex patterns.")
+        
+        # Show download details in expander if available
+        if 'download_info' in st.session_state and st.session_state.download_info:
+            with st.sidebar.expander("📋 Download Details", expanded=False):
+                info = st.session_state.download_info
+                st.write(f"**Experiments Found:** {len(info['experiments'])}")
+                st.write(f"**Experiments:** {', '.join(info['experiments'])}")
+                st.write(f"**Attribute Regex:** {info['attribute_regex']}")
+                st.write(f"**Files Fetched:** {info['files_fetched']}")
+                st.write(f"**Download Directory:** {info['download_dir']}")
+                st.write(f"**Total Files:** {info['total_files']}")
+                st.write(f"**Media Files:** {info['media_files']}")
+                st.write(f"**Files Processed:** {info['total_processed']}")
     
     # Gallery view options
     if 'files' in st.session_state and st.session_state.files:
-        st.sidebar.subheader("🖼️ Gallery Options")
+        st.sidebar.subheader("👁️ Gallery Options")
         
         # Apply regex filters to get experiments and media files
         import re
@@ -329,7 +342,7 @@ def main():
             st.sidebar.write("**Select experiments to show in gallery:**")
             for folder in sorted(top_level_folders):
                 folder_toggles[folder] = st.sidebar.checkbox(
-                    f"👁️ {folder}", 
+                    folder, 
                     value=True,  # Default to showing all folders
                     key=f"folder_toggle_{folder}"
                 )
@@ -378,7 +391,7 @@ def main():
     
     # Main content area
     if 'files' not in st.session_state or not st.session_state.files:
-        st.info("👆 Please configure your Neptune project and click 'Download & Visualize' to get started")
+        st.info("👆 Please configure your Neptune project and click 'Fetch and Visualize' to get started")
         return
     
     # Image comparison gallery
@@ -531,8 +544,21 @@ def main():
                             st.session_state.current_step_index = new_index
                             st.rerun()
                 
+                # Calculate optimal column widths
+                if sorted_folders:
+                    # Find the longest experiment name
+                    max_name_length = max(len(folder) for folder in sorted_folders)
+                    # Add padding and convert to relative width (experiment names are typically 10-30 chars)
+                    experiment_col_width = min(max(max_name_length * 0.8, 12), 25)  # Between 12 and 25
+                    step_col_width = (100 - experiment_col_width) / images_per_page
+                    
+                    # Create column configuration
+                    col_config = [experiment_col_width] + [step_col_width] * images_per_page
+                else:
+                    col_config = [1] * (images_per_page + 1)
+                
                 # Create grid header with step numbers
-                header_cols = st.columns(images_per_page + 1)  # +1 for experiment names column
+                header_cols = st.columns(col_config)
                 with header_cols[0]:
                     st.write("**Experiment**")
                 for idx, step in enumerate(current_steps):
@@ -541,7 +567,7 @@ def main():
                 
                 # Create grid rows (one per experiment)
                 for folder_name in sorted_folders:
-                    row_cols = st.columns(images_per_page + 1)
+                    row_cols = st.columns(col_config)
                     
                     # Experiment name in first column
                     with row_cols[0]:
@@ -559,7 +585,7 @@ def main():
                                     if consistent_size:
                                         image = image.resize(consistent_size, Image.Resampling.LANCZOS)
                                     
-                                    st.image(image, caption=file_info.name, use_container_width=True)
+                                    st.image(image, use_container_width=True)
                                 except Exception as e:
                                     st.error(f"Error loading {file_info.name}: {e}")
                             else:
