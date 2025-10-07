@@ -43,7 +43,7 @@ streamlit run file_analyzer_app.py
    - **Experiment Regex**: Pattern to match experiment names (e.g., "llm_train-v.*")
    - **Attribute Regex**: Pattern to match file attributes (e.g., "eval/attention_maps")
 
-4. Click "☁️ Download & Visualize" to fetch and display your experiment files
+4. Click "Download & Visualize" to fetch and display your experiment files
 
 5. Use the comparison grid to:
    - Toggle experiments on/off using the sidebar checkboxes
@@ -90,7 +90,7 @@ All required packages are listed in `requirements.txt`
   - Previous/Next buttons with sliding window navigation
   - Step scrubber slider for quick jumping to specific steps
   - Pagination controls (1-10 steps per view)
-- **Media File Support**: Specialized support for images, GIFs, and videos
+- **Media File Support**: Specialized support for images, and videos
 - **Consistent Image Sizing**: Optional uniform dimensions for better comparison
 - **Experiment Toggles**: Individual checkboxes to show/hide experiments
 - **Step Extraction**: Automatic step number detection from file paths
