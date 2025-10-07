@@ -347,8 +347,17 @@ def main():
                     key=f"folder_toggle_{folder}"
                 )
         
+        # Gallery layout controls
+        st.sidebar.subheader("📄 Gallery Layout")
+        
+        # Layout orientation toggle
+        layout_orientation = st.sidebar.radio(
+            "Layout Orientation",
+            ["Steps as Columns", "Steps as Rows"],
+            help="Choose how to arrange steps in the gallery"
+        )
+        
         # Pagination controls
-        st.sidebar.subheader("📄 Pagination")
         images_per_page = st.sidebar.slider(
             "Media files per page", 
             min_value=1, 
@@ -384,10 +393,12 @@ def main():
         else:
             consistent_size = None
         
+        
         st.session_state.filtered_files = filtered_files
         st.session_state.folder_toggles = folder_toggles
         st.session_state.images_per_page = images_per_page
         st.session_state.consistent_size = consistent_size
+        st.session_state.layout_orientation = layout_orientation
     
     # Main content area
     if 'files' not in st.session_state or not st.session_state.files:
@@ -413,6 +424,7 @@ def main():
                 folder_toggles = st.session_state.get('folder_toggles', {})
                 images_per_page = st.session_state.get('images_per_page', 3)
                 consistent_size = st.session_state.get('consistent_size', None)
+                layout_orientation = st.session_state.get('layout_orientation', 'Steps as Columns')
                 
                 # Extract step number from filename or path
                 def extract_step_number(file_info):
@@ -544,52 +556,132 @@ def main():
                             st.session_state.current_step_index = new_index
                             st.rerun()
                 
-                # Calculate optimal column widths
-                if sorted_folders:
-                    # Find the longest experiment name
-                    max_name_length = max(len(folder) for folder in sorted_folders)
-                    # Add padding and convert to relative width (experiment names are typically 10-30 chars)
-                    experiment_col_width = min(max(max_name_length * 0.8, 12), 25)  # Between 12 and 25
-                    step_col_width = (100 - experiment_col_width) / images_per_page
+                if layout_orientation == "Steps as Columns":
+                    # Original layout: experiments as rows, steps as columns
+                    # Calculate optimal column widths with smart size limiting
+                    if sorted_folders:
+                        # Find the longest experiment name
+                        max_name_length = max(len(folder) for folder in sorted_folders)
+                        # Add padding and convert to relative width (experiment names are typically 10-30 chars)
+                        experiment_col_width = min(max(max_name_length * 0.8, 12), 25)  # Between 12 and 25
+                        
+                        # Calculate available width for step columns
+                        available_width = 100 - experiment_col_width
+                        
+                        # Calculate step column width - each column can be smaller when more columns are added
+                        step_col_width = available_width / images_per_page
+                        
+                        # Smart size limiting: prevent any single image from being too large
+                        # Reference size: 3 experiments, 4 files per page, but with smaller individual images
+                        reference_experiment_width = 20  # Typical experiment column width
+                        reference_available_width = 100 - reference_experiment_width
+                        reference_step_width = reference_available_width / 4  # 4 files per page
+                        # Reduce the maximum to 60% of the reference size for more reasonable single image size
+                        max_step_width = reference_step_width * 0.6  # This is our maximum allowed step width
+                        
+                        # Apply the size limit
+                        if step_col_width > max_step_width:
+                            step_col_width = max_step_width
+                        
+                        # Create column configuration
+                        col_config = [experiment_col_width] + [step_col_width] * images_per_page
+                    else:
+                        col_config = [1] * (images_per_page + 1)
                     
-                    # Create column configuration
-                    col_config = [experiment_col_width] + [step_col_width] * images_per_page
-                else:
-                    col_config = [1] * (images_per_page + 1)
-                
-                # Create grid header with step numbers
-                header_cols = st.columns(col_config)
-                with header_cols[0]:
-                    st.write("**Experiment**")
-                for idx, step in enumerate(current_steps):
-                    with header_cols[idx + 1]:
-                        st.write(f"**Step {step}**")
-                
-                # Create grid rows (one per experiment)
-                for folder_name in sorted_folders:
-                    row_cols = st.columns(col_config)
-                    
-                    # Experiment name in first column
-                    with row_cols[0]:
-                        st.write(f"👁️ {folder_name}")
-                    
-                    # Images for each step in remaining columns
+                    # Create grid header with step numbers
+                    header_cols = st.columns(col_config)
+                    with header_cols[0]:
+                        st.write("**Experiment**")
                     for idx, step in enumerate(current_steps):
-                        with row_cols[idx + 1]:
-                            if step in folder_step_grid[folder_name]:
-                                file_info = folder_step_grid[folder_name][step]
-                                try:
-                                    image = Image.open(file_info.path)
-                                    
-                                    # Apply consistent sizing if enabled
-                                    if consistent_size:
-                                        image = image.resize(consistent_size, Image.Resampling.LANCZOS)
-                                    
-                                    st.image(image, use_container_width=True)
-                                except Exception as e:
-                                    st.error(f"Error loading {file_info.name}: {e}")
-                            else:
-                                st.write("—")  # No image for this step
+                        with header_cols[idx + 1]:
+                            st.write(f"**Step {step}**")
+                    
+                    # Create grid rows (one per experiment)
+                    for folder_name in sorted_folders:
+                        row_cols = st.columns(col_config)
+                        
+                        # Experiment name in first column
+                        with row_cols[0]:
+                            st.write(f"👁️ {folder_name}")
+                        
+                        # Images for each step in remaining columns
+                        for idx, step in enumerate(current_steps):
+                            with row_cols[idx + 1]:
+                                if step in folder_step_grid[folder_name]:
+                                    file_info = folder_step_grid[folder_name][step]
+                                    try:
+                                        image = Image.open(file_info.path)
+                                        
+                                        # Apply consistent sizing if enabled
+                                        if consistent_size:
+                                            image = image.resize(consistent_size, Image.Resampling.LANCZOS)
+                                        
+                                        # Display image
+                                        st.image(image, use_container_width=True)
+                                    except Exception as e:
+                                        st.error(f"Error loading {file_info.name}: {e}")
+                                else:
+                                    st.write("—")  # No image for this step
+                
+                else:  # Steps as Rows
+                    # New layout: steps as rows, experiments as columns
+                    # Calculate optimal column widths
+                    if sorted_folders:
+                        # Find the longest experiment name
+                        max_name_length = max(len(folder) for folder in sorted_folders)
+                        # Add padding and convert to relative width
+                        experiment_col_width = min(max(max_name_length * 0.8, 12), 25)
+                        
+                        # Calculate available width for experiment columns
+                        available_width = 100 - 15  # Reserve 15% for step labels
+                        
+                        # Calculate experiment column width
+                        experiment_col_width = available_width / len(sorted_folders)
+                        
+                        # Apply smart size limiting for experiments too
+                        max_experiment_width = 25  # Maximum 25% per experiment
+                        if experiment_col_width > max_experiment_width:
+                            experiment_col_width = max_experiment_width
+                        
+                        # Create column configuration
+                        col_config = [15] + [experiment_col_width] * len(sorted_folders)
+                    else:
+                        col_config = [1] * (len(sorted_folders) + 1)
+                    
+                    # Create grid header with experiment names
+                    header_cols = st.columns(col_config)
+                    with header_cols[0]:
+                        st.write("**Step**")
+                    for idx, folder_name in enumerate(sorted_folders):
+                        with header_cols[idx + 1]:
+                            st.write(f"**👁️ {folder_name}**")
+                    
+                    # Create grid rows (one per step)
+                    for step in current_steps:
+                        row_cols = st.columns(col_config)
+                        
+                        # Step number in first column
+                        with row_cols[0]:
+                            st.write(f"**Step {step}**")
+                        
+                        # Images for each experiment in remaining columns
+                        for idx, folder_name in enumerate(sorted_folders):
+                            with row_cols[idx + 1]:
+                                if step in folder_step_grid[folder_name]:
+                                    file_info = folder_step_grid[folder_name][step]
+                                    try:
+                                        image = Image.open(file_info.path)
+                                        
+                                        # Apply consistent sizing if enabled
+                                        if consistent_size:
+                                            image = image.resize(consistent_size, Image.Resampling.LANCZOS)
+                                        
+                                        # Display image
+                                        st.image(image, use_container_width=True)
+                                    except Exception as e:
+                                        st.error(f"Error loading {file_info.name}: {e}")
+                                else:
+                                    st.write("—")  # No image for this step
                 
                 # Show step range info
                 if current_steps:
