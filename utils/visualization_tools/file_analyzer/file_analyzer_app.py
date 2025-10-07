@@ -182,18 +182,19 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
             attributes=attribute_regex
         )
         
-        # Download files
-        nq.download_files(files=files, destination=download_dir)
+        # Create project-specific download directory
+        # Use project name as top-level folder to prevent mixing experiments from different projects
+        project_download_dir = Path(download_dir) / project_name.replace("/", "_")
+        project_download_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Download files to project-specific directory
+        nq.download_files(files=files, destination=str(project_download_dir))
         
         # Convert to our file format
         downloaded_files = []
-        download_path = Path(download_dir)
         
-        # Ensure download directory exists
-        download_path.mkdir(parents=True, exist_ok=True)
-        
-        # Scan the download directory for files
-        all_files = list(download_path.rglob("*"))
+        # Scan the project-specific download directory for files
+        all_files = list(project_download_dir.rglob("*"))
         
         media_count = 0
         for file_path in all_files:
@@ -202,7 +203,7 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
                     file_info = {
                         'name': file_path.name,
                         'path': str(file_path),
-                        'relative_path': str(file_path.relative_to(download_path)),
+                        'relative_path': str(file_path.relative_to(project_download_dir)),
                         'size_mb': get_file_size_mb(str(file_path)),
                         'extension': file_path.suffix.lower(),
                         'icon': get_file_icon(str(file_path)),
@@ -220,10 +221,11 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
         
         # Store download info for display in expander
         st.session_state.download_info = {
+            'project_name': project_name,
             'experiments': filtered_exps,
             'attribute_regex': attribute_regex,
             'files_fetched': len(files),
-            'download_dir': download_dir,
+            'download_dir': str(project_download_dir),
             'total_files': len(all_files),
             'media_files': media_count,
             'total_processed': len(downloaded_files)
@@ -296,6 +298,7 @@ def main():
         if 'download_info' in st.session_state and st.session_state.download_info:
             with st.sidebar.expander("📋 Download Details", expanded=False):
                 info = st.session_state.download_info
+                st.write(f"**Project:** {info.get('project_name', 'N/A')}")
                 st.write(f"**Experiments Found:** {len(info['experiments'])}")
                 st.write(f"**Experiments:** {', '.join(info['experiments'])}")
                 st.write(f"**Attribute Regex:** {info['attribute_regex']}")
