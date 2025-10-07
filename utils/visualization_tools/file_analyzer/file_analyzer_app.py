@@ -67,6 +67,11 @@ def is_media_file(file_path: str) -> bool:
     media_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp', '.mp4', '.avi', '.mov', '.mkv', '.webm'}
     return Path(file_path).suffix.lower() in media_extensions
 
+def is_video_file(file_path: str) -> bool:
+    """Check if file is a video"""
+    video_extensions = {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
+    return Path(file_path).suffix.lower() in video_extensions
+
 def is_text_file(file_path: str) -> bool:
     """Check if file is a text file"""
     text_extensions = {'.txt', '.py', '.json', '.csv', '.md', '.yaml', '.yml', '.xml', '.html', '.css', '.js'}
@@ -155,6 +160,7 @@ def create_file_statistics(files: List[Dict[str, Any]]) -> pd.DataFrame:
     
     return df
 
+@st.cache_data()
 def download_neptune_files(project_name: str, experiment_regex: str, attribute_regex: str, download_dir: str) -> List[Dict[str, Any]]:
     """Download files from Neptune and return file information"""
     if not NEPTUNE_AVAILABLE:
@@ -163,7 +169,8 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
     
     try:
         # List experiments
-        exps = nq.list_experiments(project=project_name)
+        exps = nq.list_experiments(project=project_name, 
+                                   experiments=f"{experiment_regex}")
         
         # Filter experiments by regex
         filtered_exps = []
@@ -208,6 +215,7 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
                         'extension': file_path.suffix.lower(),
                         'icon': get_file_icon(str(file_path)),
                         'is_media': is_media_file(str(file_path)),
+                        'is_video': is_video_file(str(file_path)),
                         'is_text': is_text_file(str(file_path)),
                         'modified': file_path.stat().st_mtime
                     }
@@ -220,7 +228,7 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
                     st.warning(f"Error processing file {file_path}: {e}")
         
         # Store download info for display in expander
-        st.session_state.download_info = {
+        download_info = {
             'project_name': project_name,
             'experiments': filtered_exps,
             'attribute_regex': attribute_regex,
@@ -231,11 +239,11 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
             'total_processed': len(downloaded_files)
         }
         
-        return downloaded_files
+        return downloaded_files, download_info
         
     except Exception as e:
         st.error(f"Error downloading from Neptune: {e}")
-        return []
+        return [], {}
 
 def main():
     st.title("📁 File Series Visualizer")
@@ -284,8 +292,9 @@ def main():
         
         if st.sidebar.button("⬇️ Fetch and Visualize"):
             with st.spinner("Downloading files from Neptune..."):
-                files = download_neptune_files(neptune_project, experiment_regex, attribute_regex, download_directory)
+                files, download_info = download_neptune_files(neptune_project, experiment_regex, attribute_regex, download_directory)
                 st.session_state.files = files
+                st.session_state.download_info = download_info
                 st.session_state.directory_scanned = True
                 
                 # Show success/warning message
@@ -613,14 +622,23 @@ def main():
                                 if step in folder_step_grid[folder_name]:
                                     file_info = folder_step_grid[folder_name][step]
                                     try:
-                                        image = Image.open(file_info.path)
+                                        # Check if it's a video file by extension
+                                        file_extension = Path(file_info.path).suffix.lower()
+                                        is_video = file_extension in {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
                                         
-                                        # Apply consistent sizing if enabled
-                                        if consistent_size:
-                                            image = image.resize(consistent_size, Image.Resampling.LANCZOS)
-                                        
-                                        # Display image
-                                        st.image(image, use_container_width=True)
+                                        if is_video:
+                                            # Display video using st.video
+                                            st.video(file_info.path)
+                                        else:
+                                            # Display image using PIL
+                                            image = Image.open(file_info.path)
+                                            
+                                            # Apply consistent sizing if enabled
+                                            if consistent_size:
+                                                image = image.resize(consistent_size, Image.Resampling.LANCZOS)
+                                            
+                                            # Display image
+                                            st.image(image, use_container_width=True)
                                     except Exception as e:
                                         st.error(f"Error loading {file_info.name}: {e}")
                                 else:
@@ -673,14 +691,23 @@ def main():
                                 if step in folder_step_grid[folder_name]:
                                     file_info = folder_step_grid[folder_name][step]
                                     try:
-                                        image = Image.open(file_info.path)
+                                        # Check if it's a video file by extension
+                                        file_extension = Path(file_info.path).suffix.lower()
+                                        is_video = file_extension in {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
                                         
-                                        # Apply consistent sizing if enabled
-                                        if consistent_size:
-                                            image = image.resize(consistent_size, Image.Resampling.LANCZOS)
-                                        
-                                        # Display image
-                                        st.image(image, use_container_width=True)
+                                        if is_video:
+                                            # Display video using st.video
+                                            st.video(file_info.path)
+                                        else:
+                                            # Display image using PIL
+                                            image = Image.open(file_info.path)
+                                            
+                                            # Apply consistent sizing if enabled
+                                            if consistent_size:
+                                                image = image.resize(consistent_size, Image.Resampling.LANCZOS)
+                                            
+                                            # Display image
+                                            st.image(image, use_container_width=True)
                                     except Exception as e:
                                         st.error(f"Error loading {file_info.name}: {e}")
                                 else:
