@@ -50,25 +50,6 @@ def is_text_file(file_path: str) -> bool:
     text_extensions = {'.txt', '.py', '.json', '.csv', '.md', '.yaml', '.yml', '.xml', '.html', '.css', '.js'}
     return Path(file_path).suffix.lower() in text_extensions
 
-def display_image_preview(file_path: str, max_width: int = 300, consistent_size: tuple = None):
-    """Display image preview with optional consistent sizing"""
-    try:
-        image = Image.open(file_path)
-        
-        # Apply consistent sizing if specified
-        if consistent_size:
-            image = image.resize(consistent_size, Image.Resampling.LANCZOS)
-        else:
-            # Resize if too large
-            if image.width > max_width:
-                ratio = max_width / image.width
-                new_height = int(image.height * ratio)
-                image = image.resize((max_width, new_height), Image.Resampling.LANCZOS)
-        
-        st.image(image, caption=Path(file_path).name, use_container_width=True)
-    except Exception as e:
-        st.error(f"Error loading image: {e}")
-
 def display_text_preview(file_path: str, max_lines: int = 50):
     """Display text file preview"""
     try:
