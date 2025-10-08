@@ -68,20 +68,14 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
         exps = nq.list_experiments(project=project_name, 
                                    experiments=f"{experiment_regex}")
         
-        # Filter experiments by regex
-        filtered_exps = []
-        for exp in exps:
-            if re.match(experiment_regex, exp):
-                filtered_exps.append(exp)
-        
-        if not filtered_exps:
+        if not exps:
             st.warning(f"No experiments found matching pattern: {experiment_regex}")
             return []
         
         # Fetch files from experiments using the attribute regex
         files = nq.fetch_series(
             project=project_name,
-            experiments=filtered_exps,
+            experiments=exps,
             attributes=attribute_regex
         )
         
@@ -125,7 +119,7 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
         # Store download info for display in expander
         download_info = {
             'project_name': project_name,
-            'experiments': filtered_exps,
+            'experiments': exps,
             'attribute_regex': attribute_regex,
             'files_fetched': len(files),
             'download_dir': str(project_download_dir),
