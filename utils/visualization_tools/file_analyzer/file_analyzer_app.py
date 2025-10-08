@@ -7,13 +7,10 @@ from PIL import Image
 import io
 import json
 import re
-# import matplotlib.pyplot as plt
 
-# import seaborn as sns
 from typing import List, Dict, Any
-# import plotly.express as px
-#import plotly.graph_objects as go
-#from plotly.subplots import make_subplots
+
+# TODO: Add support for audio and other custom file types (seaborn, plotly, etc.)
 
 # Neptune integration
 try:
@@ -160,7 +157,7 @@ def create_file_statistics(files: List[Dict[str, Any]]) -> pd.DataFrame:
     
     return df
 
-@st.cache_data()
+# @st.cache_data() # TODO: Use this for caching the files, currently does not work if switching projects
 def download_neptune_files(project_name: str, experiment_regex: str, attribute_regex: str, download_dir: str) -> List[Dict[str, Any]]:
     """Download files from Neptune and return file information"""
     if not NEPTUNE_AVAILABLE:
