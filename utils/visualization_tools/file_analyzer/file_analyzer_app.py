@@ -28,30 +28,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-def get_file_icon(file_path: str) -> str:
-    """Get appropriate icon for file type"""
-    ext = Path(file_path).suffix.lower()
-    icon_map = {
-        '.py': '🐍',
-        '.ipynb': '📓',
-        '.json': '📄',
-        '.csv': '📊',
-        '.txt': '📝',
-        '.md': '📖',
-        '.png': '🖼️',
-        '.jpg': '🖼️',
-        '.jpeg': '🖼️',
-        '.gif': '🖼️',
-        '.mp4': '🎥',
-        '.mp3': '🎵',
-        '.wav': '🎵',
-        '.pdf': '📕',
-        '.zip': '📦',
-        '.tar': '📦',
-        '.gz': '📦'
-    }
-    return icon_map.get(ext, '📄')
-
 def get_file_size_mb(file_path: str) -> float:
     """Get file size in MB"""
     try:
@@ -180,7 +156,6 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
                         'relative_path': str(file_path.relative_to(project_download_dir)),
                         'size_mb': get_file_size_mb(str(file_path)),
                         'extension': file_path.suffix.lower(),
-                        'icon': get_file_icon(str(file_path)),
                         'is_media': is_media_file(str(file_path)),
                         'is_video': is_video_file(str(file_path)),
                         'is_text': is_text_file(str(file_path)),
