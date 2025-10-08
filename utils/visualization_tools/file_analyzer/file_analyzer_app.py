@@ -18,7 +18,7 @@ except ImportError:
 
 # Configure page
 st.set_page_config(
-    page_title="Multimedia Comparison Tool",
+    page_title="File Analyzer",
     page_icon="neptune_ai_signet_color.png",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -41,10 +41,10 @@ def is_video_file(file_path: str) -> bool:
     video_extensions = {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
     return Path(file_path).suffix.lower() in video_extensions
 
-def is_text_file(file_path: str) -> bool:
-    """Check if file is a text file"""
-    text_extensions = {'.txt', '.py', '.json', '.csv', '.md', '.yaml', '.yml', '.xml', '.html', '.css', '.js'}
-    return Path(file_path).suffix.lower() in text_extensions
+# def is_text_file(file_path: str) -> bool:
+#     """Check if file is a text file"""
+#     text_extensions = {'.txt', '.py', '.json', '.csv', '.md', '.yaml', '.yml', '.xml', '.html', '.css', '.js'}
+#     return Path(file_path).suffix.lower() in text_extensions
 
 def create_file_statistics(files: List[Dict[str, Any]]) -> pd.DataFrame:
     """Create file statistics DataFrame"""
@@ -70,7 +70,7 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
         
         if not exps:
             st.warning(f"No experiments found matching pattern: {experiment_regex}")
-            return []
+            return [], {}
         
         # Fetch files from experiments using the attribute regex
         files = nq.fetch_series(
@@ -105,7 +105,6 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
                         'extension': file_path.suffix.lower(),
                         'is_media': is_media_file(str(file_path)),
                         'is_video': is_video_file(str(file_path)),
-                        'is_text': is_text_file(str(file_path)),
                         'modified': file_path.stat().st_mtime
                     }
                     downloaded_files.append(file_info)
@@ -213,7 +212,6 @@ def main():
         st.sidebar.subheader("👁️ Run selection")
         
         # Apply regex filters to get experiments and media files
-        import re
         
         experiment_pattern = st.session_state.get('experiment_regex', '.*')
         attribute_pattern = st.session_state.get('attribute_regex', '.*')
@@ -322,12 +320,11 @@ def main():
             folder_toggles = st.session_state.get('folder_toggles', {})
             images_per_page = st.session_state.get('images_per_page', 3)
             consistent_size = st.session_state.get('consistent_size', None)
-            layout_orientation = st.session_state.get('layout_orientation')
+            layout_orientation = st.session_state.get('layout_orientation', True)
             
             # Extract step number from filename or path
             def extract_step_number(file_info):
                 try:
-                    import re
                     # Try to extract step from filename first
                     match = re.search(r'step_(\d+)', file_info.name)
                     if match:
