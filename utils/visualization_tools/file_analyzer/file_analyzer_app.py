@@ -2,10 +2,7 @@ import streamlit as st
 import os
 import pandas as pd
 from pathlib import Path
-import base64
 from PIL import Image
-import io
-import json
 import re
 
 from typing import List, Dict, Any
@@ -15,7 +12,6 @@ from typing import List, Dict, Any
 # Neptune integration
 try:
     import neptune_query as nq
-    import neptune_query.runs as nq_runs
     NEPTUNE_AVAILABLE = True
 except ImportError:
     NEPTUNE_AVAILABLE = False
@@ -49,30 +45,6 @@ def is_text_file(file_path: str) -> bool:
     """Check if file is a text file"""
     text_extensions = {'.txt', '.py', '.json', '.csv', '.md', '.yaml', '.yml', '.xml', '.html', '.css', '.js'}
     return Path(file_path).suffix.lower() in text_extensions
-
-def display_text_preview(file_path: str, max_lines: int = 50):
-    """Display text file preview"""
-    try:
-        with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-            lines = f.readlines()
-        
-        if len(lines) > max_lines:
-            st.text_area(
-                f"Preview of {Path(file_path).name} (showing first {max_lines} lines)",
-                ''.join(lines[:max_lines]),
-                height=300,
-                disabled=True
-            )
-            st.info(f"File has {len(lines)} lines total. Showing first {max_lines} lines.")
-        else:
-            st.text_area(
-                f"Content of {Path(file_path).name}",
-                ''.join(lines),
-                height=300,
-                disabled=True
-            )
-    except Exception as e:
-        st.error(f"Error reading text file: {e}")
 
 def create_file_statistics(files: List[Dict[str, Any]]) -> pd.DataFrame:
     """Create file statistics DataFrame"""
@@ -345,303 +317,298 @@ def main():
     filtered_df = create_file_statistics(st.session_state.get('filtered_files', st.session_state.files))
     
     if not filtered_df.empty:
-        # Gallery view only
-        view_mode = "Gallery"
+        # Grid gallery: rows = experiments, columns = steps
+        media_files = [f for f in filtered_df.itertuples() if f.is_media]
         
-        if view_mode == "Gallery":
-            # Grid gallery: rows = experiments, columns = steps
-            media_files = [f for f in filtered_df.itertuples() if f.is_media]
+        if media_files:
+            st.subheader("Comparison Grid")
             
-            if media_files:
-                st.subheader("Comparison Grid")
-                
-                # Get folder toggles, pagination settings, and image sizing
-                folder_toggles = st.session_state.get('folder_toggles', {})
-                images_per_page = st.session_state.get('images_per_page', 3)
-                consistent_size = st.session_state.get('consistent_size', None)
-                layout_orientation = st.session_state.get('layout_orientation', 'Steps as Columns')
-                
-                # Extract step number from filename or path
-                def extract_step_number(file_info):
-                    try:
-                        import re
-                        # Try to extract step from filename first
-                        match = re.search(r'step_(\d+)', file_info.name)
-                        if match:
-                            return int(match.group(1))
+            # Get folder toggles, pagination settings, and image sizing
+            folder_toggles = st.session_state.get('folder_toggles', {})
+            images_per_page = st.session_state.get('images_per_page', 3)
+            consistent_size = st.session_state.get('consistent_size', None)
+            layout_orientation = st.session_state.get('layout_orientation', 'Steps as Columns')
+            
+            # Extract step number from filename or path
+            def extract_step_number(file_info):
+                try:
+                    import re
+                    # Try to extract step from filename first
+                    match = re.search(r'step_(\d+)', file_info.name)
+                    if match:
+                        return int(match.group(1))
+                    
+                    # Try to extract step from path (for Neptune downloads)
+                    match = re.search(r'step[_-]?(\d+)', file_info.path)
+                    if match:
+                        return int(match.group(1))
+                    
+                    # Try to extract step from relative path
+                    match = re.search(r'step[_-]?(\d+)', file_info.relative_path)
+                    if match:
+                        return int(match.group(1))
+                    
+                    # If no step found, try to extract any number from filename
+                    match = re.search(r'(\d+)', file_info.name)
+                    if match:
+                        return int(match.group(1))
+                    
+                    return 0
+                except:
+                    return 0
+            
+            # Organize images by folder and step
+            folder_step_grid = {}
+            all_steps = set()
+            
+            for file_info in media_files:
+                # Get first level folder from relative path
+                path_parts = Path(file_info.relative_path).parts
+                if len(path_parts) > 1:  # Only include actual folders, not root files
+                    folder_name = path_parts[0]
+                    
+                    # Only include if folder is enabled
+                    if folder_toggles.get(folder_name, True):
+                        step_num = extract_step_number(file_info)
+                        all_steps.add(step_num)
                         
-                        # Try to extract step from path (for Neptune downloads)
-                        match = re.search(r'step[_-]?(\d+)', file_info.path)
-                        if match:
-                            return int(match.group(1))
-                        
-                        # Try to extract step from relative path
-                        match = re.search(r'step[_-]?(\d+)', file_info.relative_path)
-                        if match:
-                            return int(match.group(1))
-                        
-                        # If no step found, try to extract any number from filename
-                        match = re.search(r'(\d+)', file_info.name)
-                        if match:
-                            return int(match.group(1))
-                        
-                        return 0
-                    except:
-                        return 0
-                
-                # Organize images by folder and step
-                folder_step_grid = {}
-                all_steps = set()
-                
-                for file_info in media_files:
-                    # Get first level folder from relative path
-                    path_parts = Path(file_info.relative_path).parts
-                    if len(path_parts) > 1:  # Only include actual folders, not root files
-                        folder_name = path_parts[0]
-                        
-                        # Only include if folder is enabled
-                        if folder_toggles.get(folder_name, True):
-                            step_num = extract_step_number(file_info)
-                            all_steps.add(step_num)
-                            
-                            if folder_name not in folder_step_grid:
-                                folder_step_grid[folder_name] = {}
-                            folder_step_grid[folder_name][step_num] = file_info
-                
-                if not folder_step_grid:
-                    st.info("No experiments are selected to display. Use the sidebar toggles to select which experiments to show in the gallery.")
-                    return
-                
-                # Sort steps and folders
-                sorted_steps = sorted(all_steps)
-                sorted_folders = sorted(folder_step_grid.keys())
-                
-                # Calculate step-based navigation
-                total_steps = len(sorted_steps)
-                
-                # Initialize current step index in session state
-                if 'current_step_index' not in st.session_state:
+                        if folder_name not in folder_step_grid:
+                            folder_step_grid[folder_name] = {}
+                        folder_step_grid[folder_name][step_num] = file_info
+            
+            if not folder_step_grid:
+                st.info("No experiments are selected to display. Use the sidebar toggles to select which experiments to show in the gallery.")
+                return
+            
+            # Sort steps and folders
+            sorted_steps = sorted(all_steps)
+            sorted_folders = sorted(folder_step_grid.keys())
+            
+            # Calculate step-based navigation
+            total_steps = len(sorted_steps)
+            
+            # Initialize current step index in session state
+            if 'current_step_index' not in st.session_state:
+                st.session_state.current_step_index = 0
+            
+            # Pagination controls
+            col1, col2, col3, col4, col5 = st.columns([1, 1, 2, 1, 1])
+            
+            # Calculate current step range
+            current_step_index = st.session_state.current_step_index
+            current_steps = sorted_steps[current_step_index:current_step_index + images_per_page]
+            
+            with col1:
+                if st.button("⏮️ First", disabled=current_step_index == 0):
                     st.session_state.current_step_index = 0
-                
-                # Pagination controls
-                col1, col2, col3, col4, col5 = st.columns([1, 1, 2, 1, 1])
-                
-                # Calculate current step range
-                current_step_index = st.session_state.current_step_index
-                current_steps = sorted_steps[current_step_index:current_step_index + images_per_page]
-                
-                with col1:
-                    if st.button("⏮️ First", disabled=current_step_index == 0):
-                        st.session_state.current_step_index = 0
-                        st.rerun()
-                
-                with col2:
-                    if st.button("⬅️ Previous", disabled=current_step_index == 0):
-                        # Move back by 1 step
-                        st.session_state.current_step_index = max(0, current_step_index - 1)
-                        st.rerun()
-                
-                with col3:
-                    if current_steps:
-                        first_step = current_steps[0]
-                        last_step = current_steps[-1]
-                        st.write(f"**Steps {first_step} to {last_step}** ({total_steps} total steps)")
-                    else:
-                        st.write(f"**No steps available** ({total_steps} total steps)")
-                
-                with col4:
-                    # Check if we can move forward by 1 step
-                    can_move_next = current_step_index + 1 + images_per_page <= total_steps
-                    if st.button("➡️ Next", disabled=not can_move_next):
-                        # Move forward by 1 step
-                        st.session_state.current_step_index = min(total_steps - images_per_page, current_step_index + 1)
-                        st.rerun()
-                
-                with col5:
-                    # Check if we're at the last possible position
-                    is_at_last = current_step_index + images_per_page >= total_steps
-                    if st.button("⏭️ Last", disabled=is_at_last):
-                        # Move to the last possible position
-                        st.session_state.current_step_index = max(0, total_steps - images_per_page)
-                        st.rerun()
-                
-                # Get current steps based on step index
-                current_steps = sorted_steps[current_step_index:current_step_index + images_per_page]
-                
-                # Add step scrubber slider
-                if sorted_steps:
-                    st.subheader("Step Scrubber")
-                    
-                    # Create slider using actual step values
-                    current_first_step = current_steps[0] if current_steps else sorted_steps[0]
-                    current_step_index_in_list = sorted_steps.index(current_first_step) if current_first_step in sorted_steps else 0
-                    
-                    # Create slider for step selection using selectbox for discrete values
-                    selected_step = st.select_slider(
-                        "Jump to step:",
-                        options=sorted_steps,
-                        value=current_first_step,
-                        help="Use this slider to quickly jump to any step in the series"
-                    )
-                    
-                    # Update current step index if slider value changed
-                    if selected_step in sorted_steps:
-                        new_index = sorted_steps.index(selected_step)
-                        if new_index != current_step_index:
-                            st.session_state.current_step_index = new_index
-                            st.rerun()
-                
-                if layout_orientation == "Steps as Columns":
-                    # Original layout: experiments as rows, steps as columns
-                    # Calculate optimal column widths with smart size limiting
-                    if sorted_folders:
-                        # Find the longest experiment name
-                        max_name_length = max(len(folder) for folder in sorted_folders)
-                        # Add padding and convert to relative width (experiment names are typically 10-30 chars)
-                        experiment_col_width = min(max(max_name_length * 0.8, 12), 25)  # Between 12 and 25
-                        
-                        # Calculate available width for step columns
-                        available_width = 100 - experiment_col_width
-                        
-                        # Calculate step column width - each column can be smaller when more columns are added
-                        step_col_width = available_width / images_per_page
-                        
-                        # Smart size limiting: prevent any single image from being too large
-                        # Reference size: 3 experiments, 4 files per page, but with smaller individual images
-                        reference_experiment_width = 20  # Typical experiment column width
-                        reference_available_width = 100 - reference_experiment_width
-                        reference_step_width = reference_available_width / 4  # 4 files per page
-                        # Reduce the maximum to 60% of the reference size for more reasonable single image size
-                        max_step_width = reference_step_width * 0.6  # This is our maximum allowed step width
-                        
-                        # Apply the size limit
-                        if step_col_width > max_step_width:
-                            step_col_width = max_step_width
-                        
-                        # Create column configuration
-                        col_config = [experiment_col_width] + [step_col_width] * images_per_page
-                    else:
-                        col_config = [1] * (images_per_page + 1)
-                    
-                    # Create grid header with step numbers
-                    header_cols = st.columns(col_config)
-                    with header_cols[0]:
-                        st.write("**Experiment**")
-                    for idx, step in enumerate(current_steps):
-                        with header_cols[idx + 1]:
-                            st.write(f"**Step {step}**")
-                    
-                    # Create grid rows (one per experiment)
-                    for folder_name in sorted_folders:
-                        row_cols = st.columns(col_config)
-                        
-                        # Experiment name in first column
-                        with row_cols[0]:
-                            st.write(f"👁️ {folder_name}")
-                        
-                        # Images for each step in remaining columns
-                        for idx, step in enumerate(current_steps):
-                            with row_cols[idx + 1]:
-                                if step in folder_step_grid[folder_name]:
-                                    file_info = folder_step_grid[folder_name][step]
-                                    try:
-                                        # Check if it's a video file by extension
-                                        file_extension = Path(file_info.path).suffix.lower()
-                                        is_video = file_extension in {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
-                                        
-                                        if is_video:
-                                            # Display video using st.video
-                                            st.video(file_info.path)
-                                        else:
-                                            # Display image using PIL
-                                            image = Image.open(file_info.path)
-                                            
-                                            # Apply consistent sizing if enabled
-                                            if consistent_size:
-                                                image = image.resize(consistent_size, Image.Resampling.LANCZOS)
-                                            
-                                            # Display image
-                                            st.image(image, use_container_width=True)
-                                    except Exception as e:
-                                        st.error(f"Error loading {file_info.name}: {e}")
-                                else:
-                                    st.write("—")  # No image for this step
-                
-                else:  # Steps as Rows
-                    # New layout: steps as rows, experiments as columns
-                    # Calculate optimal column widths
-                    if sorted_folders:
-                        # Find the longest experiment name
-                        max_name_length = max(len(folder) for folder in sorted_folders)
-                        # Add padding and convert to relative width
-                        experiment_col_width = min(max(max_name_length * 0.8, 12), 25)
-                        
-                        # Calculate available width for experiment columns
-                        available_width = 100 - 15  # Reserve 15% for step labels
-                        
-                        # Calculate experiment column width
-                        experiment_col_width = available_width / len(sorted_folders)
-                        
-                        # Apply smart size limiting for experiments too
-                        max_experiment_width = 25  # Maximum 25% per experiment
-                        if experiment_col_width > max_experiment_width:
-                            experiment_col_width = max_experiment_width
-                        
-                        # Create column configuration
-                        col_config = [15] + [experiment_col_width] * len(sorted_folders)
-                    else:
-                        col_config = [1] * (len(sorted_folders) + 1)
-                    
-                    # Create grid header with experiment names
-                    header_cols = st.columns(col_config)
-                    with header_cols[0]:
-                        st.write("**Step**")
-                    for idx, folder_name in enumerate(sorted_folders):
-                        with header_cols[idx + 1]:
-                            st.write(f"**👁️ {folder_name}**")
-                    
-                    # Create grid rows (one per step)
-                    for step in current_steps:
-                        row_cols = st.columns(col_config)
-                        
-                        # Step number in first column
-                        with row_cols[0]:
-                            st.write(f"**Step {step}**")
-                        
-                        # Images for each experiment in remaining columns
-                        for idx, folder_name in enumerate(sorted_folders):
-                            with row_cols[idx + 1]:
-                                if step in folder_step_grid[folder_name]:
-                                    file_info = folder_step_grid[folder_name][step]
-                                    try:
-                                        # Check if it's a video file by extension
-                                        file_extension = Path(file_info.path).suffix.lower()
-                                        is_video = file_extension in {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
-                                        
-                                        if is_video:
-                                            # Display video using st.video
-                                            st.video(file_info.path)
-                                        else:
-                                            # Display image using PIL
-                                            image = Image.open(file_info.path)
-                                            
-                                            # Apply consistent sizing if enabled
-                                            if consistent_size:
-                                                image = image.resize(consistent_size, Image.Resampling.LANCZOS)
-                                            
-                                            # Display image
-                                            st.image(image, use_container_width=True)
-                                    except Exception as e:
-                                        st.error(f"Error loading {file_info.name}: {e}")
-                                else:
-                                    st.write("—")  # No image for this step
-                
-                # Show step range info
+                    st.rerun()
+            
+            with col2:
+                if st.button("⬅️ Previous", disabled=current_step_index == 0):
+                    # Move back by 1 step
+                    st.session_state.current_step_index = max(0, current_step_index - 1)
+                    st.rerun()
+            
+            with col3:
                 if current_steps:
-                    st.info(f"Showing steps {current_steps[0]} to {current_steps[-1]}")
+                    first_step = current_steps[0]
+                    last_step = current_steps[-1]
+                    st.write(f"**Steps {first_step} to {last_step}** ({total_steps} total steps)")
+                else:
+                    st.write(f"**No steps available** ({total_steps} total steps)")
+            
+            with col4:
+                # Check if we can move forward by 1 step
+                can_move_next = current_step_index + 1 + images_per_page <= total_steps
+                if st.button("➡️ Next", disabled=not can_move_next):
+                    # Move forward by 1 step
+                    st.session_state.current_step_index = min(total_steps - images_per_page, current_step_index + 1)
+                    st.rerun()
+            
+            with col5:
+                # Check if we're at the last possible position
+                is_at_last = current_step_index + images_per_page >= total_steps
+                if st.button("⏭️ Last", disabled=is_at_last):
+                    # Move to the last possible position
+                    st.session_state.current_step_index = max(0, total_steps - images_per_page)
+                    st.rerun()
+            
+            # Get current steps based on step index
+            current_steps = sorted_steps[current_step_index:current_step_index + images_per_page]
+            
+            # Add step scrubber slider
+            if sorted_steps:
+                st.subheader("Step Scrubber")
                 
-            else:
-                st.info("No media files found matching the current filters")
+                # Create slider using actual step values
+                current_first_step = current_steps[0] if current_steps else sorted_steps[0]
+                
+                # Create slider for step selection using selectbox for discrete values
+                selected_step = st.select_slider(
+                    "Jump to step:",
+                    options=sorted_steps,
+                    value=current_first_step,
+                    help="Use this slider to quickly jump to any step in the series"
+                )
+                
+                # Update current step index if slider value changed
+                if selected_step in sorted_steps:
+                    new_index = sorted_steps.index(selected_step)
+                    if new_index != current_step_index:
+                        st.session_state.current_step_index = new_index
+                        st.rerun()
+            
+            if layout_orientation == "Steps as Columns":
+                # Original layout: experiments as rows, steps as columns
+                # Calculate optimal column widths with smart size limiting
+                if sorted_folders:
+                    # Find the longest experiment name
+                    max_name_length = max(len(folder) for folder in sorted_folders)
+                    # Add padding and convert to relative width (experiment names are typically 10-30 chars)
+                    experiment_col_width = min(max(max_name_length * 0.8, 12), 25)  # Between 12 and 25
+                    
+                    # Calculate available width for step columns
+                    available_width = 100 - experiment_col_width
+                    
+                    # Calculate step column width - each column can be smaller when more columns are added
+                    step_col_width = available_width / images_per_page
+                    
+                    # Smart size limiting: prevent any single image from being too large
+                    # Reference size: 3 experiments, 4 files per page, but with smaller individual images
+                    reference_experiment_width = 20  # Typical experiment column width
+                    reference_available_width = 100 - reference_experiment_width
+                    reference_step_width = reference_available_width / 4  # 4 files per page
+                    # Reduce the maximum to 60% of the reference size for more reasonable single image size
+                    max_step_width = reference_step_width * 0.6  # This is our maximum allowed step width
+                    
+                    # Apply the size limit
+                    if step_col_width > max_step_width:
+                        step_col_width = max_step_width
+                    
+                    # Create column configuration
+                    col_config = [experiment_col_width] + [step_col_width] * images_per_page
+                else:
+                    col_config = [1] * (images_per_page + 1)
+                
+                # Create grid header with step numbers
+                header_cols = st.columns(col_config)
+                with header_cols[0]:
+                    st.write("**Experiment**")
+                for idx, step in enumerate(current_steps):
+                    with header_cols[idx + 1]:
+                        st.write(f"**Step {step}**")
+                
+                # Create grid rows (one per experiment)
+                for folder_name in sorted_folders:
+                    row_cols = st.columns(col_config)
+                    
+                    # Experiment name in first column
+                    with row_cols[0]:
+                        st.write(f"👁️ {folder_name}")
+                    
+                    # Images for each step in remaining columns
+                    for idx, step in enumerate(current_steps):
+                        with row_cols[idx + 1]:
+                            if step in folder_step_grid[folder_name]:
+                                file_info = folder_step_grid[folder_name][step]
+                                try:
+                                    # Check if it's a video file by extension
+                                    file_extension = Path(file_info.path).suffix.lower()
+                                    is_video = file_extension in {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
+                                    
+                                    if is_video:
+                                        # Display video using st.video
+                                        st.video(file_info.path)
+                                    else:
+                                        # Display image using PIL
+                                        image = Image.open(file_info.path)
+                                        
+                                        # Apply consistent sizing if enabled
+                                        if consistent_size:
+                                            image = image.resize(consistent_size, Image.Resampling.LANCZOS)
+                                        
+                                        # Display image
+                                        st.image(image, use_container_width=True)
+                                except Exception as e:
+                                    st.error(f"Error loading {file_info.name}: {e}")
+                            else:
+                                st.write("—")  # No image for this step
+            
+            else:  # Steps as Rows
+                # New layout: steps as rows, experiments as columns
+                # Calculate optimal column widths
+                if sorted_folders:
+                    # Find the longest experiment name
+                    max_name_length = max(len(folder) for folder in sorted_folders)
+                    # Add padding and convert to relative width
+                    experiment_col_width = min(max(max_name_length * 0.8, 12), 25)
+                    
+                    # Calculate available width for experiment columns
+                    available_width = 100 - 15  # Reserve 15% for step labels
+                    
+                    # Calculate experiment column width
+                    experiment_col_width = available_width / len(sorted_folders)
+                    
+                    # Apply smart size limiting for experiments too
+                    max_experiment_width = 25  # Maximum 25% per experiment
+                    if experiment_col_width > max_experiment_width:
+                        experiment_col_width = max_experiment_width
+                    
+                    # Create column configuration
+                    col_config = [15] + [experiment_col_width] * len(sorted_folders)
+                else:
+                    col_config = [1] * (len(sorted_folders) + 1)
+                
+                # Create grid header with experiment names
+                header_cols = st.columns(col_config)
+                with header_cols[0]:
+                    st.write("**Step**")
+                for idx, folder_name in enumerate(sorted_folders):
+                    with header_cols[idx + 1]:
+                        st.write(f"**👁️ {folder_name}**")
+                
+                # Create grid rows (one per step)
+                for step in current_steps:
+                    row_cols = st.columns(col_config)
+                    
+                    # Step number in first column
+                    with row_cols[0]:
+                        st.write(f"**Step {step}**")
+                    
+                    # Images for each experiment in remaining columns
+                    for idx, folder_name in enumerate(sorted_folders):
+                        with row_cols[idx + 1]:
+                            if step in folder_step_grid[folder_name]:
+                                file_info = folder_step_grid[folder_name][step]
+                                try:
+                                    # Check if it's a video file by extension
+                                    file_extension = Path(file_info.path).suffix.lower()
+                                    is_video = file_extension in {'.mp4', '.avi', '.mov', '.mkv', '.webm'}
+                                    
+                                    if is_video:
+                                        # Display video using st.video
+                                        st.video(file_info.path)
+                                    else:
+                                        # Display image using PIL
+                                        image = Image.open(file_info.path)
+                                        
+                                        # Apply consistent sizing if enabled
+                                        if consistent_size:
+                                            image = image.resize(consistent_size, Image.Resampling.LANCZOS)
+                                        
+                                        # Display image
+                                        st.image(image, use_container_width=True)
+                                except Exception as e:
+                                    st.error(f"Error loading {file_info.name}: {e}")
+                            else:
+                                st.write("—")  # No image for this step
+            
+            # Show step range info
+            if current_steps:
+                st.info(f"Showing steps {current_steps[0]} to {current_steps[-1]}")
+        
+        else:
+            st.info("No media files found matching the current filters")
     
     else:
         st.warning("No files match the current filters")
