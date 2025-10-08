@@ -7,11 +7,11 @@ A Streamlit application for downloading and comparing media files across Neptune
 - **Neptune Integration**: Download files directly from your Neptune experiments
 - **Experiment Filtering**: Use regex patterns to filter experiments and file attributes
 - **Step-Based Comparison**: Compare images/videos across experiments at specific training steps
-- **Interactive Grid View**: 
+- **Interactive Grid View**:
   - Rows represent experiments
   - Columns represent training steps
   - Easy side-by-side comparison
-- **Media File Support**: 
+- **Media File Support**:
   - Static images (PNG, JPG, JPEG, BMP, TIFF, WebP)
   - Animated images (GIF)
   - Videos (MP4, AVI, MOV, MKV, WebM)
@@ -86,7 +86,7 @@ All required packages are listed in `requirements.txt`
 - **Neptune Integration**: Direct download from Neptune
 - **Experiment Filtering**: Regex-based filtering for experiments and attributes
 - **Step-Based Comparison Grid**: Rows=experiments, Columns=training steps
-- **Smart Navigation**: 
+- **Smart Navigation**:
   - Previous/Next buttons with sliding window navigation
   - Step scrubber slider for quick jumping to specific steps
   - Pagination controls (1-10 steps per view)
