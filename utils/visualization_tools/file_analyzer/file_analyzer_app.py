@@ -22,7 +22,7 @@ except ImportError:
 
 # Configure page
 st.set_page_config(
-    page_title="Neptune Experiment Comparison Tool",
+    page_title="Multimedia Comparison Tool",
     page_icon="neptune_ai_signet_color.png",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -73,36 +73,6 @@ def is_text_file(file_path: str) -> bool:
     """Check if file is a text file"""
     text_extensions = {'.txt', '.py', '.json', '.csv', '.md', '.yaml', '.yml', '.xml', '.html', '.css', '.js'}
     return Path(file_path).suffix.lower() in text_extensions
-
-def scan_directory(directory: str, recursive: bool = True) -> List[Dict[str, Any]]:
-    """Scan directory and return file information"""
-    files = []
-    directory_path = Path(directory)
-    
-    if not directory_path.exists():
-        return files
-    
-    pattern = "**/*" if recursive else "*"
-    
-    for file_path in directory_path.glob(pattern):
-        if file_path.is_file():
-            try:
-                file_info = {
-                    'name': file_path.name,
-                    'path': str(file_path),
-                    'relative_path': str(file_path.relative_to(directory_path)),
-                    'size_mb': get_file_size_mb(str(file_path)),
-                    'extension': file_path.suffix.lower(),
-                    'icon': get_file_icon(str(file_path)),
-                    'is_media': is_media_file(str(file_path)),
-                    'is_text': is_text_file(str(file_path)),
-                    'modified': file_path.stat().st_mtime
-                }
-                files.append(file_info)
-            except Exception as e:
-                st.warning(f"Error reading {file_path}: {e}")
-    
-    return files
 
 def display_image_preview(file_path: str, max_width: int = 300, consistent_size: tuple = None):
     """Display image preview with optional consistent sizing"""
