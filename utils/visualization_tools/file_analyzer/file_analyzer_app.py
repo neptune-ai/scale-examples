@@ -135,62 +135,65 @@ def download_neptune_files(project_name: str, experiment_regex: str, attribute_r
         return [], {}
 
 def main():
-    st.title("📁 File Series Visualizer")
+    st.title("File Analyzer")
     st.markdown("Visualize and explore files across different folders")
     
-    # Sidebar for configuration
-    st.sidebar.header("Configuration")
+    # Project configuration in expandable container
+    # Determine if expander should be open (default open, closed after successful fetch)
+    expander_open = st.session_state.get('expander_open', True)
     
-    # Project configuration
-    st.sidebar.subheader("📂 Project Configuration")
-    
-    if not NEPTUNE_AVAILABLE:
-        st.sidebar.error("Neptune Query not available. Install with: pip install neptune-query")
-    else:
-        # Neptune project
-        neptune_project = st.sidebar.text_input(
-            "Neptune Project",
-            value=st.session_state.get('neptune_project'),
-            help="Neptune project name (e.g., 'examples/quickstart')"
-        )
-        st.session_state.neptune_project = neptune_project
-        
-        # Download directory
-        download_directory = st.sidebar.text_input(
-            "Download Directory",
-            value=st.session_state.get('download_directory', os.path.join(os.getcwd(), 'neptune_downloads')),
-            help="Directory to download Neptune files to"
-        )
-        st.session_state.download_directory = download_directory
-        
-        # Experiment regex
-        experiment_regex = st.sidebar.text_input(
-            "Experiment Regex",
-            value=st.session_state.get('experiment_regex', '.*'),
-            help="Regex pattern to match experiment names (e.g., 'exp_.*' or '.*_v[0-9]+')"
-        )
-        st.session_state.experiment_regex = experiment_regex
-        
-        # Attribute regex
-        attribute_regex = st.sidebar.text_input(
-            "Attribute Regex",
-            value=st.session_state.get('attribute_regex', '.*'),
-            help="Regex pattern to match file attributes/names (e.g., 'step_.*' or '.*_result.*')"
-        )
-        st.session_state.attribute_regex = attribute_regex
-        
-        if st.sidebar.button("⬇️ Fetch and Visualize"):
-            with st.spinner("Downloading files from Neptune..."):
-                files, download_info = download_neptune_files(neptune_project, experiment_regex, attribute_regex, download_directory)
-                st.session_state.files = files
-                st.session_state.download_info = download_info
-                st.session_state.directory_scanned = True
-                
-                # Show success/warning message
-                if files:
-                    st.success(f"Successfully downloaded {len(files)} files")
-                else:
-                    st.warning("No files were downloaded. Check your project name and regex patterns.")
+    with st.sidebar.expander("📂 File Configuration", expanded=expander_open):
+        if not NEPTUNE_AVAILABLE:
+            st.error("Neptune Query not available. Install with: pip install neptune-query")
+        else:
+            # Neptune project
+            neptune_project = st.text_input(
+                "Neptune Project",
+                value=st.session_state.get('neptune_project'),
+                help="Neptune project name (e.g., 'examples/quickstart')"
+            )
+            st.session_state.neptune_project = neptune_project
+            
+            # Download directory
+            download_directory = st.text_input(
+                "Download Directory",
+                value=st.session_state.get('download_directory', os.path.join(os.getcwd(), 'neptune_downloads')),
+                help="Directory to download Neptune files to"
+            )
+            st.session_state.download_directory = download_directory
+            
+            # Experiment regex
+            experiment_regex = st.text_input(
+                "Experiment Regex",
+                value=st.session_state.get('experiment_regex', '.*'),
+                help="Regex pattern to match experiment names (e.g., 'exp_.*' or '.*_v[0-9]+')"
+            )
+            st.session_state.experiment_regex = experiment_regex
+            
+            # Attribute regex
+            attribute_regex = st.text_input(
+                "Attribute Regex",
+                value=st.session_state.get('attribute_regex', '.*'),
+                help="Regex pattern to match file attributes/names (e.g., 'step_.*' or '.*_result.*')"
+            )
+            st.session_state.attribute_regex = attribute_regex
+            
+            if st.button("⬇️ Fetch and Visualize"):
+                with st.spinner("Downloading files from Neptune..."):
+                    files, download_info = download_neptune_files(neptune_project, experiment_regex, attribute_regex, download_directory)
+                    st.session_state.files = files
+                    st.session_state.download_info = download_info
+                    st.session_state.directory_scanned = True
+                    st.session_state.expander_open = False  # Close expander after successful fetch
+                    
+                    # Show success/warning message
+                    if files:
+                        st.success(f"Successfully downloaded {len(files)} files")
+                    else:
+                        st.warning("No files were downloaded. Check your project name and regex patterns.")
+                    
+                    # Trigger rerun to update the expander state
+                    st.rerun()
         
         # Show download details in expander if available
         if 'download_info' in st.session_state and st.session_state.download_info:
@@ -200,7 +203,6 @@ def main():
                 st.write(f"**Experiments Found:** {len(info['experiments'])}")
                 st.write(f"**Experiments:** {', '.join(info['experiments'])}")
                 st.write(f"**Attribute Regex:** {info['attribute_regex']}")
-                st.write(f"**Files Fetched:** {info['files_fetched']}")
                 st.write(f"**Download Directory:** {info['download_dir']}")
                 st.write(f"**Total Files:** {info['total_files']}")
                 st.write(f"**Media Files:** {info['media_files']}")
@@ -208,7 +210,7 @@ def main():
     
     # Gallery view options
     if 'files' in st.session_state and st.session_state.files:
-        st.sidebar.subheader("👁️ Gallery Options")
+        st.sidebar.subheader("👁️ Run selection")
         
         # Apply regex filters to get experiments and media files
         import re
