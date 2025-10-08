@@ -270,23 +270,23 @@ def main():
         )
         
         # Image sizing controls
-        st.sidebar.subheader("🖼️ Image Display")
+        st.sidebar.subheader("🖼️ Media Display")
         consistent_sizing = st.sidebar.checkbox(
-            "Consistent image size",
-            value=True,
+            "Consistent media size",
+            value=False,
             help="Resize all images to the same dimensions for easier comparison"
         )
         
         if consistent_sizing:
             image_width = st.sidebar.slider(
-                "Image width (pixels)",
+                "Media width (pixels)",
                 min_value=100,
                 max_value=500,
                 value=200,
                 step=10
             )
             image_height = st.sidebar.slider(
-                "Image height (pixels)",
+                "Media height (pixels)",
                 min_value=100,
                 max_value=500,
                 value=200,
