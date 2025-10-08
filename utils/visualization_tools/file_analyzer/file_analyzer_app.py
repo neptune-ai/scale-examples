@@ -25,8 +25,8 @@ except ImportError:
 
 # Configure page
 st.set_page_config(
-    page_title="File Series Visualizer",
-    page_icon="📁",
+    page_title="Neptune Experiment Comparison Tool",
+    page_icon="neptune_ai_signet_color.png",
     layout="wide",
     initial_sidebar_state="expanded"
 )
