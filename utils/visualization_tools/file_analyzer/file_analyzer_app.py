@@ -254,12 +254,11 @@ def main():
         st.sidebar.subheader("📄 Gallery Layout")
         
         # Layout orientation toggle
-        layout_orientation = st.sidebar.radio(
-            "Layout Orientation",
-            ["Steps as Columns", "Steps as Rows"],
-            help="Choose how to arrange steps in the gallery"
-        )
-        
+        layout_orientation = st.sidebar.toggle(
+            "Steps as columns", 
+            value=True,
+            help="Choose how to arrange steps in the gallery")
+
         # Pagination controls
         images_per_page = st.sidebar.slider(
             "Media files per page", 
@@ -323,7 +322,7 @@ def main():
             folder_toggles = st.session_state.get('folder_toggles', {})
             images_per_page = st.session_state.get('images_per_page', 3)
             consistent_size = st.session_state.get('consistent_size', None)
-            layout_orientation = st.session_state.get('layout_orientation', 'Steps as Columns')
+            layout_orientation = st.session_state.get('layout_orientation')
             
             # Extract step number from filename or path
             def extract_step_number(file_info):
@@ -454,7 +453,7 @@ def main():
                         st.session_state.current_step_index = new_index
                         st.rerun()
             
-            if layout_orientation == "Steps as Columns":
+            if layout_orientation:
                 # Original layout: experiments as rows, steps as columns
                 # Calculate optimal column widths with smart size limiting
                 if sorted_folders:
