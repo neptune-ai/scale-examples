@@ -78,7 +78,7 @@ def create_file_statistics(files: List[Dict[str, Any]]) -> pd.DataFrame:
     return df
 
 
-# @st.cache_data() # TODO: Use this for caching the files, currently does not work if switching projects
+@st.cache_data()
 def download_neptune_files(
     project_name: str, experiment_regex: str, attribute_regex: str, download_dir: str
 ) -> List[Dict[str, Any]]:
