@@ -38,9 +38,9 @@ This repo contains tutorials and examples of how to use Neptune.
 
 ### Visualization tools
 
-|               |                GitHub                |
-| ------------- | :----------------------------------: |
-| File Comparer | [![github-icon]][file-comparer-code] |
+|               |                 GitHub                 |
+| ------------- | :------------------------------------: |
+| File Comparer | [![github-icon]][file-comparison-code] |
 
 ## Can't find what you're looking for?
 
@@ -55,7 +55,7 @@ This repo contains tutorials and examples of how to use Neptune.
 [hpo-notebook]: how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [hpo-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [pytorch-model-internals-code]: utils/monitoring_tools/pytorch_model_internals/
-[file-comparer-code]: utils/visualization_tools/file_comparer/
+[file-comparison-code]: utils/visualization_tools/file_comparison_app/
 [qs-notebook]: how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 [qs-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 
