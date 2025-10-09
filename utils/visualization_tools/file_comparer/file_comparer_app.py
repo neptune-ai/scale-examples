@@ -268,9 +268,9 @@ def main():
                 path_parts = Path(file_info["relative_path"]).parts
                 if len(path_parts) > 1:
                     experiment_name = path_parts[0]
-                    if re.match(experiment_pattern, experiment_name):
+                    if re.search(experiment_pattern, experiment_name):
                         # Check attribute regex (filename)
-                        if re.match(attribute_pattern, file_info["name"]):
+                        if re.search(attribute_pattern, file_info["name"]):
                             filtered_files.append(file_info)
 
         # Get unique experiments from filtered files
