@@ -586,7 +586,7 @@ def main():
                                             )
 
                                         # Display image
-                                        st.image(image, use_container_width=True)
+                                        st.image(image, width='stretch')
                                 except Exception as e:
                                     st.error(f"Error loading {file_info.name}: {e}")
                             else:
@@ -663,7 +663,7 @@ def main():
                                             )
 
                                         # Display image
-                                        st.image(image, use_container_width=True)
+                                        st.image(image, width='stretch')
                                 except Exception as e:
                                     st.error(f"Error loading {file_info.name}: {e}")
                             else:
