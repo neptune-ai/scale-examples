@@ -265,7 +265,7 @@ def main():
             "Download and Visualize", icon=":material/download:", width="stretch", type="primary"
         ):
             # Check if experiment regex is valid before proceeding
-            if not experiment_regex_valid or not experiment_regex or not experiment_regex.strip():
+            if not experiment_regex_valid:
                 st.error("Cannot proceed: Experiment regex is required!", icon=":material/error:")
                 st.stop()
 
