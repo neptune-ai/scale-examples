@@ -200,13 +200,21 @@ def main():
             )
             st.session_state.download_directory = download_directory
 
-            # Experiment regex
+            # Experiment regex (required field)
             experiment_regex = st.text_input(
-                "Experiment Regex",
-                value=st.session_state.get("experiment_regex", ".*"),
-                help="Regex pattern to match experiment names (e.g., 'exp_.*' or '.*_v[0-9]+')",
+                "Experiment Regex *",
+                value=st.session_state.get("experiment_regex", ""),
+                help="Regex pattern to match experiment names (e.g., 'exp_.*' or '.*_v[0-9]+'). This field is required.",
+                placeholder="e.g., 'file', '.*file.*', 'exp_.*'"
             )
             st.session_state.experiment_regex = experiment_regex
+            
+            # Validate experiment regex is not empty
+            if not experiment_regex or not experiment_regex.strip():
+                st.error("⚠️ Experiment Regex is required! Please enter a pattern to match experiment names.")
+                experiment_regex_valid = False
+            else:
+                experiment_regex_valid = True
 
             # Attribute regex
             attribute_regex = st.text_input(
@@ -217,6 +225,11 @@ def main():
             st.session_state.attribute_regex = attribute_regex
 
             if st.button("⬇️ Fetch and Visualize"):
+                # Check if experiment regex is valid before proceeding
+                if not experiment_regex_valid or not experiment_regex or not experiment_regex.strip():
+                    st.error("❌ Cannot proceed: Experiment Regex is required!")
+                    st.stop()
+                
                 with st.spinner("Downloading files from Neptune..."):
                     files, download_info = download_neptune_files(
                         neptune_project, experiment_regex, attribute_regex, download_directory
