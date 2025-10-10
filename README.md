@@ -40,7 +40,7 @@ This repo contains tutorials and examples of how to use Neptune.
 
 |               |                 GitHub                 |
 | ------------- | :------------------------------------: |
-| File Comparer | [![github-icon]][file-comparison-code] |
+| Compare files | [![github-icon]][file-comparison-code] |
 
 ## Can't find what you're looking for?
 
