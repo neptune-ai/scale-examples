@@ -63,5 +63,5 @@ Unless required by applicable law or agreed to in writing, software distributed 
 WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and limitations under the License.
 
-[Github issues]: https://github.com/neptune-ai/scale-examples/issues/new
+[GitHub issues]: https://github.com/neptune-ai/scale-examples/issues/new
 [Support center]: https://support.neptune.ai/
