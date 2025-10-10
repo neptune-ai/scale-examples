@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 import pandas as pd
 import streamlit as st
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # TODO: Support runs mode
 # TODO: Add support for audio and html
