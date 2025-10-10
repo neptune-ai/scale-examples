@@ -187,15 +187,16 @@ def main():
         _neptune_api_token = st.session_state.get("neptune_api_token") or os.getenv(
             "NEPTUNE_API_TOKEN"
         )
-        _neptune_api_token = st.text_input(
+        st.session_state.neptune_api_token = st.text_input(
             "Neptune API Token",
             value=_neptune_api_token,
             placeholder="your_api_token",
             type="password",
             help="Defaults to `NEPTUNE_API_TOKEN` environment variable",
             icon=":material/password:",
-            on_change=lambda: nq.set_api_token(_neptune_api_token),
         )
+        if st.session_state.neptune_api_token or _neptune_api_token:
+            nq.set_api_token(st.session_state.neptune_api_token or _neptune_api_token)
 
         # Neptune project
         _neptune_project = st.session_state.get("neptune_project") or os.getenv("NEPTUNE_PROJECT")
@@ -290,7 +291,7 @@ def main():
             if files:
                 st.success(f"Successfully downloaded {len(files)} files", icon=":material/check:")
             else:
-                st.warning("No files were downloaded. Check your project name and regex patterns.")
+                st.warning("No files were downloaded. Check your configuration.")
 
         # Show download details in expander if available
         if "download_info" in st.session_state and st.session_state.download_info:
