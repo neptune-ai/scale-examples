@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 import pandas as pd
 import streamlit as st
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 # TODO: Support runs mode
 # TODO: Add support for audio and html
@@ -21,7 +21,8 @@ try:
 except ImportError:
     NEPTUNE_AVAILABLE = False
 
-_LOGO_PATH = "assets/neptune_ai_signet_color.png"
+_LOGO_PATH = "utils/visualization_tools/file_comparison_app/assets/neptune_ai_signet_color.png"
+
 # Configure page
 st.set_page_config(
     page_title="File Comparison App",
@@ -97,11 +98,11 @@ def download_neptune_files(
 
     try:
         # List experiments
-        filter = Filter.name(experiment_regex)
+        _filter = Filter.name(experiment_regex)
         if not include_archived:
-            filter = filter & Filter.eq("sys/archived", False)
+            _filter = _filter & Filter.eq("sys/archived", False)
 
-        exps = nq.list_experiments(project=project_name, experiments=filter)
+        exps = nq.list_experiments(project=project_name, experiments=_filter)
 
         if not exps:
             st.warning(f"No experiments found matching pattern: {experiment_regex}")
@@ -186,7 +187,7 @@ def main():
         _neptune_api_token = st.session_state.get("neptune_api_token") or os.getenv(
             "NEPTUNE_API_TOKEN"
         )
-        neptune_api_token = st.text_input(
+        st.session_state.neptune_api_token = st.text_input(
             "Neptune API Token",
             value=_neptune_api_token,
             placeholder="your_api_token",
@@ -194,8 +195,8 @@ def main():
             help="Defaults to `NEPTUNE_API_TOKEN` environment variable",
             icon=":material/password:",
         )
-        if neptune_api_token:
-            os.environ["NEPTUNE_API_TOKEN"] = neptune_api_token
+        if st.session_state.neptune_api_token or _neptune_api_token:
+            nq.set_api_token(st.session_state.neptune_api_token or _neptune_api_token)
 
         # Neptune project
         _neptune_project = st.session_state.get("neptune_project") or os.getenv("NEPTUNE_PROJECT")
@@ -290,7 +291,7 @@ def main():
             if files:
                 st.success(f"Successfully downloaded {len(files)} files", icon=":material/check:")
             else:
-                st.warning("No files were downloaded. Check your project name and regex patterns.")
+                st.warning("No files were downloaded. Check your configuration.")
 
         # Show download details in expander if available
         if "download_info" in st.session_state and st.session_state.download_info:

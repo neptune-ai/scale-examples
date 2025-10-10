@@ -16,29 +16,38 @@ A Streamlit application for downloading, visualizing, and comparing media files 
 
 ## Installation and usage
 
+### Cloud-hosted version
+
+SaaS users can try the hosted version of the app with zero local setup: [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://neptune-file-comparison.streamlit.app/)
+
+### Local version
+
 1. Clone the repository
-2. Navigate to `utils/visualization_tools/file_comparison_app/`
-3. Install dependencies:
+2. Install dependencies:
 
    ```bash
-   pip install -r requirements.txt
+   pip install -r utils/visualization_tools/file_comparison_app/requirements.txt
    ```
 
-4. Run the Streamlit app:
+3. Run the Streamlit app:
 
    ```bash
-   streamlit run file_comparison_app.py
+   streamlit run utils/visualization_tools/file_comparison_app/file_comparison_app.py
    ```
 
-5. Open your browser and navigate to the provided URL (usually `http://localhost:8501`)
+4. Open your browser and navigate to the provided URL (usually `http://localhost:8501`)
 
 ---
 
 ## Changelog
 
+### Version 0.1.1 (2025-10-10)
+
+- Fixed handling of Neptune API key and project name
+
 ### Version 0.1.0 (2025-10-09)
 
-Initial release
+- Initial release
 
 ## Support and feedback
 
