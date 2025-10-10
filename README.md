@@ -38,9 +38,9 @@ This repo contains tutorials and examples of how to use Neptune.
 
 ### Visualization tools
 
-|               |                 GitHub                 |
-| ------------- | :------------------------------------: |
-| Compare files | [![github-icon]][file-comparison-code] |
+|                           |                 GitHub                 |
+| ------------------------- | :------------------------------------: |
+| Compare media file-series | [![github-icon]][file-comparison-code] |
 
 ## Can't find what you're looking for?
 

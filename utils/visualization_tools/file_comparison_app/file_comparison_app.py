@@ -9,8 +9,8 @@ import streamlit as st
 __version__ = "0.1.0"
 
 # TODO: Support runs mode
+# TODO: Add support for audio and html
 # TODO: Clean download directory
-# TODO: Add support for audio and other custom file types (seaborn, plotly, etc.)
 
 # Neptune integration
 try:
@@ -28,6 +28,11 @@ st.set_page_config(
     page_icon=_LOGO_PATH,
     layout="wide",
     initial_sidebar_state="expanded",
+    menu_items={
+        "Get help": "https://support.neptune.ai/",
+        "Report a bug": "https://github.com/neptune-ai/scale-examples/issues",
+        "About": f"**File Comparison App** v{__version__}\n\nVisualize and compare media file-series across different Neptune experiments.",
+    },
 )
 st.logo(_LOGO_PATH)
 
