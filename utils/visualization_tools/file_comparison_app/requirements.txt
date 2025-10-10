@@ -1,0 +1,5 @@
+matplotlib>=3.5.0
+neptune-query>=1.7.0
+pandas>=1.5.0
+pathlib2>=2.3.0
+streamlit>=1.50.0
