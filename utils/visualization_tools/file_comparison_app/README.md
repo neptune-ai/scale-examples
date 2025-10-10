@@ -1,26 +1,24 @@
-# Neptune File Series Comparison App
+# Neptune file-series comparison tool
 
 A Streamlit application for downloading, visualizing, and comparing media files logged as series across Neptune experiments.
 
-[![Screenshot](./assets/screenshot.jpeg)](./assets/screenshot.jpeg)
-
-## Installation and usage
+[![Streamlit interface showing a gallery of files logged with Neptune.](./assets/screenshot.jpeg)](./assets/screenshot.jpeg)
 
 ## Features
 
-- **Interactive Media Gallery**: Compare images and videos across experiments and training steps
-- **Flexible Layouts**: Switch between step-based and experiment-based column layouts
-- **Smart Pagination**: Navigate through large datasets with configurable columns per page
-- **Experiment Filtering**: Select specific experiments using regex patterns and interactive toggles
-- **Media Support**: View images (PNG, JPG, GIF, BMP) and videos (MP4, AVI, MOV, MKV, WebM)
+- **Interactive media gallery**: Compare images and videos across experiments and training steps
+- **Flexible layout**: Switch between step-based and experiment-based column layouts
+- **Smart pagination**: Navigate through large datasets with configurable columns per page
+- **Experiment filtering**: Select specific experiments using regex patterns and interactive toggles
+- **Media support**: View images (PNG, JPG, GIF, BMP) and videos (MP4, AVI, MOV, MKV, WebM)
 
 ---
 
-## Installation and Usage
+## Installation and usage
 
 1. Clone the repository
 2. Navigate to `utils/visualization_tools/file_comparison_app/`
-3. **Install dependencies:**
+3. Install dependencies:
 
    ```bash
    pip install -r requirements.txt
@@ -32,7 +30,7 @@ A Streamlit application for downloading, visualizing, and comparing media files 
    streamlit run file_comparison_app.py
    ```
 
-5. **Open your browser** and navigate to the provided URL (usually `http://localhost:8501`)
+5. Open your browser and navigate to the provided URL (usually `http://localhost:8501`)
 
 ---
 
@@ -40,7 +38,7 @@ A Streamlit application for downloading, visualizing, and comparing media files 
 
 ### Version 0.1.0 (2025-10-09)
 
-Initial Release
+Initial release
 
 ## Support and feedback
 
