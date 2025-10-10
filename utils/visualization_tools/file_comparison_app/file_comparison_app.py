@@ -21,7 +21,8 @@ try:
 except ImportError:
     NEPTUNE_AVAILABLE = False
 
-_LOGO_PATH = "assets/neptune_ai_signet_color.png"
+_LOGO_PATH = "utils/visualization_tools/file_comparison_app/assets/neptune_ai_signet_color.png"
+
 # Configure page
 st.set_page_config(
     page_title="File Comparison App",
