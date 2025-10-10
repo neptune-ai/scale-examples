@@ -98,11 +98,11 @@ def download_neptune_files(
 
     try:
         # List experiments
-        filter = Filter.name(experiment_regex)
+        _filter = Filter.name(experiment_regex)
         if not include_archived:
-            filter = filter & Filter.eq("sys/archived", False)
+            _filter = _filter & Filter.eq("sys/archived", False)
 
-        exps = nq.list_experiments(project=project_name, experiments=filter)
+        exps = nq.list_experiments(project=project_name, experiments=_filter)
 
         if not exps:
             st.warning(f"No experiments found matching pattern: {experiment_regex}")
@@ -187,16 +187,15 @@ def main():
         _neptune_api_token = st.session_state.get("neptune_api_token") or os.getenv(
             "NEPTUNE_API_TOKEN"
         )
-        neptune_api_token = st.text_input(
+        _neptune_api_token = st.text_input(
             "Neptune API Token",
             value=_neptune_api_token,
             placeholder="your_api_token",
             type="password",
             help="Defaults to `NEPTUNE_API_TOKEN` environment variable",
             icon=":material/password:",
+            on_change=lambda: nq.set_api_token(_neptune_api_token),
         )
-        if neptune_api_token:
-            os.environ["NEPTUNE_API_TOKEN"] = neptune_api_token
 
         # Neptune project
         _neptune_project = st.session_state.get("neptune_project") or os.getenv("NEPTUNE_PROJECT")
