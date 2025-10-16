@@ -23,23 +23,34 @@ SaaS users can try the hosted version of the app with zero local setup: [![Open 
 ### Local version
 
 1. Clone the repository
-2. Install dependencies:
+2. Navigate to the app directory:
 
    ```bash
-   pip install -r utils/visualization_tools/file_comparison_app/requirements.txt
+   cd utils/visualization_tools/file_comparison_app
    ```
 
-3. Run the Streamlit app:
+3. Install dependencies:
 
    ```bash
-   streamlit run utils/visualization_tools/file_comparison_app/file_comparison_app.py
+   pip install -Uq -r requirements.txt
    ```
 
-4. Open your browser and navigate to the provided URL (usually `http://localhost:8501`)
+4. Run the Streamlit app:
+
+   ```bash
+   streamlit run file_comparison_app.py
+   ```
+
+5. Open your browser and navigate to the provided URL (usually `http://localhost:8501`)
 
 ---
 
 ## Changelog
+
+### Version 0.1.2 (2025-10-16)
+
+- Fixed logo path to be relative to the app directory
+- Fixed requirements to be more specific
 
 ### Version 0.1.1 (2025-10-10)
 
