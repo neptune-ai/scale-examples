@@ -6,7 +6,7 @@ from typing import Any, Dict, List
 import pandas as pd
 import streamlit as st
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 # TODO: Support runs mode
 # TODO: Add support for audio and html
@@ -21,7 +21,7 @@ try:
 except ImportError:
     NEPTUNE_AVAILABLE = False
 
-_LOGO_PATH = "utils/visualization_tools/file_comparison_app/assets/neptune_ai_signet_color.png"
+_LOGO_PATH = Path(__file__).parent.joinpath("assets/neptune_ai_signet_color.png").absolute()
 
 # Configure page
 st.set_page_config(
