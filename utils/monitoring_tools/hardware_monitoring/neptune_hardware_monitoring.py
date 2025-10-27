@@ -69,7 +69,8 @@ class SystemMetricsMonitor:
         else:
             _fork_step = self.run._fork_step
         self._monitoring_step = _fork_step + 1 if _fork_step is not None else 0
-
+        # Last time stamp GPU SM process information was retrieved
+        self._last_process_time_stamp = 0
         self.hostname = socket.gethostname()
 
         # Prime psutil.cpu_percent to avoid initial 0.0 reading
@@ -270,6 +271,31 @@ class SystemMetricsMonitor:
                 metrics[f"{prefix}/gpu/{i}/power_usage_watts"] = power
             except Exception as e:
                 logger.warning(f"Error getting power usage for GPU {i} on {self.hostname}: {e}")
+            # SM Process Utilization
+            try:
+                sm_utilization_samples: list[
+                    pynvml.c_nvmlProcessUtilizationSample_t
+                ] = pynvml.nvmlDeviceGetProcessUtilization(
+                    handle, self._last_process_time_stamp
+                )
+            except Exception as e:
+                logger.warning(
+                    f"Error getting process utilization for GPU {i} on {self.hostname}: {e}"
+                )
+            else:
+                # SM Utilization samples is returned as a list of samples
+                # There are as many as samples as active processes in the time stamp interval
+                # We assume process utilization is given in percentage and can be summed
+                # We expect only one process to be active at a time during training
+                # For more details, see
+                # https://docs.nvidia.com/deploy/nvml-api/group__nvmlDeviceQueries.html#group__nvmlDeviceQueries_1gb0ea5236f5e69e63bf53684a11c233bd
+                sm_util = sum(sample.smUtil for sample in sm_utilization_samples)
+                mem_util = sum(sample.memUtil for sample in sm_utilization_samples)
+                metrics[f"{prefix}/gpu/{i}/sm_utilization_percent"] = sm_util
+                metrics[f"{prefix}/gpu/{i}/memory_utilization_percent"] = mem_util
+                self._last_process_time_stamp = max(
+                    sample.timeStamp for sample in sm_utilization_samples
+                )
 
     def _collect_process_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
         """
