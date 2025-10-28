@@ -8,6 +8,10 @@ An extensible Python module for logging system and process hardware metrics (CPU
 
 ## Changelog
 
+**v0.3.0** (2025-10-28)
+
+- Added support for GPU SM utilization and memory utilization.
+
 **v0.2.2** (2025-10-01)
 
 - Handled error when using DDP on non-zero ranks.

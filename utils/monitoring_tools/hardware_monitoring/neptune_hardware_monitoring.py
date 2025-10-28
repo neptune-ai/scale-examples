@@ -13,7 +13,7 @@ from neptune_scale.util.logger import get_logger
 
 logger = get_logger()
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 
 try:
     import torch
@@ -277,10 +277,8 @@ class SystemMetricsMonitor:
                 # There are as many as samples as active processes in the time stamp interval
                 # For more details, see
                 # https://docs.nvidia.com/deploy/nvml-api/group__nvmlDeviceQueries.html#group__nvmlDeviceQueries_1gb0ea5236f5e69e63bf53684a11c233bd
-                sm_utilization_samples: list[
-                    pynvml.c_nvmlProcessUtilizationSample_t
-                ] = pynvml.nvmlDeviceGetProcessUtilization(
-                    handle, self._last_process_time_stamp
+                sm_utilization_samples: list[pynvml.c_nvmlProcessUtilizationSample_t] = (
+                    pynvml.nvmlDeviceGetProcessUtilization(handle, self._last_process_time_stamp)
                 )
             except pynvml.nvmlExceptionClass(pynvml.NVML_ERROR_NOT_FOUND) as e:
                 # If no valid sample entries are found since the last seen time stamp, NVML_ERROR_NOT_FOUND is returned.
@@ -304,9 +302,7 @@ class SystemMetricsMonitor:
             finally:
                 if sm_util is not None and mem_util is not None:
                     metrics[f"{prefix}/gpu/{i}/sm_utilization_percent"] = sm_util
-                    metrics[f"{prefix}/gpu/{i}/sm_memory_utilization_percent"] = (
-                        mem_util
-                    )
+                    metrics[f"{prefix}/gpu/{i}/sm_memory_utilization_percent"] = mem_util
 
     def _collect_process_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
         """
