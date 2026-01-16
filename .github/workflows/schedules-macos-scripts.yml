@@ -9,6 +9,6 @@ jobs:
   test-scripts-macos:
     uses: ./.github/workflows/test-scripts.yml
     with:
-      os: macos-latest
+      os: macos-14
     secrets:
       NEPTUNE_API_TOKEN: ${{ secrets.NEPTUNE_API_TOKEN }}
