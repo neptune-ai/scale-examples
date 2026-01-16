@@ -1,0 +1,4 @@
+neptune-scale
+torch
+torchvision
+importlib-metadata
