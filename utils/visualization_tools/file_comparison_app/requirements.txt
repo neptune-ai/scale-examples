@@ -1,0 +1,3 @@
+neptune-query>=1.7.0,<2.0.0
+pandas>=2.3.3,<3.0.0
+streamlit>=1.50.0,<2.0.0

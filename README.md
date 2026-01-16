@@ -14,42 +14,53 @@ With Neptune, you can monitor thousands of per-layer metrics—losses, gradients
 
 This repo contains tutorials and examples of how to use Neptune.
 
-| | Docs | Neptune | GitHub | Colab |
-| -- | :--: | :--: | :--: | :--: |
-| Quickstart | [![docs-icon]][quickstart] | [![neptune-icon]][quickstart-example] | [![github-icon]][qs-notebook] | [![colab-icon]][qs-colab] |
-| Log different types of metadata | [![docs-icon]][log-metadata] | [![neptune-icon]][log-metadata-example] | | |
-| Organize and filter runs | [![docs-icon]][runs-table] | [![neptune-icon]][runs-table-example] | | |
-| Resume run or other object | [![docs-icon]][resume-run] | | | |
-| Use Neptune in HPO jobs | [![docs-icon]][hpo] | [![neptune-icon]][hpo-example] | [![github-icon]][hpo-notebook] | [![colab-icon]][hpo-colab] |
+|                                 |             Docs             |                 Neptune                 |             GitHub             |           Colab            |
+| ------------------------------- | :--------------------------: | :-------------------------------------: | :----------------------------: | :------------------------: |
+| Quickstart                      |  [![docs-icon]][quickstart]  |  [![neptune-icon]][quickstart-example]  | [![github-icon]][qs-notebook]  | [![colab-icon]][qs-colab]  |
+| Log different types of metadata | [![docs-icon]][log-metadata] | [![neptune-icon]][log-metadata-example] |                                |                            |
+| Organize and filter runs        |  [![docs-icon]][runs-table]  |  [![neptune-icon]][runs-table-example]  |                                |                            |
+| Resume a run                    |  [![docs-icon]][resume-run]  |                                         |                                |                            |
+| Use Neptune in HPO jobs         |     [![docs-icon]][hpo]      |     [![neptune-icon]][hpo-example]      | [![github-icon]][hpo-notebook] | [![colab-icon]][hpo-colab] |
 
 ### Migration tools
 
-| | Docs | GitHub |
-| -- | :--: | :--: |
-| Import runs from Weights & Biases | [![docs-icon]][from-wandb] | [![github-icon]][from-wandb-code] |
+|                                         |            Docs             |               GitHub               |
+| --------------------------------------- | :-------------------------: | :--------------------------------: |
+| Import runs from Weights & Biases       | [![docs-icon]][from-wandb]  | [![github-icon]][from-wandb-code]  |
 | Migrate code from Neptune Legacy client | [![docs-icon]][from-legacy] | [![github-icon]][from-legacy-code] |
 
 ### Monitoring tools
-| | Docs | Neptune | GitHub |
-| -- | :--: | :--: | :--: |
-| Hardware monitoring | [![docs-icon]][hardware-monitoring] | [![neptune-icon]][hardware-monitoring-example] | [![github-icon]][hardware-monitoring-code] |
+
+|                         |                  Docs                   |                      Neptune                       |                     GitHub                     |
+| ----------------------- | :-------------------------------------: | :------------------------------------------------: | :--------------------------------------------: |
+| Hardware monitoring     |   [![docs-icon]][hardware-monitoring]   |   [![neptune-icon]][hardware-monitoring-example]   |   [![github-icon]][hardware-monitoring-code]   |
+| PyTorch model internals | [![docs-icon]][pytorch-model-internals] | [![neptune-icon]][pytorch-model-internals-example] | [![github-icon]][pytorch-model-internals-code] |
+
+### Visualization tools
+
+|                           |                 GitHub                 |
+| ------------------------- | :------------------------------------: |
+| Compare media file-series | [![github-icon]][file-comparison-code] |
 
 ## Can't find what you're looking for?
 
 - [Visit the documentation &rarr;][docs]
 - [Check out the blog &rarr;][blog]
-- Reach out to us at [support@neptune.ai](mailto:support@neptune.ai)
-
+- Visit our [Support Center](https://support.neptune.ai/) to get help or contact the Support team.
 
 <!-- Internal -->
+
 [from-wandb-code]: utils/migration_tools/from_wandb/
 [from-legacy-code]: utils/migration_tools/from_legacy_neptune/
 [hpo-notebook]: how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
 [hpo-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
+[pytorch-model-internals-code]: utils/monitoring_tools/pytorch_model_internals/
+[file-comparison-code]: utils/visualization_tools/file_comparison_app/
 [qs-notebook]: how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 [qs-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 
 <!-- External -->
+
 [blog]: https://neptune.ai/blog
 [docs]: https://docs.neptune.ai/
 [from-legacy]: https://docs.neptune.ai/migration_neptune
@@ -61,6 +72,8 @@ This repo contains tutorials and examples of how to use Neptune.
 [hpo-example]: https://scale.neptune.ai/o/examples/org/hpo/runs/table?viewId=9d44261f-32a1-42e7-96ff-9b35edc4be66
 [log-metadata]: https://docs.neptune.ai/log_metadata
 [log-metadata-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/details?viewId=9e6a41f4-69a5-4d9f-951c-b1304f2acf12&detailsTab=dashboard&dashboardId=9e6a5c4c-0c39-491f-9811-87eeb39a2603&runIdentificationKey=LLM-29&type=run&compare=uMlyIDUTmecveIHVma0eEB95Ei5xu8F_9qHOh0nynbtM
+[pytorch-model-internals]: https://docs.neptune.ai/utility_scripts/torchwatcher
+[pytorch-model-internals-example]: https://scale.neptune.ai/examples/showcase/runs/details?viewId=standard-view&detailsTab=dashboard&dashboardId=9f67bd03-4080-4d47-83b2-36836b03351c&runIdentificationKey=torch-watcher-example&type=experiment&experimentsOnly=true&runsLineage=FULL&lbViewUnpacked=true&sortBy=%5B%22sys%2Fcreation_time%22%5D&sortFieldType=%5B%22datetime%22%5D&sortFieldAggregationMode=%5B%22auto%22%5D&sortDirection=%5B%22descending%22%5D&experimentOnly=true
 [quickstart]: https://docs.neptune.ai/quickstart
 [quickstart-example]: https://scale.neptune.ai/examples/quickstart/reports/9ea26258-2aed-4441-9b58-bab619215f6f
 [resume-run]: https://docs.neptune.ai/resume_run
@@ -68,6 +81,7 @@ This repo contains tutorials and examples of how to use Neptune.
 [runs-table-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/table?viewId=9e746462-f045-4ff2-9ac4-e41fa349b04d&detailsTab=dashboard&dash=table&type=run&compare=auto-5
 
 <!-- Clickable icons -->
+
 [docs-icon]: https://neptune.ai/wp-content/uploads/2023/06/file_icon.svg "Read the documentation"
 [neptune-icon]: https://neptune.ai/wp-content/uploads/2023/01/Signet-svg-16x16-1.svg "See Neptune example"
 [github-icon]: https://neptune.ai/wp-content/uploads/2023/06/Github-Monochrome-1.svg "See code on GitHub"

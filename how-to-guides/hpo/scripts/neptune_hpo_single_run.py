@@ -1,5 +1,4 @@
 import math
-from datetime import datetime
 
 import torch
 import torch.nn as nn
@@ -7,8 +6,6 @@ import torch.optim as optim
 from neptune_scale import Run
 from torchvision import datasets, transforms
 from tqdm.auto import tqdm, trange
-
-ALLOWED_DATATYPES = [int, float, str, datetime, bool, list, set]
 
 parameters = {
     "batch_size": 128,
@@ -72,15 +69,10 @@ trainloader = torch.utils.data.DataLoader(
 
 if __name__ == "__main__":
     run = Run()
-    print(f"Neptune run created 🎉\nAccess at {run.get_run_url()}")
 
     run.add_tags(["all-trials", "script"])
 
-    for key in parameters:
-        if type(parameters[key]) not in ALLOWED_DATATYPES:
-            run.log_configs({f"config/{key}": str(parameters[key])})
-        else:
-            run.log_configs({f"config/{key}": parameters[key]})
+    run.log_configs({"config": parameters}, flatten=True, cast_unsupported=True)
 
     for trial, lr in tqdm(
         enumerate(learning_rates),
