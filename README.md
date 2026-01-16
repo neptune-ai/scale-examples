@@ -39,8 +39,7 @@ In this repo, you'll find tutorials and examples of using Neptune Scale.
 
 | | Docs | Neptune | GitHub | Colab
 | ----------- | :---: | :---: | :------: | :---:
-| DDP training scripts | [![docs]]() | | [![github]](how-to-guides/ddp-training/scripts/) | |
-
+| DDP training scripts | | | [![github]](how-to-guides/ddp-training/scripts/) | |
 ## 🛠️ Other utilities
 
 ### 🧳 Migration tools
