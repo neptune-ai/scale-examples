@@ -10,6 +10,6 @@ jobs:
   test-notebooks-macos:
     uses: ./.github/workflows/test-notebooks.yml
     with:
-      os: macos-14
+      os: macos-latest
     secrets:
       NEPTUNE_API_TOKEN: ${{ secrets.NEPTUNE_API_TOKEN }}
