@@ -1,4 +1,6 @@
 name: Scheduled scripts tests (macos)
+permissions:
+  contents: read
 on:
   schedule:
     - cron: "0 0 * * 1" # Run every Monday at 12:00 AM UTC

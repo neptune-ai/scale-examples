@@ -124,9 +124,8 @@ A: Use the `--query` argument with [NQL syntax](https://docs-legacy.neptune.ai/u
 We welcome your feedback and contributions to help improve the script. Please submit any issues or feature requests as [GitHub Issues](https://github.com/neptune-ai/scale-examples/issues).
 
 For help, reach out via our support channels:
-- [Support portal](https://support.neptune.ai)
-- [Email](mailto:support@neptune.ai)
-- In-app chat
+- [Support Center](https://support.neptune.ai)
+- In-app chat via the 'Messenger' at the bottom right of the screen.
 
 ---
 

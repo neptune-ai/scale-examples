@@ -13,6 +13,8 @@ from neptune_scale.util.logger import get_logger
 
 logger = get_logger()
 
+__version__ = "0.3.0"
+
 try:
     import torch
 
@@ -60,9 +62,15 @@ class SystemMetricsMonitor:
         self.sampling_rate = sampling_rate
         self._stop_event = threading.Event()
         self._monitoring_thread: Optional[threading.Thread] = None
-        self._monitoring_step = 0
         self._proc = psutil.Process(os.getpid())
-
+        # Handle _fork_step which a bound method for dummy experiments on non-zero ranks
+        if callable(self.run._fork_step):
+            _fork_step = self.run._fork_step()
+        else:
+            _fork_step = self.run._fork_step
+        self._monitoring_step = _fork_step + 1 if _fork_step is not None else 0
+        # Last time stamp GPU SM process information was retrieved
+        self._last_process_time_stamp = 0
         self.hostname = socket.gethostname()
 
         # Prime psutil.cpu_percent to avoid initial 0.0 reading
@@ -263,6 +271,38 @@ class SystemMetricsMonitor:
                 metrics[f"{prefix}/gpu/{i}/power_usage_watts"] = power
             except Exception as e:
                 logger.warning(f"Error getting power usage for GPU {i} on {self.hostname}: {e}")
+            # SM Process Utilization
+            try:
+                # SM Utilization samples is returned as a list of samples
+                # There are as many as samples as active processes in the time stamp interval
+                # For more details, see
+                # https://docs.nvidia.com/deploy/nvml-api/group__nvmlDeviceQueries.html#group__nvmlDeviceQueries_1gb0ea5236f5e69e63bf53684a11c233bd
+                sm_utilization_samples: list[pynvml.c_nvmlProcessUtilizationSample_t] = (
+                    pynvml.nvmlDeviceGetProcessUtilization(handle, self._last_process_time_stamp)
+                )
+            except pynvml.nvmlExceptionClass(pynvml.NVML_ERROR_NOT_FOUND) as e:
+                # If no valid sample entries are found since the last seen time stamp, NVML_ERROR_NOT_FOUND is returned.
+                # It is expected if no process is active during two consecutive calls.
+                sm_util = 0
+                mem_util = 0
+            except Exception as e:
+                logger.warning(
+                    f"Error getting process utilization for GPU {i} on {self.hostname}: {e}"
+                )
+                sm_util = None
+                mem_util = None
+            else:
+                # We assume process utilization is given in percentage and can be summed
+                # We expect only one process to be active at a time during training
+                sm_util = sum(sample.smUtil for sample in sm_utilization_samples)
+                mem_util = sum(sample.memUtil for sample in sm_utilization_samples)
+                self._last_process_time_stamp = max(
+                    sample.timeStamp for sample in sm_utilization_samples
+                )
+            finally:
+                if sm_util is not None and mem_util is not None:
+                    metrics[f"{prefix}/gpu/{i}/sm_utilization_percent"] = sm_util
+                    metrics[f"{prefix}/gpu/{i}/sm_memory_utilization_percent"] = mem_util
 
     def _collect_process_metrics(self, metrics: Dict[str, Any], prefix: str) -> None:
         """

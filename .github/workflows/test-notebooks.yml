@@ -1,4 +1,7 @@
 name: Notebooks test matrix
+permissions:
+  contents: read
+
 env:
   PYTHONIOENCODING: utf-8
   PYTHONLEGACYWINDOWSSTDIO: utf-8

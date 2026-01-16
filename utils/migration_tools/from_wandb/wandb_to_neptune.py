@@ -17,7 +17,7 @@
 # Instructions on how to use this script can be found at
 # https://github.com/neptune-ai/scale-examples/blob/main/utils/migration_tools/from_wandb/README.md
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 import argparse
 import logging
@@ -37,8 +37,6 @@ from neptune_scale.exceptions import (
 from neptune_scale.projects import create_project
 from neptune_scale.types import File
 from tqdm.auto import tqdm
-
-SUPPORTED_DATATYPES = [int, float, str, datetime, bool, list, set]
 
 EXCLUDED_PATHS = {"artifact/", "config.yaml", "media/", "wandb-"}
 
@@ -73,27 +71,6 @@ def setup_logging(log_level: str) -> tuple[logging.Logger, str]:
     print(f"Logs available at {log_filename}\n")
 
     return logger, log_filename
-
-
-def stringify_unsupported(d, parent_key="", sep="/"):
-    items = {}
-    if not isinstance(d, (dict, list, tuple, set)):
-        return d if type(d) in SUPPORTED_DATATYPES else str(d)
-    if isinstance(d, dict):
-        for k, v in d.items():
-            new_key = f"{parent_key}{sep}{k}" if parent_key else k
-            if isinstance(v, (dict, list, tuple, set)):
-                items |= stringify_unsupported(v, new_key, sep=sep)
-            else:
-                items[new_key] = v if type(v) in SUPPORTED_DATATYPES else str(v)
-    elif isinstance(d, (list, tuple, set)):
-        for i, v in enumerate(d):
-            new_key = f"{parent_key}{sep}{i}" if parent_key else str(i)
-            if isinstance(v, (dict, list, tuple, set)):
-                items.update(stringify_unsupported(v, new_key, sep=sep))
-            else:
-                items[new_key] = v if type(v) in SUPPORTED_DATATYPES else str(v)
-    return items
 
 
 def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
@@ -138,11 +115,12 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
                     elif attr == "tags":
                         logger.debug(f"Adding tags for {wandb_run.name}")
                         neptune_run.add_tags(wandb_run.tags)
-                    elif isinstance(getattr(wandb_run, attr), dict):
-                        for k, v in stringify_unsupported(getattr(wandb_run, attr)).items():
-                            neptune_run.log_configs({f"wandb/{attr}/{k}": v})
                     else:
-                        neptune_run.log_configs({f"wandb/{attr}": getattr(wandb_run, attr)})
+                        neptune_run.log_configs(
+                            {f"wandb/{attr}": getattr(wandb_run, attr)},
+                            flatten=True,
+                            cast_unsupported=True,
+                        )
                 except TypeError:
                     pass
                 except Exception as e:
@@ -168,15 +146,10 @@ def copy_run(wandb_run, wandb_project_name: str) -> None:  # type: ignore
 
 
 def copy_config(neptune_run: Run, wandb_run) -> None:  # type: ignore
-    flat_config = stringify_unsupported(wandb_run.config)
-
     try:
-        for key, value in flat_config.items():
-            neptune_run.log_configs({f"config/{key}": value})
+        neptune_run.log_configs({"config": wandb_run.config}, flatten=True, cast_unsupported=True)
     except Exception as e:
-        logger.error(
-            f"Failed to copy config {key} from W&B run {wandb_run.name} due to exception:\n{e}"
-        )
+        logger.error(f"Failed to copy configs from W&B run {wandb_run.name} due to exception:\n{e}")
 
 
 def copy_summary(neptune_run: Run, wandb_run) -> None:  # type: ignore
@@ -186,12 +159,7 @@ def copy_summary(neptune_run: Run, wandb_run) -> None:  # type: ignore
         if key.startswith("_") or (isinstance(value, wandb.old.summary.SummarySubDict)):
             continue
         try:
-            stringified_summary = stringify_unsupported(value)
-            if isinstance(stringified_summary, dict):
-                for k, v in stringified_summary.items():
-                    neptune_run.log_configs({f"summary/{key}/{k}": v})
-            else:
-                neptune_run.log_configs({f"summary/{key}": stringified_summary})
+            neptune_run.log_configs({f"summary/{key}": value}, flatten=True, cast_unsupported=True)
         except KeyError:
             continue
         except Exception as e:
