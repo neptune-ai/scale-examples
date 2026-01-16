@@ -1,5 +1,4 @@
 import math
-from datetime import datetime
 from uuid import uuid4
 
 import torch
@@ -8,8 +7,6 @@ import torch.optim as optim
 from neptune_scale import Run
 from torchvision import datasets, transforms
 from tqdm.auto import tqdm, trange
-
-ALLOWED_DATATYPES = [int, float, str, datetime, bool, list, set]
 
 parameters = {
     "batch_size": 128,
@@ -74,16 +71,12 @@ trainloader = torch.utils.data.DataLoader(
 if __name__ == "__main__":
     sweep_id = str(uuid4())
 
-    sweep_run = Run(run_id=f"sweep-{sweep_id}")
+    sweep_run = Run()
 
     sweep_run.add_tags(["sweep", "script"])
     sweep_run.add_tags([sweep_id], group_tags=True)
 
-    for key in parameters:
-        if type(parameters[key]) not in ALLOWED_DATATYPES:
-            sweep_run.log_configs({f"config/{key}": str(parameters[key])})
-        else:
-            sweep_run.log_configs({f"config/{key}": parameters[key]})
+    sweep_run.log_configs({"config": parameters}, flatten=True, cast_unsupported=True)
 
     # Initialize fields for best values across all trials
     best_acc = None
@@ -94,7 +87,7 @@ if __name__ == "__main__":
         desc="Trials",
     ):
         # Create a trial-level run
-        with Run(run_id=f"trial-{sweep_id}-{trial}") as trial_run:
+        with Run() as trial_run:
             trial_run.add_tags(["trial", "script"])
 
             # Add sweep_id to the trial-level run

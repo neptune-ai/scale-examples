@@ -1,5 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+
+# Temporary files
 .neptune
+.tmp*
 
 # Data files
 /how-to-guides/hpo/**/mnist
 /integrations-and-supported-tools/pytorch/data
+**ubyte**
+*.mp4
+*.mp3
+**neptune_downloads/
+
+# Logs
+*.log

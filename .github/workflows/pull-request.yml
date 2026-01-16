@@ -1,4 +1,6 @@
 name: Pull Request test
+permissions:
+  contents: read
 on:
   pull_request:
     branches:
@@ -24,6 +26,8 @@ jobs:
           json: true
           files: |
             **/*.ipynb
+          files_ignore: |
+            **/community-code/**
       - name: Set output
         id: output
         if: steps.changed-files.outputs.any_changed == 'true'
@@ -83,6 +87,7 @@ jobs:
             **/code/**
           files_ignore: |
             **/ddp-training/**
+            **/community-code/**
       - name: Set output
         id: output
         if: steps.changed-dirs.outputs.any_changed == 'true'

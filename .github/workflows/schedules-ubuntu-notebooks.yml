@@ -1,4 +1,7 @@
 name: Scheduled notebook tests (ubuntu)
+permissions:
+  contents: read
+
 on:
   schedule:
     - cron: "0 0 * * 2" # Run every Tuesday at 12:00 AM UTC

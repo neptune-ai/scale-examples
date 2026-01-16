@@ -1,4 +1,7 @@
 name: Notebooks test matrix
+permissions:
+  contents: read
+
 env:
   PYTHONIOENCODING: utf-8
   PYTHONLEGACYWINDOWSSTDIO: utf-8
@@ -21,6 +24,7 @@ jobs:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         notebooks: # Add in alphabetical order
           - how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
+          - how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
         os: ["${{ inputs.os }}"]
     steps:
       - uses: actions/checkout@main
