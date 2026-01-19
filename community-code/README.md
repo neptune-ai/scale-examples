@@ -8,7 +8,7 @@
   <div align="left">
     <ul>
         <!-- Add in alphabetical order -->
-        <li> <b>How to Monitor, Diagnose, and Solve Gradient Issues in Foundation Models</b> - <a href="https://neptune.ai/blog/monitoring-diagnosing-and-solving-gradient-issues-in-foundation-models"> Read </a> | <a href="community-code/How_to_Monitor_Diagnose_and_Solve_Gradient_Issues_in_Foundation_Models/gradient_norm_tracking_in_pytorch%20.ipynb"> Code </a>
+        <li> <b>How to Monitor, Diagnose, and Solve Gradient Issues in Foundation Models</b> - <a href="https://neptune.ai/blog/monitoring-diagnosing-and-solving-gradient-issues-in-foundation-models"> Read </a> | <a href="How_to_Monitor_Diagnose_and_Solve_Gradient_Issues_in_Foundation_Models/gradient_norm_tracking_in_pytorch .ipynb"> Code </a>
     </ul>
   <br>
   <h4> Notice something wrong? </h4>

@@ -1,4 +1,7 @@
 name: Scripts test matrix
+permissions:
+  contents: read
+
 env:
   PYTHONIOENCODING: utf-8
   PYTHONLEGACYWINDOWSSTDIO: utf-8
@@ -20,9 +23,11 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12", "3.13"]
         scripts: # Add in alphabetical order
+          - how-to-guides/debug-model-training-runs/scripts
           - how-to-guides/hpo/scripts
           - how-to-guides/quickstart/scripts
           - integrations-and-supported-tools/pytorch-lightning/scripts
+          - utils/monitoring_tools/pytorch_model_internals/scripts
         os: ["${{ inputs.os }}"]
     steps:
       - uses: actions/checkout@main
@@ -36,7 +41,7 @@ jobs:
         if: matrix.python-version >= 3.12
         run: pip install -U setuptools
       - name: Install libomp on MacOS
-        if: matrix.os == 'macos-13'
+        if: matrix.os == 'macos-latest'
         run: brew install libomp
       - name: Test examples
         uses: nick-fields/retry@v3
