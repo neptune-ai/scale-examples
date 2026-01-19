@@ -4,7 +4,7 @@ import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn.functional as F
-from lightning.pytorch.loggers.neptune import NeptuneScaleLogger
+from lightning.pytorch.loggers.neptune import NeptuneLogger
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from sklearn.metrics import accuracy_score
 from torch.optim.lr_scheduler import LambdaLR
@@ -186,7 +186,7 @@ class MNISTDataModule(pl.LightningDataModule):
 def main():
 
     # (neptune) create NeptuneLogger
-    neptune_logger = NeptuneScaleLogger(
+    neptune_logger = NeptuneLogger(
         # api_key = "YOUR_API_KEY",
         # project = "YOUR_WORKSPACE_NAME/YOUR_PROJECT_NAME"
         experiment_name="lightning-experiment",
