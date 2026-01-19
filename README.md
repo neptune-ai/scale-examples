@@ -23,6 +23,11 @@ This repo contains tutorials and examples of how to use Neptune.
 | Use Neptune in HPO jobs         | [![docs-icon]][hpo]          | [![neptune-icon]][hpo-example]          | [![github-icon]][hpo-notebook] | [![colab-icon]][hpo-colab] |
 | Debug training runs             | [![docs-icon]][debug]        | [![neptune-icon]][debug-example]        | [![github-icon]][debug-notebook] | [![colab-icon]][debug-colab] |
 
+### Integrations
+| | Docs | Neptune | GitHub | Colab |
+| -- | :--: | :--: | :--: | :--: |
+|  PyTorch Lightning  | [![docs-icon]][lightning] | [![neptune-icon]][lightning-example] | [![github-icon]][lightning-notebook] | [![colab-icon]][lightning-colab] |
+
 ### Migration tools
 
 |                                         |            Docs             |               GitHub               |
@@ -59,6 +64,8 @@ This repo contains tutorials and examples of how to use Neptune.
 [file-comparison-code]: utils/visualization_tools/file_comparison_app/
 [qs-notebook]: how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
 [qs-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
+[lightning-notebook]: TODO: final notebook URL in GH
+[lightning-colab]: TODO: final colab URL
 [debug-notebook]: how-to-guides/debug-model-training-runs/debug_training_runs.ipynb
 [debug-colab]: https://colab.research.google.com/github/neptune-ai/scale-examples/blob/master/how-to-guides/debug-model-training-runs/notebooks/debug_training_runs.ipynb
 
@@ -82,6 +89,8 @@ This repo contains tutorials and examples of how to use Neptune.
 [resume-run]: https://docs.neptune.ai/resume_run
 [runs-table]: https://docs.neptune.ai/runs_table
 [runs-table-example]: https://scale.neptune.ai/o/examples/org/LLM-Pretraining/runs/table?viewId=9e746462-f045-4ff2-9ac4-e41fa349b04d&detailsTab=dashboard&dash=table&type=run&compare=auto-5
+[lightning]: https://docs.neptune.ai/integrations/pytorch_lightning
+[lightning-example]: https://scale.neptune.ai/o/examples/org/pytorch-lightning/runs/table?viewId=9ea6121c-42a7-4ece-83b2-c591044837e7
 [debug]: https://docs.neptune.ai/debug_runs_tutorial
 [debug-example]: https://scale.neptune.ai/o/examples/org/debug-training-metrics/runs/table?viewId=standard-view&dash=table&compareChartsFilter-compound=udzSoRe3VmlvolZ8TbuB_zvfcAcgJmla8UuNku1rGWdg
 

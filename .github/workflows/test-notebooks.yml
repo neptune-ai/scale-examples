@@ -26,6 +26,7 @@ jobs:
           - how-to-guides/debug-model-training-runs/notebooks/debug_training_runs.ipynb
           - how-to-guides/hpo/notebooks/Neptune_HPO.ipynb
           - how-to-guides/quickstart/notebooks/neptune_quickstart.ipynb
+          - integrations-and-supported-tools/pytorch-lightning/notebooks/Neptune_PyTorch_Lightning.ipynb
         os: ["${{ inputs.os }}"]
     steps:
       - uses: actions/checkout@main

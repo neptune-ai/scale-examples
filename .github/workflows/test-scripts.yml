@@ -26,6 +26,7 @@ jobs:
           - how-to-guides/debug-model-training-runs/scripts
           - how-to-guides/hpo/scripts
           - how-to-guides/quickstart/scripts
+          - integrations-and-supported-tools/pytorch-lightning/scripts
           - utils/monitoring_tools/pytorch_model_internals/scripts
         os: ["${{ inputs.os }}"]
     steps:
