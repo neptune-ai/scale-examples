@@ -1,0 +1,4 @@
+neptune_scale
+numpy<2
+torch
+torchvision
