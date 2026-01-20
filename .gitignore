@@ -8,6 +8,7 @@ __pycache__/
 
 # Data files
 /how-to-guides/hpo/**/mnist
+/integrations-and-supported-tools/pytorch/data
 **ubyte**
 *.mp4
 *.mp3

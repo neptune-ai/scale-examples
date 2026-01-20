@@ -86,6 +86,7 @@ jobs:
             **/scripts/**
             **/code/**
           files_ignore: |
+            **/ddp-training/**
             **/community-code/**
       - name: Set output
         id: output
